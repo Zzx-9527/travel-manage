@@ -17,6 +17,9 @@ public class ScenicEntity{
     private String images;
     private Double price;
     private String openTime;
+    private String dayTicketCutoffTime;
+    private Integer defaultCapacity;
+    private Integer defaultAdultStock;
     private String address;
     private Double longitude;
     private Double latitude;

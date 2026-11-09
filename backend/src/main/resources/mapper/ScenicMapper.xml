@@ -9,6 +9,9 @@
         <result column="images" property="images" />
         <result column="price" property="price" />
         <result column="open_time" property="openTime" />
+        <result column="day_ticket_cutoff_time" property="dayTicketCutoffTime" />
+        <result column="default_capacity" property="defaultCapacity" />
+        <result column="default_adult_stock" property="defaultAdultStock" />
         <result column="address" property="address" />
         <result column="longitude" property="longitude" />
         <result column="latitude" property="latitude" />
@@ -27,7 +30,7 @@
 
     <sql id="baseSql">
         SELECT
-            scenic.id, scenic.name, scenic.cover, scenic.images, scenic.price, scenic.open_time, scenic.address, scenic.longitude, scenic.latitude, scenic.intro, scenic.score, scenic.view_count, scenic.status, scenic.create_time, scenic.update_time, 
+            scenic.id, scenic.name, scenic.cover, scenic.images, scenic.price, scenic.open_time, scenic.day_ticket_cutoff_time, scenic.default_capacity, scenic.default_adult_stock, scenic.address, scenic.longitude, scenic.latitude, scenic.intro, scenic.score, scenic.view_count, scenic.status, scenic.create_time, scenic.update_time,
             scenic_category_2.id id_2, scenic_category_2.name name_2, scenic_category_2.create_time create_time_2
         FROM scenic
              JOIN scenic_category scenic_category_2 ON(scenic.category_id = scenic_category_2.id)
@@ -113,8 +116,8 @@
     </select>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        insert into scenic(category_id, name, cover, images, price, open_time, address, longitude, latitude, intro, score, view_count, status, create_time, update_time)
-        values(#{categoryId.id}, #{name}, #{cover}, #{images}, #{price}, #{openTime}, #{address}, #{longitude}, #{latitude}, #{intro}, #{score}, #{viewCount}, #{status}, #{createTime}, #{updateTime})
+        insert into scenic(category_id, name, cover, images, price, open_time, day_ticket_cutoff_time, default_capacity, default_adult_stock, address, longitude, latitude, intro, score, view_count, status, create_time, update_time)
+        values(#{categoryId.id}, #{name}, #{cover}, #{images}, #{price}, #{openTime}, #{dayTicketCutoffTime}, #{defaultCapacity}, #{defaultAdultStock}, #{address}, #{longitude}, #{latitude}, #{intro}, #{score}, #{viewCount}, #{status}, #{createTime}, #{updateTime})
     </insert>
 
     <update id="update">
@@ -138,6 +141,9 @@
             <if test="openTime != null and openTime != ''">
                 open_time = #{openTime},
             </if>
+            <if test="dayTicketCutoffTime != null and dayTicketCutoffTime != ''">day_ticket_cutoff_time = #{dayTicketCutoffTime},</if>
+            <if test="defaultCapacity != null and defaultCapacity >= 0">default_capacity = #{defaultCapacity},</if>
+            <if test="defaultAdultStock != null and defaultAdultStock >= 0">default_adult_stock = #{defaultAdultStock},</if>
             <if test="address != null and address != ''">
                 address = #{address},
             </if>
@@ -172,6 +178,8 @@
     <update id="deleteById">
         UPDATE scenic SET del_mark = 0 WHERE id = #{id}
     </update>
+
+    <select id="queryActiveForStock" resultMap="scenicMap"><include refid="baseSql"/> AND scenic.status = 1</select>
 
     <!-- 浏览量回写：数据库侧自增，避免并发覆盖；只更新未删除的景点 -->
     <update id="increaseViewCount">

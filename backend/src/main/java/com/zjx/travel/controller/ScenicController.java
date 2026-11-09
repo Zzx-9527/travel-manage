@@ -15,6 +15,9 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
 import java.util.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import com.zjx.travel.service.ScenicStockService;
 
 @RestController
 @RequestMapping("scenic")
@@ -24,6 +27,8 @@ public class ScenicController {
 
     @Resource
     private FileStorageService fileStorageService;
+    @Resource
+    private ScenicStockService scenicStockService;
 
     @GetMapping("queryById/{id}")
     public ReturnVO queryById(@PathVariable("id") Integer id) {
@@ -89,6 +94,14 @@ public class ScenicController {
     @SaCheckRole("admin")
     public ReturnVO edit(@RequestBody ScenicEntity scenic) {
 
+        if (scenic.getDefaultCapacity() != null && scenic.getDefaultCapacity() < 0
+                || scenic.getDefaultAdultStock() != null && scenic.getDefaultAdultStock() < 0) {
+            return new ReturnVO("长期默认库存不能为负数");
+        }
+        if (scenic.getDayTicketCutoffTime() != null && !scenic.getDayTicketCutoffTime().matches("^([01]\\d|2[0-3]):[0-5]\\d(:[0-5]\\d)?$")) {
+            return new ReturnVO("截止时间格式无效");
+        }
+
         //定义失败的返回对象
         ReturnVO returnVO = ReturnVO.getNodataFoundReturnVO();
 
@@ -110,6 +123,26 @@ public class ScenicController {
         returnVO.setMsg("修改成功");
 
         return returnVO;
+    }
+
+    @GetMapping("stock")
+    public ReturnVO stock(@RequestParam Integer scenicId, @RequestParam String playDate) {
+        try {
+            ScenicStockService.ScenicStockView view = scenicStockService.query(scenicId, LocalDate.parse(playDate));
+            if (view == null) return new ReturnVO("暂未开放");
+            return new ReturnVO(1, view.remaining != null && view.remaining == 0 ? "已售罄" : "找到数据！", view);
+        } catch (DateTimeParseException e) { return new ReturnVO("日期格式无效"); }
+    }
+
+    @PostMapping("stock/adjust")
+    @SaCheckRole("admin")
+    public ReturnVO adjustStock(@RequestParam Integer scenicId, @RequestParam String playDate,
+                                @RequestParam Integer capacity, @RequestParam Integer adultStock) {
+        try {
+            scenicStockService.adjust(scenicId, LocalDate.parse(playDate), capacity, adultStock);
+            return ReturnVO.getSuccessDataReturnVO();
+        } catch (DateTimeParseException e) { return new ReturnVO("日期格式无效"); }
+        catch (IllegalArgumentException | IllegalStateException e) { return new ReturnVO(e.getMessage()); }
     }
 
     @PostMapping("deleteById/{id}")

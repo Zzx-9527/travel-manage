@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjx.travel.mapper.ScenicStockMapper">
+ <resultMap id="capacityMap" type="com.zjx.travel.domain.ScenicCapacityEntity"><id column="id" property="id"/><result column="scenic_id" property="scenicId"/><result column="play_date" property="playDate"/><result column="total" property="total"/><result column="remaining" property="remaining"/><result column="create_time" property="createTime"/><result column="update_time" property="updateTime"/></resultMap>
+ <resultMap id="stockMap" type="com.zjx.travel.domain.ScenicStockEntity"><id column="id" property="id"/><result column="scenic_id" property="scenicId"/><result column="play_date" property="playDate"/><result column="ticket_type_id" property="ticketTypeId"/><result column="total" property="total"/><result column="remaining" property="remaining"/><result column="version" property="version"/><result column="create_time" property="createTime"/><result column="update_time" property="updateTime"/></resultMap>
+ <insert id="insertCapacityIfAbsent">INSERT IGNORE INTO scenic_capacity(scenic_id,play_date,total,remaining) VALUES(#{scenicId},#{playDate},#{total},#{total})</insert>
+ <insert id="insertStockIfAbsent">INSERT IGNORE INTO scenic_stock(scenic_id,play_date,ticket_type_id,total,remaining) VALUES(#{scenicId},#{playDate},#{ticketTypeId},#{total},#{total})</insert>
+ <update id="decrementCapacity">UPDATE scenic_capacity SET remaining=remaining-#{count} WHERE scenic_id=#{scenicId} AND play_date=#{playDate} AND remaining &gt;= #{count}</update>
+ <update id="decrementStock">UPDATE scenic_stock SET remaining=remaining-#{count},version=version+1 WHERE scenic_id=#{scenicId} AND play_date=#{playDate} AND ticket_type_id=#{ticketTypeId} AND remaining &gt;= #{count}</update>
+ <update id="incrementCapacity">UPDATE scenic_capacity SET remaining=remaining+#{count} WHERE scenic_id=#{scenicId} AND play_date=#{playDate} AND remaining+#{count} &lt;= total</update>
+ <update id="incrementStock">UPDATE scenic_stock SET remaining=remaining+#{count},version=version+1 WHERE scenic_id=#{scenicId} AND play_date=#{playDate} AND ticket_type_id=#{ticketTypeId} AND remaining+#{count} &lt;= total</update>
+ <select id="queryCapacity" resultMap="capacityMap">SELECT * FROM scenic_capacity WHERE scenic_id=#{scenicId} AND play_date=#{playDate}</select>
+ <select id="queryStock" resultMap="stockMap">SELECT * FROM scenic_stock WHERE scenic_id=#{scenicId} AND play_date=#{playDate} AND ticket_type_id=#{ticketTypeId}</select>
+ <update id="updateCapacityTotal">UPDATE scenic_capacity SET total=#{total},remaining=#{total}-(total-remaining) WHERE scenic_id=#{scenicId} AND play_date=#{playDate} AND #{total} &gt;= (total-remaining)</update>
+ <update id="updateStockTotal">UPDATE scenic_stock SET total=#{total},remaining=#{total}-(total-remaining),version=version+1 WHERE scenic_id=#{scenicId} AND play_date=#{playDate} AND ticket_type_id=#{ticketTypeId} AND #{total} &gt;= (total-remaining)</update>
+</mapper>

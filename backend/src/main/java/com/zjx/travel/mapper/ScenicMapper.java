@@ -29,5 +29,6 @@ public interface ScenicMapper  extends BaseMapper<ScenicEntity> {
      * @return 影响行数（0 表示景点不存在或已删除，调用方应保留 Redis 计数）
      */
     int increaseViewCount(@Param("id") Integer id, @Param("delta") long delta);
+    List<ScenicEntity> queryActiveForStock();
 
 }
