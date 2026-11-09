@@ -191,6 +191,23 @@
           <el-form-item label="开放时间">
             <el-input v-model="formData.openTime" placeholder="如：06:00-18:00" clearable />
           </el-form-item>
+          <el-form-item label="当日停售时间">
+            <el-time-picker
+              v-model="formData.dayTicketCutoffTime"
+              value-format="HH:mm"
+              format="HH:mm"
+              placeholder="默认 17:00"
+              style="width: 100%;"
+            />
+          </el-form-item>
+          <el-form-item label="默认日容量" class="md:col-span-2">
+            <el-input-number v-model="formData.defaultCapacity" :min="0" :max="100000" style="width: 100%;" placeholder="留空使用全站默认 100" />
+            <p class="form-tip">定时任务生成未来 30 天库存时使用；留空表示沿用全站默认 100，编辑时留空则保持原值。</p>
+          </el-form-item>
+          <el-form-item label="默认成人票库存" class="md:col-span-2">
+            <el-input-number v-model="formData.defaultAdultStock" :min="0" :max="100000" style="width: 100%;" placeholder="留空使用全站默认 100" />
+            <p class="form-tip">当前仅成人票；单日库存可在库存调整接口中单独修改，已售数量不受调总影响。</p>
+          </el-form-item>
           <el-form-item label="评分">
             <el-input-number v-model="formData.score" :min="0" :max="5" :step="0.1" :precision="1" style="width: 100%;" />
           </el-form-item>
@@ -316,6 +333,18 @@
             <p class="text-gray-700">{{ detailData.openTime || '--' }}</p>
           </div>
           <div>
+            <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">当日停售时间</p>
+            <p class="text-gray-700">{{ detailData.dayTicketCutoffTime || '17:00' }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">默认日容量</p>
+            <p class="text-gray-700">{{ detailData.defaultCapacity ?? '全站默认 100' }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">默认成人票库存</p>
+            <p class="text-gray-700">{{ detailData.defaultAdultStock ?? '全站默认 100' }}</p>
+          </div>
+          <div>
             <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">浏览量</p>
             <p class="text-gray-700 font-medium">{{ detailData.viewCount ?? 0 }}</p>
           </div>
@@ -409,6 +438,9 @@ const defaultForm = {
   categoryId: null,
   price: 0,
   openTime: '',
+  dayTicketCutoffTime: '17:00',
+  defaultCapacity: null,
+  defaultAdultStock: null,
   score: 5,
   address: '',
   longitude: null,
@@ -498,6 +530,9 @@ function openEditDialog(row) {
   formData.categoryId = row.categoryId?.id || null
   formData.price = row.price ?? 0
   formData.openTime = row.openTime || ''
+  formData.dayTicketCutoffTime = row.dayTicketCutoffTime || '17:00'
+  formData.defaultCapacity = row.defaultCapacity ?? null
+  formData.defaultAdultStock = row.defaultAdultStock ?? null
   formData.score = row.score ?? 5
   formData.address = row.address || ''
   formData.longitude = row.longitude ?? null
@@ -531,6 +566,9 @@ async function handleSubmit() {
       categoryId: categoryIdObj,
       price: formData.price,
       openTime: formData.openTime,
+      dayTicketCutoffTime: formData.dayTicketCutoffTime || null,
+      defaultCapacity: formData.defaultCapacity ?? null,
+      defaultAdultStock: formData.defaultAdultStock ?? null,
       score: formData.score,
       address: formData.address,
       longitude: formData.longitude,
@@ -604,6 +642,13 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.form-tip {
+  width: 100%;
+  font-size: 12px;
+  color: #94A3B8;
+  margin: 4px 0 0;
+  line-height: 1.5;
+}
 .action-btn {
   width: 32px;
   height: 32px;
