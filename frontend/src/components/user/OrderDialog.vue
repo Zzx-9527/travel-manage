@@ -22,6 +22,7 @@
             style="width: 100%;"
             :disabled-date="disabledDate"
           />
+          <p class="date-tip">仅可预订今天起 30 天内；当天售票截止时间以景区设置为准</p>
         </el-form-item>
         <el-form-item label="门票数量" prop="ticketCount">
           <el-input-number v-model="form.ticketCount" :min="1" :max="20" style="width: 100%;" />
@@ -50,15 +51,15 @@
     </template>
   </el-dialog>
 
-  <!-- 模拟支付弹窗：付费景点下单时弹出；免费景点跳过直接 payStatus=2 -->
+  <!-- 模拟支付弹窗：下单后立即支付；选“稍后支付”则订单保持待支付 -->
   <PayDialog
     v-model="payVisible"
     :name="spot?.name || ''"
     :amount="payAmount"
     :meta="`${form.playDate} · ${form.ticketCount} 张门票`"
     :loading="submitting"
-    @pay="doSubmit(1)"
-    @later="doSubmit(0)"
+    @pay="doCreate(true)"
+    @later="doCreate(false)"
   />
 </template>
 
@@ -66,7 +67,7 @@
 import { ref, reactive, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { priceText } from '@/utils/format'
-import { createOrder } from '@/api/order'
+import { createOrder, payOrder } from '@/api/order'
 import { useAuthStore } from '@/stores/auth'
 import PayDialog from '@/components/user/PayDialog.vue'
 
@@ -111,7 +112,11 @@ const payVisible = ref(false)
 const payAmount = computed(() => ((props.spot?.price || 0) * (form.ticketCount || 1)).toLocaleString('zh-CN'))
 
 function disabledDate(date) {
-  return date.getTime() < Date.now() - 86400000
+  const min = new Date()
+  min.setHours(0, 0, 0, 0)
+  const max = new Date(min)
+  max.setDate(max.getDate() + 29)
+  return date.getTime() < min.getTime() || date.getTime() > max.getTime()
 }
 
 watch(() => props.modelValue, (v) => {
@@ -129,40 +134,49 @@ async function submit() {
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
 
-  // 付费景点先弹模拟支付窗（确认支付→1，稍后支付→0）；免费景点跳过直接 2
+  // 付费景点先弹模拟支付窗；免费景点（0 元）直接创建并支付
   if ((props.spot?.price || 0) > 0) {
     payVisible.value = true
   } else {
-    doSubmit(2)
+    doCreate(true)
   }
 }
 
-async function doSubmit(payStatus) {
+async function doCreate(payNow) {
   submitting.value = true
   try {
     const payload = {
-      // 后端实体的关联字段是嵌套对象（同 userId），传裸数字会反序列化失败返回 400
+      // 后端关联字段是嵌套对象；金额、支付状态、用户、订单号都由服务端决定
       scenicId: { id: props.spot.id },
       playDate: form.playDate,
       ticketCount: form.ticketCount,
       contactName: form.contactName,
-      contactPhone: form.contactPhone,
-      totalAmount: (props.spot.price || 0) * form.ticketCount,
-      payStatus
+      contactPhone: form.contactPhone
     }
     const res = await createOrder(payload)
+    if (res.code !== 1) return
+
+    const created = res.content || {}
+    let paid = false
+    if (payNow) {
+      try {
+        const payRes = await payOrder(created.id)
+        paid = payRes.code === 1
+      } catch (err) {
+        // 支付失败不回滚订单，提示用户到「我的订单」继续支付
+      }
+    }
+
     dialogVisible.value = false
     payVisible.value = false
-    if (res.code === 1) {
-      ElMessage.success(
-        payStatus === 1
-          ? '支付成功，订单已创建'
-          : payStatus === 2
-            ? '下单成功（免费景点）'
-            : '下单成功，可在「我的订单」中继续支付'
-      )
-      emit('order-created', res.content)
+    if (paid) {
+      ElMessage.success('支付成功，订单已创建')
+    } else if ((props.spot?.price || 0) === 0) {
+      ElMessage.success('下单成功（免费景点）')
+    } else {
+      ElMessage.success('下单成功，请在 30 分钟内到「我的订单」完成支付')
     }
+    emit('order-created', created)
   } catch (err) {
     dialogVisible.value = false
   } finally {
@@ -191,6 +205,14 @@ async function doSubmit(payStatus) {
 }
 
 .brief-info { min-width: 0; }
+
+.date-tip {
+  width: 100%;
+  font-size: 12px;
+  color: #94A3B8;
+  margin: 4px 0 0;
+  line-height: 1.5;
+}
 
 .brief-name {
   font-size: 15px;

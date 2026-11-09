@@ -23,21 +23,36 @@ export function truncate(text, max) {
   return text.length > max ? text.substring(0, max) + '...' : text
 }
 
-// ---- 支付状态（0未支付 1已支付 2免费）----
-export function payStatusText(row) {
-  if (row.payStatus === 2) return '免费'
-  return row.payStatus === 1 ? '已支付' : '未支付'
+// ---- 订单状态（0待支付 1已支付 2已取消 3已完成）----
+// 取消原因 TIMEOUT 单独展示，历史迁移原因也给出可读文案
+export function orderStatusText(row) {
+  const status = Number(row?.status)
+  if (status === 2) {
+    if (row?.cancelReason === 'TIMEOUT') return '已超时取消'
+    if (row?.cancelReason === 'LEGACY_REFUNDED') return '历史退款（已取消）'
+    if (row?.cancelReason === 'LEGACY_UNPAID') return '历史未支付（已取消）'
+    return '已取消'
+  }
+  if (status === 1) return '已支付'
+  if (status === 3) return '已完成'
+  if (status === 0) return '待支付'
+  return '未知'
 }
 
-export function payStatusIcon(row) {
-  if (row.payStatus === 2) return 'fa fa-gift'
-  return row.payStatus === 1 ? 'fa fa-check-circle' : 'fa fa-clock-o'
+export function orderStatusIcon(row) {
+  const status = Number(row?.status)
+  if (status === 2) return 'fa fa-ban'
+  if (status === 1) return 'fa fa-check-circle'
+  if (status === 3) return 'fa fa-flag-checkered'
+  return 'fa fa-clock-o'
 }
 
-export function payStatusStyle(row) {
-  if (row.payStatus === 2) return { background: '#F0FDF4', color: '#16A34A', border: '1px solid #BBF7D0' }
-  if (row.payStatus === 1) return { background: '#F0FDF4', color: '#16A34A', border: '1px solid #BBF7D0' }
-  return { background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA' }
+export function orderStatusStyle(row) {
+  const status = Number(row?.status)
+  if (status === 1) return { background: '#F0FDF4', color: '#16A34A', border: '1px solid #BBF7D0' }
+  if (status === 3) return { background: '#EFF6FF', color: '#2563EB', border: '1px solid #BFDBFE' }
+  if (status === 2) return { background: '#F1F5F9', color: '#64748B', border: '1px solid #E2E8F0' }
+  return { background: '#FFFBEB', color: '#D97706', border: '1px solid #FDE68A' }
 }
 
 // ---- 审核状态（0待审核 1已通过 2已拒绝）----

@@ -1,6 +1,6 @@
 import request from './request'
 
-// 分页查询订单
+// 分页查询订单（普通用户后端只返回本人订单）
 export function getOrdersByPage(params) {
   return request({
     url: 'scenicOrders/queryByPage',
@@ -9,7 +9,7 @@ export function getOrdersByPage(params) {
   })
 }
 
-// 创建订单（用户端购票）——后端通用 CRUD 用 add
+// 创建订单（用户端购票）：用户、金额、状态、订单号全部由后端决定
 export function createOrder(data) {
   return request({
     url: 'scenicOrders/add',
@@ -18,7 +18,7 @@ export function createOrder(data) {
   })
 }
 
-// 我的订单列表（用户端）——后端通用 CRUD 用 queryByPage，页面内按 userId 过滤
+// 我的订单列表（用户端）：后端按 token 过滤，无需再按 userId 筛选
 export function getMyOrders(params) {
   return request({
     url: 'scenicOrders/queryByPage',
@@ -27,18 +27,23 @@ export function getMyOrders(params) {
   })
 }
 
-// 订单支付（用户端）——无独立支付接口，走 edit 改 payStatus
+// 模拟支付：仅本人、待支付且创建未满 30 分钟
 export function payOrder(id) {
   return request({
-    url: 'scenicOrders/edit',
-    method: 'post',
-    data: { id, payStatus: 1 }
+    url: `scenicOrders/pay/${id}`,
+    method: 'post'
   })
 }
 
-// 取消订单（用户端）直接调用 deleteOrder 删除（payStatus=2 的语义是「免费」，不能当已取消用）
+// 取消订单：本人或管理员，取消后余票回补，订单保留
+export function cancelOrder(id) {
+  return request({
+    url: `scenicOrders/cancel/${id}`,
+    method: 'post'
+  })
+}
 
-// 修改订单（支付状态等）
+// 修改订单：后端只允许修改待支付订单的联系人
 export function editOrder(data) {
   return request({
     url: 'scenicOrders/edit',
@@ -47,7 +52,7 @@ export function editOrder(data) {
   })
 }
 
-// 删除订单
+// 删除订单：待支付订单不可删除，需先取消
 export function deleteOrder(id) {
   return request({
     url: `scenicOrders/deleteById/${id}`,

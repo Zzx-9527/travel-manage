@@ -16,8 +16,8 @@
       <div v-for="order in list" :key="order.id" class="order-item">
         <div class="order-head">
           <span class="order-no"><i class="fa fa-ticket mr-1"></i>{{ order.orderNo || '--' }}</span>
-          <span class="status-badge" :style="payStatusStyle(order)">
-            <i :class="payStatusIcon(order)"></i>{{ payStatusText(order) }}
+          <span class="status-badge" :style="orderStatusStyle(order)">
+            <i :class="orderStatusIcon(order)"></i>{{ orderStatusText(order) }}
           </span>
         </div>
         <div class="order-body">
@@ -44,11 +44,15 @@
             </div>
           </div>
         </div>
-        <div v-if="order.payStatus === 0" class="order-actions">
+        <div v-if="Number(order.status) === 0" class="order-actions">
+          <span class="pay-deadline">请在 30 分钟内完成支付，超时自动取消</span>
           <el-button size="small" type="primary" @click="handlePay(order)" style="border-radius: 8px; background: linear-gradient(135deg, #1CB89D, #0D9488); border: none;">
             去支付
           </el-button>
           <el-button size="small" @click="handleCancel(order)" style="border-radius: 8px;">取消订单</el-button>
+        </div>
+        <div v-else-if="Number(order.status) === 2 && order.cancelTime" class="order-actions">
+          <span class="pay-deadline">取消时间：{{ formatTime(order.cancelTime) }}</span>
         </div>
       </div>
 
@@ -80,12 +84,9 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import EmptyState from '@/components/user/EmptyState.vue'
-import { formatTime, payStatusText, payStatusIcon, payStatusStyle } from '@/utils/format'
-import { getMyOrders, payOrder, deleteOrder } from '@/api/order'
-import { useAuthStore } from '@/stores/auth'
+import { formatTime, orderStatusText, orderStatusIcon, orderStatusStyle } from '@/utils/format'
+import { getMyOrders, payOrder, cancelOrder } from '@/api/order'
 import PayDialog from '@/components/user/PayDialog.vue'
-
-const authStore = useAuthStore()
 
 const list = ref([])
 const total = ref(0)
@@ -95,25 +96,17 @@ const size = ref(8)
 const loading = ref(false)
 const degraded = ref(false)
 
-// 后端 queryByPage 不按用户过滤，取全量后在前端按 userId 过滤 + 本地分页
+// 后端 queryByPage 已按 token 只返回本人订单，这里直接本地分页
 async function fetchList() {
-  const uid = authStore.userInfo?.id
-  if (!uid) {
-    list.value = []
-    total.value = 0
-    totalPages.value = 0
-    return
-  }
   loading.value = true
   try {
     const res = await getMyOrders({ page: 1, size: 200 })
     if (res.code === 1) {
       const all = res.content?.content || res.content || []
-      const mine = all.filter(o => Number(o.userId?.id) === Number(uid))
-      total.value = mine.length
-      totalPages.value = Math.ceil(mine.length / size.value)
+      total.value = all.length
+      totalPages.value = Math.ceil(all.length / size.value)
       const start = (page.value - 1) * size.value
-      list.value = mine.slice(start, start + size.value)
+      list.value = all.slice(start, start + size.value)
       degraded.value = false
     }
   } catch (err) {
@@ -162,14 +155,13 @@ async function confirmPay() {
 }
 
 function handleCancel(order) {
-  ElMessageBox.confirm(`确定要取消并删除订单「${order.orderNo || order.id}」吗？此操作不可恢复。`, '提示', {
+  ElMessageBox.confirm(`确定要取消订单「${order.orderNo || order.id}」吗？取消后余票会立即回补，订单记录仍会保留。`, '提示', {
     confirmButtonText: '确定取消', cancelButtonText: '再想想', type: 'warning'
   }).then(async () => {
     try {
-      // 取消订单直接调删除接口；不再走 edit 置 payStatus=2（2 的语义是「免费」，会产生脏数据）
-      const res = await deleteOrder(order.id)
+      const res = await cancelOrder(order.id)
       if (res.code === 1) {
-        ElMessage.success('订单已取消')
+        ElMessage.success('订单已取消，余票已回补')
         fetchList()
       }
     } catch (err) {
@@ -295,10 +287,17 @@ onMounted(() => fetchList())
 .order-actions {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   gap: 10px;
   margin-top: 14px;
   padding-top: 14px;
   border-top: 1px solid #E2E8F0;
+}
+
+.pay-deadline {
+  margin-right: auto;
+  font-size: 12px;
+  color: #D97706;
 }
 
 .pager {
