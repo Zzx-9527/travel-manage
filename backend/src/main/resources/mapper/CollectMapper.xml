@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjx.travel.mapper.CollectMapper">
+
+    <resultMap id="collectMap" type="com.zjx.travel.domain.CollectEntity">
+        <result column="id" property="id" />
+        <result column="target_type" property="targetType" />
+        <result column="target_id" property="targetId" />
+        <result column="create_time" property="createTime" />
+        <association property="userId" javaType="com.zjx.travel.domain.TravelUserEntity">
+            <result column="id_4" property="id" />
+            <result column="account_4" property="account" />
+            <result column="password_4" property="password" />
+            <result column="nickname_4" property="nickname" />
+            <result column="phone_4" property="phone" />
+            <result column="avatar_4" property="avatar" />
+            <result column="user_role_4" property="userRole" />
+            <result column="status_4" property="status" />
+            <result column="create_time_4" property="createTime" />
+            <result column="update_time_4" property="updateTime" />
+        </association>
+        <association property="scenicId" javaType="com.zjx.travel.domain.ScenicEntity">
+            <result column="id_5" property="id" />
+            <result column="name_5" property="name" />
+            <result column="cover_5" property="cover" />
+            <result column="images_5" property="images" />
+            <result column="price_5" property="price" />
+            <result column="open_time_5" property="openTime" />
+            <result column="address_5" property="address" />
+            <result column="longitude_5" property="longitude" />
+            <result column="latitude_5" property="latitude" />
+            <result column="intro_5" property="intro" />
+            <result column="score_5" property="score" />
+            <result column="view_count_5" property="viewCount" />
+            <result column="status_5" property="status" />
+            <result column="create_time_5" property="createTime" />
+            <result column="update_time_5" property="updateTime" />
+            <association property="categoryId" javaType="com.zjx.travel.domain.ScenicCategoryEntity">
+                <result column="id_6" property="id" />
+                <result column="name_6" property="name" />
+                <result column="create_time_6" property="createTime" />
+            </association>
+        </association>
+        <association property="routeId" javaType="com.zjx.travel.domain.RouteEntity">
+            <result column="id_7" property="id" />
+            <result column="name_7" property="name" />
+            <result column="day_count_7" property="dayCount" />
+            <result column="start_city_7" property="startCity" />
+            <result column="traffic_7" property="traffic" />
+            <result column="budget_7" property="budget" />
+            <result column="intro_7" property="intro" />
+            <result column="status_7" property="status" />
+            <result column="create_time_7" property="createTime" />
+            <result column="update_time_7" property="updateTime" />
+        </association>
+    </resultMap>
+
+    <sql id="baseSql">
+        SELECT
+            collect.id, collect.target_type, collect.target_id, collect.create_time,
+            scenic_5.id id_5, scenic_5.name name_5, scenic_5.cover cover_5, scenic_5.images images_5, scenic_5.price price_5, scenic_5.open_time open_time_5, scenic_5.address address_5, scenic_5.longitude longitude_5, scenic_5.latitude latitude_5, scenic_5.intro intro_5, scenic_5.score score_5, scenic_5.view_count view_count_5, scenic_5.status status_5, scenic_5.create_time create_time_5, scenic_5.update_time update_time_5,
+            scenic_category_6.id id_6, scenic_category_6.name name_6, scenic_category_6.create_time create_time_6,
+            route_7.id id_7, route_7.name name_7, route_7.day_count day_count_7, route_7.start_city start_city_7, route_7.traffic traffic_7, route_7.budget budget_7, route_7.intro intro_7, route_7.status status_7, route_7.create_time create_time_7, route_7.update_time update_time_7,
+            travel_user_4.id id_4, travel_user_4.account account_4, travel_user_4.password password_4, travel_user_4.nickname nickname_4, travel_user_4.phone phone_4, travel_user_4.avatar avatar_4, travel_user_4.user_role user_role_4, travel_user_4.status status_4, travel_user_4.create_time create_time_4, travel_user_4.update_time update_time_4
+        FROM collect
+             LEFT JOIN scenic scenic_5 ON(collect.target_type = 2 AND collect.target_id = scenic_5.id AND scenic_5.del_mark = 1)
+             LEFT JOIN scenic_category scenic_category_6 ON(scenic_5.category_id = scenic_category_6.id)
+             LEFT JOIN route route_7 ON(collect.target_type = 3 AND collect.target_id = route_7.id AND route_7.del_mark = 1)
+             LEFT JOIN travel_user travel_user_4 ON(collect.user_id = travel_user_4.id)
+        WHERE 1 = 1
+    </sql>
+
+    <sql id="condition">
+        <if test="collect.id != null">
+             and collect.id = #{collect.id}
+        </if>
+        <if test="collect.targetType != null">
+             and collect.target_type = #{collect.targetType}
+        </if>
+        <if test="collect.targetId != null">
+             and collect.target_id = #{collect.targetId}
+        </if>
+        <if test="collect.collectorId != null">
+             and travel_user_4.id = #{collect.collectorId}
+        </if>
+        <if test="collect.createTime != null and collect.createTime != ''">
+             and collect.create_time LIKE concat('%', #{collect.createTime}, '%')
+        </if>
+    </sql>
+
+    <select id="queryById" resultMap="collectMap">
+        <include refid="baseSql"></include>
+        AND collect.id = #{id}
+    </select>
+
+    <select id="queryAllByLimit" resultMap="collectMap">
+        <include refid="baseSql"></include>
+        <include refid="condition"></include>
+        order by collect.id asc
+        limit #{pageable.offset}, #{pageable.pageSize}
+    </select>
+
+    <select id="count" resultType="java.lang.Long">
+        select count(1)
+        from (
+        <include refid="baseSql"></include>
+        <include refid="condition"></include> ) t
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        insert into collect(user_id, target_type, target_id, create_time)
+        values(#{userId.id}, #{targetType}, #{targetId}, #{createTime})
+    </insert>
+
+    <update id="update">
+        update collect
+        <set>
+            <if test="userId != null and userId.id != null">
+                user_id = #{userId.id},
+            </if>
+            <if test="targetType != null">
+                target_type = #{targetType},
+            </if>
+            <if test="targetId != null">
+                target_id = #{targetId},
+            </if>
+            <if test="createTime != null and createTime != ''">
+                create_time = #{createTime},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM collect WHERE id = #{id}
+    </delete>
+
+    <!-- 判断是否已收藏 -->
+    <select id="checkCollected" resultType="java.lang.Integer">
+        select count(1) from collect
+        where user_id = #{userId}
+          and target_type = #{targetType}
+          and target_id = #{targetId}
+    </select>
+
+    <!-- 按 用户 + 目标类型 + 目标ID 取消收藏 -->
+    <delete id="deleteByUserAndTarget">
+        DELETE FROM collect
+        WHERE user_id = #{userId}
+          and target_type = #{targetType}
+          and target_id = #{targetId}
+    </delete>
+</mapper>

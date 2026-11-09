@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjx.travel.mapper.ScenicCategoryMapper">
+
+    <resultMap id="scenicCategoryMap" type="com.zjx.travel.domain.ScenicCategoryEntity">
+        <result column="id" property="id" />
+        <result column="name" property="name" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+    </resultMap>
+
+    <sql id="baseSql">
+        SELECT
+            scenic_category.id, scenic_category.name, scenic_category.create_time, scenic_category.update_time
+        FROM scenic_category
+        WHERE scenic_category.del_mark = 1 
+    </sql>
+
+    <sql id="condition">
+        <if test="scenicCategory.id != null">
+             and scenic_category.id = #{scenicCategory.id}
+        </if>
+        <if test="scenicCategory.name != null and scenicCategory.name != ''">
+             and scenic_category.name LIKE concat('%', #{scenicCategory.name}, '%')
+        </if>
+        <if test="scenicCategory.createTime != null and scenicCategory.createTime != ''">
+             and scenic_category.create_time LIKE concat('%', #{scenicCategory.createTime}, '%')
+        </if>
+        <if test="scenicCategory.updateTime != null and scenicCategory.updateTime != ''">
+             and scenic_category.update_time LIKE concat('%', #{scenicCategory.updateTime}, '%')
+        </if>
+    </sql>
+
+    <select id="queryById" resultMap="scenicCategoryMap">
+        <include refid="baseSql"></include>
+        AND scenic_category.id = #{id}
+    </select>
+
+    <select id="queryAllByLimit" resultMap="scenicCategoryMap">
+        <include refid="baseSql"></include>
+        <include refid="condition"></include>
+        order by id asc
+        limit #{pageable.offset}, #{pageable.pageSize}
+    </select>
+
+    <select id="count" resultType="java.lang.Long">
+        select count(1)
+        from (
+        <include refid="baseSql"></include>
+        <include refid="condition"></include> ) t
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        insert into scenic_category(name, create_time, update_time)
+        values(#{name}, #{createTime}, #{updateTime})
+    </insert>
+
+    <update id="update">
+        update scenic_category
+        <set>
+            <if test="name != null and name != ''">
+                name = #{name},
+            </if>
+            <if test="createTime != null and createTime != ''">
+                create_time = #{createTime},
+            </if>
+            <if test="updateTime != null and updateTime != ''">
+                update_time = #{updateTime},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="deleteById">
+        UPDATE scenic_category SET del_mark = 0 WHERE id = #{id}
+    </update>
+</mapper>
+

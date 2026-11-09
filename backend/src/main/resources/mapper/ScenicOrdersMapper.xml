@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjx.travel.mapper.ScenicOrdersMapper">
+
+    <resultMap id="scenicOrdersMap" type="com.zjx.travel.domain.ScenicOrdersEntity">
+        <result column="id" property="id" />
+        <result column="order_no" property="orderNo" />
+        <result column="contact_name" property="contactName" />
+        <result column="contact_phone" property="contactPhone" />
+        <result column="play_date" property="playDate" />
+        <result column="ticket_count" property="ticketCount" />
+        <result column="total_amount" property="totalAmount" />
+        <result column="pay_type" property="payType" />
+        <result column="pay_status" property="payStatus" />
+        <result column="create_time" property="createTime" />
+        <result column="pay_time" property="payTime" />
+        <association property="userId" javaType="com.zjx.travel.domain.TravelUserEntity">
+            <result column="id_2" property="id" />
+            <result column="account_2" property="account" />
+            <result column="password_2" property="password" />
+            <result column="nickname_2" property="nickname" />
+            <result column="phone_2" property="phone" />
+            <result column="avatar_2" property="avatar" />
+            <result column="user_role_2" property="userRole" />
+            <result column="status_2" property="status" />
+            <result column="create_time_2" property="createTime" />
+            <result column="update_time_2" property="updateTime" />
+        </association>
+        <association property="scenicId" javaType="com.zjx.travel.domain.ScenicEntity">
+            <result column="id_3" property="id" />
+            <result column="name_3" property="name" />
+            <result column="cover_3" property="cover" />
+            <result column="images_3" property="images" />
+            <result column="price_3" property="price" />
+            <result column="open_time_3" property="openTime" />
+            <result column="address_3" property="address" />
+            <result column="longitude_3" property="longitude" />
+            <result column="latitude_3" property="latitude" />
+            <result column="intro_3" property="intro" />
+            <result column="score_3" property="score" />
+            <result column="view_count_3" property="viewCount" />
+            <result column="status_3" property="status" />
+            <result column="create_time_3" property="createTime" />
+            <result column="update_time_3" property="updateTime" />
+            <association property="categoryId" javaType="com.zjx.travel.domain.ScenicCategoryEntity">
+                <result column="id_5" property="id" />
+                <result column="name_5" property="name" />
+                <result column="create_time_5" property="createTime" />
+            </association>
+        </association>
+    </resultMap>
+
+    <sql id="baseSql">
+        SELECT
+            scenic_orders.id, scenic_orders.order_no, scenic_orders.contact_name, scenic_orders.contact_phone, scenic_orders.play_date, scenic_orders.ticket_count, scenic_orders.total_amount, scenic_orders.pay_type, scenic_orders.pay_status, scenic_orders.create_time, scenic_orders.pay_time, 
+            travel_user_2.id id_2, travel_user_2.account account_2, travel_user_2.password password_2, travel_user_2.nickname nickname_2, travel_user_2.phone phone_2, travel_user_2.avatar avatar_2, travel_user_2.user_role user_role_2, travel_user_2.status status_2, travel_user_2.create_time create_time_2, travel_user_2.update_time update_time_2, 
+            scenic_2.id id_3, scenic_2.name name_3, scenic_2.cover cover_3, scenic_2.images images_3, scenic_2.price price_3, scenic_2.open_time open_time_3, scenic_2.address address_3, scenic_2.longitude longitude_3, scenic_2.latitude latitude_3, scenic_2.intro intro_3, scenic_2.score score_3, scenic_2.view_count view_count_3, scenic_2.status status_3, scenic_2.create_time create_time_3, scenic_2.update_time update_time_3,
+            scenic_category_5.id id_5, scenic_category_5.name name_5, scenic_category_5.create_time create_time_5
+        FROM scenic_orders
+             JOIN travel_user travel_user_2 ON(scenic_orders.user_id = travel_user_2.id)
+             JOIN scenic scenic_2 ON(scenic_orders.scenic_id = scenic_2.id)
+             JOIN scenic_category scenic_category_5 ON(scenic_2.category_id = scenic_category_5.id)
+        WHERE scenic_orders.del_mark = 1 
+    </sql>
+
+    <sql id="condition">
+        <if test="scenicOrders.id != null">
+             and scenic_orders.id = #{scenicOrders.id}
+        </if>
+        <if test="scenicOrders.orderNo != null and scenicOrders.orderNo != ''">
+             and scenic_orders.order_no LIKE concat('%', #{scenicOrders.orderNo}, '%')
+        </if>
+        <!-- 按下单人过滤：前端"我的订单"依赖这个条件；缺失会导致任何人都能查到全部订单 -->
+        <if test="scenicOrders.userId != null and scenicOrders.userId.id != null">
+             and scenic_orders.user_id = #{scenicOrders.userId.id}
+        </if>
+        <if test="scenicOrders.scenicId != null">
+            <if test="scenicOrders.scenic.id != null">
+                 and scenic_2.id = #{scenicOrders.scenic.id}
+            </if>
+            <if test="scenicOrders.scenic.categoryId != null">
+                <if test="scenicOrders.scenic.scenicCategory.id != null">
+                     and scenic_category_5.id = #{scenicOrders.scenic.scenicCategory.id}
+                </if>
+                <if test="scenicOrders.scenic.scenicCategory.name != null and scenicOrders.scenic.scenicCategory.name != ''">
+                     and scenic_category_5.name LIKE concat('%', #{scenicOrders.scenic.scenicCategory.name}, '%')
+                </if>
+                <if test="scenicOrders.scenic.scenicCategory.createTime != null and scenicOrders.scenic.scenicCategory.createTime != ''">
+                     and scenic_category_5.create_time LIKE concat('%', #{scenicOrders.scenic.scenicCategory.createTime}, '%')
+                </if>
+            </if>
+            <if test="scenicOrders.scenic.name != null and scenicOrders.scenic.name != ''">
+                 and scenic_2.name LIKE concat('%', #{scenicOrders.scenic.name}, '%')
+            </if>
+            <if test="scenicOrders.scenic.cover != null and scenicOrders.scenic.cover != ''">
+                 and scenic_2.cover LIKE concat('%', #{scenicOrders.scenic.cover}, '%')
+            </if>
+            <if test="scenicOrders.scenic.images != null and scenicOrders.scenic.images != ''">
+                 and scenic_2.images LIKE concat('%', #{scenicOrders.scenic.images}, '%')
+            </if>
+            <if test="scenicOrders.scenic.price != null">
+                 and scenic_2.price = #{scenicOrders.scenic.price}
+            </if>
+            <if test="scenicOrders.scenic.openTime != null and scenicOrders.scenic.openTime != ''">
+                 and scenic_2.open_time LIKE concat('%', #{scenicOrders.scenic.openTime}, '%')
+            </if>
+            <if test="scenicOrders.scenic.address != null and scenicOrders.scenic.address != ''">
+                 and scenic_2.address LIKE concat('%', #{scenicOrders.scenic.address}, '%')
+            </if>
+            <if test="scenicOrders.scenic.longitude != null">
+                 and scenic_2.longitude = #{scenicOrders.scenic.longitude}
+            </if>
+            <if test="scenicOrders.scenic.latitude != null">
+                 and scenic_2.latitude = #{scenicOrders.scenic.latitude}
+            </if>
+            <if test="scenicOrders.scenic.intro != null and scenicOrders.scenic.intro != ''">
+                 and scenic_2.intro LIKE concat('%', #{scenicOrders.scenic.intro}, '%')
+            </if>
+            <if test="scenicOrders.scenic.score != null">
+                 and scenic_2.score = #{scenicOrders.scenic.score}
+            </if>
+            <if test="scenicOrders.scenic.viewCount != null">
+                 and scenic_2.view_count = #{scenicOrders.scenic.viewCount}
+            </if>
+            <if test="scenicOrders.scenic.status != null">
+                 and scenic_2.status = #{scenicOrders.scenic.status}
+            </if>
+            <if test="scenicOrders.scenic.createTime != null and scenicOrders.scenic.createTime != ''">
+                 and scenic_2.create_time LIKE concat('%', #{scenicOrders.scenic.createTime}, '%')
+            </if>
+            <if test="scenicOrders.scenic.updateTime != null and scenicOrders.scenic.updateTime != ''">
+                 and scenic_2.update_time LIKE concat('%', #{scenicOrders.scenic.updateTime}, '%')
+            </if>
+        </if>
+        <if test="scenicOrders.contactName != null and scenicOrders.contactName != ''">
+             and scenic_orders.contact_name LIKE concat('%', #{scenicOrders.contactName}, '%')
+        </if>
+        <if test="scenicOrders.contactPhone != null and scenicOrders.contactPhone != ''">
+             and scenic_orders.contact_phone LIKE concat('%', #{scenicOrders.contactPhone}, '%')
+        </if>
+        <if test="scenicOrders.playDate != null and scenicOrders.playDate != ''">
+             and scenic_orders.play_date LIKE concat('%', #{scenicOrders.playDate}, '%')
+        </if>
+        <if test="scenicOrders.ticketCount != null">
+             and scenic_orders.ticket_count = #{scenicOrders.ticketCount}
+        </if>
+        <if test="scenicOrders.totalAmount != null">
+             and scenic_orders.total_amount = #{scenicOrders.totalAmount}
+        </if>
+        <if test="scenicOrders.payType != null">
+             and scenic_orders.pay_type = #{scenicOrders.payType}
+        </if>
+        <if test="scenicOrders.payStatus != null">
+             and scenic_orders.pay_status = #{scenicOrders.payStatus}
+        </if>
+        <if test="scenicOrders.createTime != null and scenicOrders.createTime != ''">
+             and scenic_orders.create_time LIKE concat('%', #{scenicOrders.createTime}, '%')
+        </if>
+        <if test="scenicOrders.payTime != null and scenicOrders.payTime != ''">
+             and scenic_orders.pay_time LIKE concat('%', #{scenicOrders.payTime}, '%')
+        </if>
+    </sql>
+
+    <select id="queryById" resultMap="scenicOrdersMap">
+        <include refid="baseSql"></include>
+        AND scenic_orders.id = #{id}
+    </select>
+
+    <select id="queryAllByLimit" resultMap="scenicOrdersMap">
+        <include refid="baseSql"></include>
+        <include refid="condition"></include>
+        order by id asc
+        limit #{pageable.offset}, #{pageable.pageSize}
+    </select>
+
+    <select id="count" resultType="java.lang.Long">
+        select count(1)
+        from (
+        <include refid="baseSql"></include>
+        <include refid="condition"></include> ) t
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        insert into scenic_orders(order_no, user_id, scenic_id, contact_name, contact_phone, play_date, ticket_count, total_amount, pay_type, pay_status, create_time, pay_time)
+        values(#{orderNo}, #{userId.id}, #{scenicId.id}, #{contactName}, #{contactPhone}, #{playDate}, #{ticketCount}, #{totalAmount}, #{payType}, #{payStatus}, #{createTime}, #{payTime})
+    </insert>
+
+    <update id="update">
+        update scenic_orders
+        <set>
+            <if test="orderNo != null and orderNo != ''">
+                order_no = #{orderNo},
+            </if>
+            <if test="userId != null and userId.id != null">
+                user_id = #{userId.id},
+            </if>
+            <if test="scenicId != null and scenicId.id != null">
+                scenic_id = #{scenicId.id},
+            </if>
+            <if test="contactName != null and contactName != ''">
+                contact_name = #{contactName},
+            </if>
+            <if test="contactPhone != null and contactPhone != ''">
+                contact_phone = #{contactPhone},
+            </if>
+            <if test="playDate != null and playDate != ''">
+                play_date = #{playDate},
+            </if>
+            <if test="ticketCount != null">
+                ticket_count = #{ticketCount},
+            </if>
+            <if test="totalAmount != null">
+                total_amount = #{totalAmount},
+            </if>
+            <if test="payType != null">
+                pay_type = #{payType},
+            </if>
+            <if test="payStatus != null">
+                pay_status = #{payStatus},
+            </if>
+            <if test="createTime != null and createTime != ''">
+                create_time = #{createTime},
+            </if>
+            <if test="payTime != null and payTime != ''">
+                pay_time = #{payTime},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="deleteById">
+        UPDATE scenic_orders SET del_mark = 0 WHERE id = #{id}
+    </update>
+</mapper>
+

@@ -1,0 +1,8 @@
+/.idea/
+/.mvn/
+/target/
+/HELP.md
+/mvnw.cmd
+/src/main/webapp/
+/src/test/
+/uploads/

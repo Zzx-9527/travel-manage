@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjx.travel.mapper.TravelUserMapper">
+
+    <resultMap id="travelUserMap" type="com.zjx.travel.domain.TravelUserEntity">
+        <result column="id" property="id" />
+        <result column="account" property="account" />
+        <result column="password" property="password" />
+        <result column="nickname" property="nickname" />
+        <result column="phone" property="phone" />
+        <result column="avatar" property="avatar" />
+        <result column="user_role" property="userRole" />
+        <result column="status" property="status" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+    </resultMap>
+
+    <sql id="baseSql">
+        SELECT
+            travel_user.id, travel_user.account, travel_user.password, travel_user.nickname, travel_user.phone, travel_user.avatar, travel_user.user_role, travel_user.status, travel_user.create_time, travel_user.update_time
+        FROM travel_user
+        WHERE travel_user.del_mark = 1 
+    </sql>
+
+    <sql id="condition">
+        <if test="travelUser.id != null">
+             and travel_user.id = #{travelUser.id}
+        </if>
+        <if test="travelUser.account != null and travelUser.account != ''">
+             and travel_user.account LIKE concat('%', #{travelUser.account}, '%')
+        </if>
+        <if test="travelUser.password != null and travelUser.password != ''">
+             and travel_user.password LIKE concat('%', #{travelUser.password}, '%')
+        </if>
+        <if test="travelUser.nickname != null and travelUser.nickname != ''">
+             and travel_user.nickname LIKE concat('%', #{travelUser.nickname}, '%')
+        </if>
+        <if test="travelUser.phone != null and travelUser.phone != ''">
+             and travel_user.phone LIKE concat('%', #{travelUser.phone}, '%')
+        </if>
+        <if test="travelUser.avatar != null and travelUser.avatar != ''">
+             and travel_user.avatar LIKE concat('%', #{travelUser.avatar}, '%')
+        </if>
+        <if test="travelUser.userRole != null">
+             and travel_user.user_role = #{travelUser.userRole}
+        </if>
+        <if test="travelUser.status != null">
+             and travel_user.status = #{travelUser.status}
+        </if>
+        <if test="travelUser.createTime != null and travelUser.createTime != ''">
+             and travel_user.create_time LIKE concat('%', #{travelUser.createTime}, '%')
+        </if>
+        <if test="travelUser.updateTime != null and travelUser.updateTime != ''">
+             and travel_user.update_time LIKE concat('%', #{travelUser.updateTime}, '%')
+        </if>
+    </sql>
+
+    <select id="queryById" resultMap="travelUserMap">
+        <include refid="baseSql"></include>
+        AND travel_user.id = #{id}
+    </select>
+
+    <select id="queryAllByLimit" resultMap="travelUserMap">
+        <include refid="baseSql"></include>
+        <include refid="condition"></include>
+        order by id asc
+        limit #{pageable.offset}, #{pageable.pageSize}
+    </select>
+
+    <select id="count" resultType="java.lang.Long">
+        select count(1)
+        from (
+        <include refid="baseSql"></include>
+        <include refid="condition"></include> ) t
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        insert into travel_user(account, password, nickname, phone, avatar, user_role, status, create_time, update_time)
+        values(#{account}, #{password}, #{nickname}, #{phone}, #{avatar}, #{userRole}, #{status}, #{createTime}, #{updateTime})
+    </insert>
+
+    <update id="update">
+        update travel_user
+        <set>
+            <if test="account != null and account != ''">
+                account = #{account},
+            </if>
+            <if test="password != null and password != ''">
+                password = #{password},
+            </if>
+            <if test="nickname != null and nickname != ''">
+                nickname = #{nickname},
+            </if>
+            <if test="phone != null and phone != ''">
+                phone = #{phone},
+            </if>
+            <if test="avatar != null and avatar != ''">
+                avatar = #{avatar},
+            </if>
+            <if test="userRole != null">
+                user_role = #{userRole},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="createTime != null">
+                create_time = #{createTime},
+            </if>
+            <if test="updateTime != null ">
+                update_time = #{updateTime},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="deleteById">
+        UPDATE travel_user SET del_mark = 0 WHERE id = #{id}
+    </update>
+
+    <!-- 根据账号查询用户 -->
+    <select id="queryByAccount" resultMap="travelUserMap">
+        <include refid="baseSql"></include>
+        AND travel_user.account = #{account}
+    </select>
+</mapper>
+

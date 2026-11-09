@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjx.travel.mapper.StrategyCommentMapper">
+
+    <resultMap id="strategyCommentMap" type="com.zjx.travel.domain.StrategyCommentEntity">
+        <result column="id" property="id" />
+        <result column="content" property="content" />
+        <result column="audit_status" property="status" />
+        <result column="create_time" property="createTime" />
+        <association property="strategyId" javaType="com.zjx.travel.domain.StrategyEntity">
+            <result column="id_2" property="id" />
+            <result column="title_2" property="title" />
+            <result column="cover_2" property="cover" />
+            <result column="content_2" property="content" />
+            <result column="collect_count_2" property="collectCount" />
+            <result column="read_count_2" property="readCount" />
+            <result column="audit_status_2" property="auditStatus" />
+            <result column="create_time_2" property="createTime" />
+            <result column="update_time_2" property="updateTime" />
+            <association property="userId" javaType="com.zjx.travel.domain.TravelUserEntity">
+                <result column="id_3" property="id" />
+                <result column="account_3" property="account" />
+                <result column="password_3" property="password" />
+                <result column="nickname_3" property="nickname" />
+                <result column="phone_3" property="phone" />
+                <result column="avatar_3" property="avatar" />
+                <result column="user_role_3" property="userRole" />
+                <result column="status_3" property="status" />
+                <result column="create_time_3" property="createTime" />
+                <result column="update_time_3" property="updateTime" />
+            </association>
+        </association>
+        <association property="userId" javaType="com.zjx.travel.domain.TravelUserEntity">
+            <result column="id_4" property="id" />
+            <result column="account_4" property="account" />
+            <result column="password_4" property="password" />
+            <result column="nickname_4" property="nickname" />
+            <result column="phone_4" property="phone" />
+            <result column="avatar_4" property="avatar" />
+            <result column="user_role_4" property="userRole" />
+            <result column="status_4" property="status" />
+            <result column="create_time_4" property="createTime" />
+            <result column="update_time_4" property="updateTime" />
+        </association>
+    </resultMap>
+
+    <sql id="baseSql">
+        SELECT
+            strategy_comment.id, strategy_comment.content, strategy_comment.audit_status, strategy_comment.create_time,
+            strategy.id id_2, strategy.title title_2, strategy.cover cover_2, strategy.content content_2, strategy.collect_count collect_count_2, strategy.read_count read_count_2, strategy.audit_status audit_status_2, strategy.create_time create_time_2, strategy.update_time update_time_2,
+            travel_user_3.id id_3, travel_user_3.account account_3, travel_user_3.password password_3, travel_user_3.nickname nickname_3, travel_user_3.phone phone_3, travel_user_3.avatar avatar_3, travel_user_3.user_role user_role_3, travel_user_3.status status_3, travel_user_3.create_time create_time_3, travel_user_3.update_time update_time_3, 
+            travel_user_4.id id_4, travel_user_4.account account_4, travel_user_4.password password_4, travel_user_4.nickname nickname_4, travel_user_4.phone phone_4, travel_user_4.avatar avatar_4, travel_user_4.user_role user_role_4, travel_user_4.status status_4, travel_user_4.create_time create_time_4, travel_user_4.update_time update_time_4
+        FROM strategy_comment
+             JOIN strategy ON(strategy_comment.strategy_id = strategy.id)
+             JOIN travel_user travel_user_3 ON(strategy.user_id = travel_user_3.id)
+             JOIN travel_user travel_user_4 ON(strategy_comment.user_id = travel_user_4.id)
+        WHERE strategy_comment.del_mark = 1 
+    </sql>
+
+    <sql id="condition">
+        <if test="strategyComment.id != null">
+             and strategy_comment.id = #{strategyComment.id}
+        </if>
+        <if test="strategyComment.strategyId != null">
+            <if test="strategyComment.strategy.id != null">
+                 and strategy.id = #{strategyComment.strategy.id}
+            </if>
+            <if test="strategyComment.strategy.title != null and strategyComment.strategy.title != ''">
+                 and strategy.title LIKE concat('%', #{strategyComment.strategy.title}, '%')
+            </if>
+            <if test="strategyComment.strategy.cover != null and strategyComment.strategy.cover != ''">
+                 and strategy.cover LIKE concat('%', #{strategyComment.strategy.cover}, '%')
+            </if>
+            <if test="strategyComment.strategy.content != null and strategyComment.strategy.content != ''">
+                 and strategy.content LIKE concat('%', #{strategyComment.strategy.content}, '%')
+            </if>
+            <if test="strategyComment.strategy.collectCount != null">
+                 and strategy.collect_count = #{strategyComment.strategy.collectCount}
+            </if>
+            <if test="strategyComment.strategy.readCount != null">
+                 and strategy.read_count = #{strategyComment.strategy.readCount}
+            </if>
+            <if test="strategyComment.strategy.auditStatus != null">
+                 and strategy.audit_status = #{strategyComment.strategy.auditStatus}
+            </if>
+            <if test="strategyComment.strategy.createTime != null and strategyComment.strategy.createTime != ''">
+                 and strategy.create_time LIKE concat('%', #{strategyComment.strategy.createTime}, '%')
+            </if>
+            <if test="strategyComment.strategy.updateTime != null and strategyComment.strategy.updateTime != ''">
+                 and strategy.update_time LIKE concat('%', #{strategyComment.strategy.updateTime}, '%')
+            </if>
+        </if>
+        <if test="strategyComment.content != null and strategyComment.content != ''">
+             and strategy_comment.content LIKE concat('%', #{strategyComment.content}, '%')
+        </if>
+        <if test="strategyComment.status != null">
+             and strategy_comment.audit_status = #{strategyComment.status}
+        </if>
+        <if test="strategyComment.createTime != null and strategyComment.createTime != ''">
+             and strategy_comment.create_time LIKE concat('%', #{strategyComment.createTime}, '%')
+        </if>
+        <if test="strategyComment.keyword != null and strategyComment.keyword != ''">
+             and strategy.title LIKE concat('%', #{strategyComment.keyword}, '%')
+        </if>
+    </sql>
+
+    <select id="queryById" resultMap="strategyCommentMap">
+        <include refid="baseSql"></include>
+        AND strategy_comment.id = #{id}
+    </select>
+
+    <select id="queryAllByLimit" resultMap="strategyCommentMap">
+        <include refid="baseSql"></include>
+        <include refid="condition"></include>
+        order by id asc
+        limit #{pageable.offset}, #{pageable.pageSize}
+    </select>
+
+    <select id="count" resultType="java.lang.Long">
+        select count(1)
+        from (
+        <include refid="baseSql"></include>
+        <include refid="condition"></include> ) t
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        insert into strategy_comment(strategy_id, user_id, content, audit_status, create_time)
+        values(#{strategyId.id}, #{userId.id}, #{content}, #{status}, #{createTime})
+    </insert>
+
+    <update id="update">
+        update strategy_comment
+        <set>
+            <if test="strategyId != null and strategyId.id != null">
+                strategy_id = #{strategyId.id},
+            </if>
+            <if test="userId != null and userId.id != null">
+                user_id = #{userId.id},
+            </if>
+            <if test="content != null and content != ''">
+                content = #{content},
+            </if>
+            <if test="status != null">
+                audit_status = #{status},
+            </if>
+            <if test="createTime != null and createTime != ''">
+                create_time = #{createTime},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="deleteById">
+        UPDATE strategy_comment SET del_mark = 0 WHERE id = #{id}
+    </update>
+</mapper>
+

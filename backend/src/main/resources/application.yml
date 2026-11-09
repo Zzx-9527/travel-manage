@@ -1,0 +1,91 @@
+server:
+    port: 8081
+    servlet:
+        context-path: /travel
+
+spring:
+    datasource:
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: "jdbc:mysql://localhost:3306/travel_management?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true"
+        username: root
+        password: 123456
+
+        # ===== HikariCP（Spring Boot 默认连接池） =====
+        hikari:
+            pool-name: TravelHikariPool
+            maximum-pool-size: 20
+            minimum-idle: 2
+            connection-timeout: 60000
+            idle-timeout: 600000
+            max-lifetime: 1800000
+
+    # ===== Redis =====
+    redis:
+        host: localhost
+        port: 6379
+        # 本地 Redis 未启用 requirepass（redis-cli 执行 acl list 可见 user default on nopass）。
+        # 若你的 Redis 配了密码，取消下面一行注释并改成实际密码；否则 Redisson 发 AUTH 会直接连不上。
+        # password: 123456
+        database: 0
+        timeout: 3000ms
+        connect-timeout: 3000ms
+        client-name: travel-app
+        lettuce:
+            shutdown-timeout: 200ms
+
+    # ===== 文件上传 =====
+    servlet:
+        multipart:
+            max-file-size: 10MB
+            max-request-size: 10MB
+
+# ===== 缓存开关 =====
+# true=正常走缓存；false=直接回源查库（排障或压测基线时用，启动参数 --travel.cache.enabled=false 可覆盖）
+travel:
+    cache:
+        enabled: true
+    # ===== 浏览量回写 =====
+    # 详情接口只 INCR，定时任务按此间隔把增量写回 MySQL（毫秒）
+    view:
+        flush-interval-ms: 60000
+    # ===== 文件上传 =====
+    # 上传根目录（相对项目根目录），通过 /uploads/** 静态访问
+    upload:
+        dir: "./uploads"
+
+# ===== Sa-Token 登录鉴权 =====
+# 会话由 sa-token-redis-jackson 写入同一个 Redis（key 前缀 satoken:），因此重启不掉线
+sa-token:
+    token-name: Authorization
+    token-prefix: Bearer
+    # 绝对有效期 24 小时（秒）
+    timeout: 86400
+    # 30 分钟无操作自动过期（秒），有请求即自动续期
+    active-timeout: 1800
+    # 允许多端登录，但每端独立 token（踢人时一次性踢掉该账号全部 token）
+    is-concurrent: true
+    is-share: false
+    # 前后端分离：只从 Header 取 token，不读 Cookie
+    is-read-cookie: false
+    # 短 token，不连续，降低被遍历风险
+    token-style: tik
+    # 关闭启动横幅与操作日志，避免刷屏
+    is-print: false
+    is-log: false
+
+mybatis:
+    type-aliases-package: com.zjx.travel.domain
+    mapper-locations: "classpath*:mapper/*Mapper.xml"
+    configuration:
+        log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# 日志（Logback，Spring Boot 默认）
+logging:
+    level:
+        com.zjx.travel: INFO
+
+# ===== 接口文档（Knife4j + SpringDoc） =====
+knife4j:
+    enable: true
+    setting:
+        language: zh_cn

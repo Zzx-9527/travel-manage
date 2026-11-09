@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjx.travel.mapper.RouteMapper">
+
+    <resultMap id="routeMap" type="com.zjx.travel.domain.RouteEntity">
+        <result column="id" property="id" />
+        <result column="name" property="name" />
+        <result column="day_count" property="dayCount" />
+        <result column="start_city" property="startCity" />
+        <result column="traffic" property="traffic" />
+        <result column="budget" property="budget" />
+        <result column="intro" property="intro" />
+        <result column="status" property="status" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <association property="userId" javaType="com.zjx.travel.domain.TravelUserEntity">
+            <result column="id_2" property="id" />
+            <result column="account_2" property="account" />
+            <result column="password_2" property="password" />
+            <result column="nickname_2" property="nickname" />
+            <result column="phone_2" property="phone" />
+            <result column="avatar_2" property="avatar" />
+            <result column="user_role_2" property="userRole" />
+            <result column="status_2" property="status" />
+            <result column="create_time_2" property="createTime" />
+            <result column="update_time_2" property="updateTime" />
+        </association>
+    </resultMap>
+
+    <sql id="baseSql">
+        SELECT
+            route.id, route.name, route.day_count, route.start_city, route.traffic, route.budget, route.intro, route.status, route.create_time, route.update_time, 
+            travel_user_2.id id_2, travel_user_2.account account_2, travel_user_2.password password_2, travel_user_2.nickname nickname_2, travel_user_2.phone phone_2, travel_user_2.avatar avatar_2, travel_user_2.user_role user_role_2, travel_user_2.status status_2, travel_user_2.create_time create_time_2, travel_user_2.update_time update_time_2
+        FROM route
+             JOIN travel_user travel_user_2 ON(route.user_id = travel_user_2.id)
+        WHERE route.del_mark = 1 
+    </sql>
+
+    <sql id="condition">
+        <if test="route.id != null">
+             and route.id = #{route.id}
+        </if>
+        <if test="route.name != null and route.name != ''">
+             and route.name LIKE concat('%', #{route.name}, '%')
+        </if>
+        <if test="route.dayCount != null">
+             and route.day_count = #{route.dayCount}
+        </if>
+        <if test="route.startCity != null and route.startCity != ''">
+             and route.start_city LIKE concat('%', #{route.startCity}, '%')
+        </if>
+        <if test="route.traffic != null and route.traffic != ''">
+             and route.traffic LIKE concat('%', #{route.traffic}, '%')
+        </if>
+        <if test="route.budget != null">
+             and route.budget = #{route.budget}
+        </if>
+        <if test="route.intro != null and route.intro != ''">
+             and route.intro LIKE concat('%', #{route.intro}, '%')
+        </if>
+        <if test="route.status != null">
+             and route.status = #{route.status}
+        </if>
+        <if test="route.createTime != null and route.createTime != ''">
+             and route.create_time LIKE concat('%', #{route.createTime}, '%')
+        </if>
+        <if test="route.updateTime != null and route.updateTime != ''">
+             and route.update_time LIKE concat('%', #{route.updateTime}, '%')
+        </if>
+    </sql>
+
+    <select id="queryById" resultMap="routeMap">
+        <include refid="baseSql"></include>
+        AND route.id = #{id}
+    </select>
+
+    <select id="queryAllByLimit" resultMap="routeMap">
+        <include refid="baseSql"></include>
+        <include refid="condition"></include>
+        order by id asc
+        limit #{pageable.offset}, #{pageable.pageSize}
+    </select>
+
+    <select id="count" resultType="java.lang.Long">
+        select count(1)
+        from (
+        <include refid="baseSql"></include>
+        <include refid="condition"></include> ) t
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        insert into route(user_id, name, day_count, start_city, traffic, budget, intro, status, create_time, update_time)
+        values(#{userId.id}, #{name}, #{dayCount}, #{startCity}, #{traffic}, #{budget}, #{intro}, #{status}, #{createTime}, #{updateTime})
+    </insert>
+
+    <update id="update">
+        update route
+        <set>
+            <if test="userId != null and userId.id != null">
+                user_id = #{userId.id},
+            </if>
+            <if test="name != null and name != ''">
+                name = #{name},
+            </if>
+            <if test="dayCount != null">
+                day_count = #{dayCount},
+            </if>
+            <if test="startCity != null and startCity != ''">
+                start_city = #{startCity},
+            </if>
+            <if test="traffic != null and traffic != ''">
+                traffic = #{traffic},
+            </if>
+            <if test="budget != null">
+                budget = #{budget},
+            </if>
+            <if test="intro != null and intro != ''">
+                intro = #{intro},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="createTime != null and createTime != ''">
+                create_time = #{createTime},
+            </if>
+            <if test="updateTime != null and updateTime != ''">
+                update_time = #{updateTime},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="deleteById">
+        UPDATE route SET del_mark = 0 WHERE id = #{id}
+    </update>
+</mapper>
+

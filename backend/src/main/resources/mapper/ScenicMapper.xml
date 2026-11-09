@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjx.travel.mapper.ScenicMapper">
+
+    <resultMap id="scenicMap" type="com.zjx.travel.domain.ScenicEntity">
+        <result column="id" property="id" />
+        <result column="name" property="name" />
+        <result column="cover" property="cover" />
+        <result column="images" property="images" />
+        <result column="price" property="price" />
+        <result column="open_time" property="openTime" />
+        <result column="address" property="address" />
+        <result column="longitude" property="longitude" />
+        <result column="latitude" property="latitude" />
+        <result column="intro" property="intro" />
+        <result column="score" property="score" />
+        <result column="view_count" property="viewCount" />
+        <result column="status" property="status" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <association property="categoryId" javaType="com.zjx.travel.domain.ScenicCategoryEntity">
+            <result column="id_2" property="id" />
+            <result column="name_2" property="name" />
+            <result column="create_time_2" property="createTime" />
+        </association>
+    </resultMap>
+
+    <sql id="baseSql">
+        SELECT
+            scenic.id, scenic.name, scenic.cover, scenic.images, scenic.price, scenic.open_time, scenic.address, scenic.longitude, scenic.latitude, scenic.intro, scenic.score, scenic.view_count, scenic.status, scenic.create_time, scenic.update_time, 
+            scenic_category_2.id id_2, scenic_category_2.name name_2, scenic_category_2.create_time create_time_2
+        FROM scenic
+             JOIN scenic_category scenic_category_2 ON(scenic.category_id = scenic_category_2.id)
+        WHERE scenic.del_mark = 1 
+    </sql>
+
+    <sql id="condition">
+        <if test="scenic.id != null">
+             and scenic.id = #{scenic.id}
+        </if>
+        <if test="scenic.categoryId != null">
+            <if test="scenic.categoryId.id != null">
+                 and scenic_category_2.id = #{scenic.categoryId.id}
+            </if>
+            <if test="scenic.categoryId.name != null and scenic.categoryId.name != ''">
+                 and scenic_category_2.name LIKE concat('%', #{scenic.categoryId.name}, '%')
+            </if>
+            <if test="scenic.categoryId.createTime != null and scenic.categoryId.createTime != ''">
+                 and scenic_category_2.create_time LIKE concat('%', #{scenic.categoryId.createTime}, '%')
+            </if>
+        </if>
+        <if test="scenic.name != null and scenic.name != ''">
+             and scenic.name LIKE concat('%', #{scenic.name}, '%')
+        </if>
+        <if test="scenic.cover != null and scenic.cover != ''">
+             and scenic.cover LIKE concat('%', #{scenic.cover}, '%')
+        </if>
+        <if test="scenic.images != null and scenic.images != ''">
+             and scenic.images LIKE concat('%', #{scenic.images}, '%')
+        </if>
+        <if test="scenic.price != null">
+             and scenic.price = #{scenic.price}
+        </if>
+        <if test="scenic.openTime != null and scenic.openTime != ''">
+             and scenic.open_time LIKE concat('%', #{scenic.openTime}, '%')
+        </if>
+        <if test="scenic.address != null and scenic.address != ''">
+             and scenic.address LIKE concat('%', #{scenic.address}, '%')
+        </if>
+        <if test="scenic.longitude != null">
+             and scenic.longitude = #{scenic.longitude}
+        </if>
+        <if test="scenic.latitude != null">
+             and scenic.latitude = #{scenic.latitude}
+        </if>
+        <if test="scenic.intro != null and scenic.intro != ''">
+             and scenic.intro LIKE concat('%', #{scenic.intro}, '%')
+        </if>
+        <if test="scenic.score != null">
+             and scenic.score = #{scenic.score}
+        </if>
+        <if test="scenic.viewCount != null">
+             and scenic.view_count = #{scenic.viewCount}
+        </if>
+        <if test="scenic.status != null">
+             and scenic.status = #{scenic.status}
+        </if>
+        <if test="scenic.createTime != null and scenic.createTime != ''">
+             and scenic.create_time LIKE concat('%', #{scenic.createTime}, '%')
+        </if>
+        <if test="scenic.updateTime != null and scenic.updateTime != ''">
+             and scenic.update_time LIKE concat('%', #{scenic.updateTime}, '%')
+        </if>
+    </sql>
+
+    <select id="queryById" resultMap="scenicMap">
+        <include refid="baseSql"></include>
+        AND scenic.id = #{id}
+    </select>
+
+    <select id="queryAllByLimit" resultMap="scenicMap">
+        <include refid="baseSql"></include>
+        <include refid="condition"></include>
+        order by id asc
+        limit #{pageable.offset}, #{pageable.pageSize}
+    </select>
+
+    <select id="count" resultType="java.lang.Long">
+        select count(1)
+        from (
+        <include refid="baseSql"></include>
+        <include refid="condition"></include> ) t
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        insert into scenic(category_id, name, cover, images, price, open_time, address, longitude, latitude, intro, score, view_count, status, create_time, update_time)
+        values(#{categoryId.id}, #{name}, #{cover}, #{images}, #{price}, #{openTime}, #{address}, #{longitude}, #{latitude}, #{intro}, #{score}, #{viewCount}, #{status}, #{createTime}, #{updateTime})
+    </insert>
+
+    <update id="update">
+        update scenic
+        <set>
+            <if test="categoryId != null and categoryId.id != null">
+                category_id = #{categoryId.id},
+            </if>
+            <if test="name != null and name != ''">
+                name = #{name},
+            </if>
+            <if test="cover != null and cover != ''">
+                cover = #{cover},
+            </if>
+            <if test="images != null and images != ''">
+                images = #{images},
+            </if>
+            <if test="price != null">
+                price = #{price},
+            </if>
+            <if test="openTime != null and openTime != ''">
+                open_time = #{openTime},
+            </if>
+            <if test="address != null and address != ''">
+                address = #{address},
+            </if>
+            <if test="longitude != null">
+                longitude = #{longitude},
+            </if>
+            <if test="latitude != null">
+                latitude = #{latitude},
+            </if>
+            <if test="intro != null and intro != ''">
+                intro = #{intro},
+            </if>
+            <if test="score != null">
+                score = #{score},
+            </if>
+            <if test="viewCount != null">
+                view_count = #{viewCount},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="createTime != null and createTime != ''">
+                create_time = #{createTime},
+            </if>
+            <if test="updateTime != null and updateTime != ''">
+                update_time = #{updateTime},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="deleteById">
+        UPDATE scenic SET del_mark = 0 WHERE id = #{id}
+    </update>
+
+    <!-- 浏览量回写：数据库侧自增，避免并发覆盖；只更新未删除的景点 -->
+    <update id="increaseViewCount">
+        UPDATE scenic
+        SET view_count = view_count + #{delta}
+        WHERE id = #{id} AND del_mark = 1
+    </update>
+</mapper>
+

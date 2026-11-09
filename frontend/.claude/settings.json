@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -p \"require\\('d:/project/travel-platform/node_modules/element-plus/package.json'\\).version\")",
+      "Bash(ls -la \"d:/project/travel-platform/\" && echo \"---\" && ls \"d:/project/travel-platform/../\" 2>/dev/null | head -30)",
+      "Read(//d/project//**)",
+      "Bash(curl -s --max-time 15 \"http://localhost:8081/travel/v3/api-docs\" -o /tmp/api-docs.json)",
+      "Bash(node -e ' *)"
+    ]
+  }
+}

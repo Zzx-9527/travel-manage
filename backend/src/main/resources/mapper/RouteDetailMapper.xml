@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjx.travel.mapper.RouteDetailMapper">
+
+    <resultMap id="routeDetailMap" type="com.zjx.travel.domain.RouteDetailEntity">
+        <result column="id" property="id" />
+        <result column="day_no" property="dayNo" />
+        <result column="sort" property="sort" />
+        <result column="stay_time" property="stayTime" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <association property="routeId" javaType="com.zjx.travel.domain.RouteEntity">
+            <result column="id_1" property="id" />
+            <result column="name" property="name" />
+            <result column="day_count" property="dayCount" />
+            <result column="start_city" property="startCity" />
+            <result column="traffic" property="traffic" />
+            <result column="budget" property="budget" />
+            <result column="intro" property="intro" />
+            <result column="status" property="status" />
+            <result column="create_time_1" property="createTime" />
+            <result column="update_time_1" property="updateTime" />
+            <association property="userId" javaType="com.zjx.travel.domain.TravelUserEntity">
+                <result column="id_3" property="id" />
+                <result column="account_3" property="account" />
+                <result column="password_3" property="password" />
+                <result column="nickname_3" property="nickname" />
+                <result column="phone_3" property="phone" />
+                <result column="avatar_3" property="avatar" />
+                <result column="user_role_3" property="userRole" />
+                <result column="status_3" property="status" />
+                <result column="create_time_3" property="createTime" />
+                <result column="update_time_3" property="updateTime" />
+            </association>
+        </association>
+        <association property="scenicId" javaType="com.zjx.travel.domain.ScenicEntity">
+            <result column="id_2" property="id" />
+            <result column="name_2" property="name" />
+            <result column="cover_2" property="cover" />
+            <result column="images_2" property="images" />
+            <result column="price_2" property="price" />
+            <result column="open_time_2" property="openTime" />
+            <result column="address_2" property="address" />
+            <result column="longitude_2" property="longitude" />
+            <result column="latitude_2" property="latitude" />
+            <result column="intro_2" property="intro" />
+            <result column="score_2" property="score" />
+            <result column="view_count_2" property="viewCount" />
+            <result column="status_2" property="status" />
+            <result column="create_time_2" property="createTime" />
+            <result column="update_time_2" property="updateTime" />
+            <association property="categoryId" javaType="com.zjx.travel.domain.ScenicCategoryEntity">
+                <result column="id_5" property="id" />
+                <result column="name_5" property="name" />
+                <result column="create_time_5" property="createTime" />
+            </association>
+        </association>
+    </resultMap>
+
+    <sql id="baseSql">
+        SELECT
+            route_detail.id, route_detail.day_no, route_detail.sort, route_detail.stay_time, route_detail.create_time, route_detail.update_time,
+            route.id AS id_1, route.name, route.day_count, route.start_city, route.traffic, route.budget, route.intro, route.status, route.create_time AS create_time_1, route.update_time AS update_time_1,
+            travel_user_3.id id_3, travel_user_3.account account_3, travel_user_3.password password_3, travel_user_3.nickname nickname_3, travel_user_3.phone phone_3, travel_user_3.avatar avatar_3, travel_user_3.user_role user_role_3, travel_user_3.status status_3, travel_user_3.create_time create_time_3, travel_user_3.update_time update_time_3, 
+            scenic_2.id id_2, scenic_2.name name_2, scenic_2.cover cover_2, scenic_2.images images_2, scenic_2.price price_2, scenic_2.open_time open_time_2, scenic_2.address address_2, scenic_2.longitude longitude_2, scenic_2.latitude latitude_2, scenic_2.intro intro_2, scenic_2.score score_2, scenic_2.view_count view_count_2, scenic_2.status status_2, scenic_2.create_time create_time_2, scenic_2.update_time update_time_2, 
+            scenic_category_5.id id_5, scenic_category_5.name name_5, scenic_category_5.create_time create_time_5
+        FROM route_detail
+             JOIN route ON(route_detail.route_id = route.id)
+             JOIN travel_user travel_user_3 ON(route.user_id = travel_user_3.id)
+             JOIN scenic scenic_2 ON(route_detail.scenic_id = scenic_2.id)
+             JOIN scenic_category scenic_category_5 ON(scenic_2.category_id = scenic_category_5.id)
+        WHERE route_detail.del_mark = 1 
+    </sql>
+
+    <sql id="condition">
+        <if test="routeDetail.keyword != null and routeDetail.keyword != ''">
+             and route.name LIKE concat('%', #{routeDetail.keyword}, '%')
+        </if>
+        <if test="routeDetail.id != null">
+             and route_detail.id = #{routeDetail.id}
+        </if>
+        <if test="routeId != null">
+             and route.id = #{routeId}
+        </if>
+        <if test="routeDetail.routeId != null">
+            <if test="routeDetail.route.id != null">
+                 and route.id = #{routeDetail.route.id}
+            </if>
+            <if test="routeDetail.route.name != null and routeDetail.route.name != ''">
+                 and route.name LIKE concat('%', #{routeDetail.route.name}, '%')
+            </if>
+            <if test="routeDetail.route.dayCount != null">
+                 and route.day_count = #{routeDetail.route.dayCount}
+            </if>
+            <if test="routeDetail.route.startCity != null and routeDetail.route.startCity != ''">
+                 and route.start_city LIKE concat('%', #{routeDetail.route.startCity}, '%')
+            </if>
+            <if test="routeDetail.route.traffic != null and routeDetail.route.traffic != ''">
+                 and route.traffic LIKE concat('%', #{routeDetail.route.traffic}, '%')
+            </if>
+            <if test="routeDetail.route.budget != null">
+                 and route.budget = #{routeDetail.route.budget}
+            </if>
+            <if test="routeDetail.route.intro != null and routeDetail.route.intro != ''">
+                 and route.intro LIKE concat('%', #{routeDetail.route.intro}, '%')
+            </if>
+            <if test="routeDetail.route.status != null">
+                 and route.status = #{routeDetail.route.status}
+            </if>
+            <if test="routeDetail.route.createTime != null and routeDetail.route.createTime != ''">
+                 and route.create_time LIKE concat('%', #{routeDetail.route.createTime}, '%')
+            </if>
+            <if test="routeDetail.route.updateTime != null and routeDetail.route.updateTime != ''">
+                 and route.update_time LIKE concat('%', #{routeDetail.route.updateTime}, '%')
+            </if>
+        </if>
+        <if test="routeDetail.scenicId != null">
+            <if test="routeDetail.scenic.id != null">
+                 and scenic_2.id = #{routeDetail.scenic.id}
+            </if>
+            <if test="routeDetail.scenic.categoryId != null">
+                <if test="routeDetail.scenic.scenicCategory.id != null">
+                     and scenic_category_5.id = #{routeDetail.scenic.scenicCategory.id}
+                </if>
+                <if test="routeDetail.scenic.scenicCategory.name != null and routeDetail.scenic.scenicCategory.name != ''">
+                     and scenic_category_5.name LIKE concat('%', #{routeDetail.scenic.scenicCategory.name}, '%')
+                </if>
+                <if test="routeDetail.scenic.scenicCategory.createTime != null and routeDetail.scenic.scenicCategory.createTime != ''">
+                     and scenic_category_5.create_time LIKE concat('%', #{routeDetail.scenic.scenicCategory.createTime}, '%')
+                </if>
+            </if>
+            <if test="routeDetail.scenic.name != null and routeDetail.scenic.name != ''">
+                 and scenic_2.name LIKE concat('%', #{routeDetail.scenic.name}, '%')
+            </if>
+            <if test="routeDetail.scenic.cover != null and routeDetail.scenic.cover != ''">
+                 and scenic_2.cover LIKE concat('%', #{routeDetail.scenic.cover}, '%')
+            </if>
+            <if test="routeDetail.scenic.images != null and routeDetail.scenic.images != ''">
+                 and scenic_2.images LIKE concat('%', #{routeDetail.scenic.images}, '%')
+            </if>
+            <if test="routeDetail.scenic.price != null">
+                 and scenic_2.price = #{routeDetail.scenic.price}
+            </if>
+            <if test="routeDetail.scenic.openTime != null and routeDetail.scenic.openTime != ''">
+                 and scenic_2.open_time LIKE concat('%', #{routeDetail.scenic.openTime}, '%')
+            </if>
+            <if test="routeDetail.scenic.address != null and routeDetail.scenic.address != ''">
+                 and scenic_2.address LIKE concat('%', #{routeDetail.scenic.address}, '%')
+            </if>
+            <if test="routeDetail.scenic.longitude != null">
+                 and scenic_2.longitude = #{routeDetail.scenic.longitude}
+            </if>
+            <if test="routeDetail.scenic.latitude != null">
+                 and scenic_2.latitude = #{routeDetail.scenic.latitude}
+            </if>
+            <if test="routeDetail.scenic.intro != null and routeDetail.scenic.intro != ''">
+                 and scenic_2.intro LIKE concat('%', #{routeDetail.scenic.intro}, '%')
+            </if>
+            <if test="routeDetail.scenic.score != null">
+                 and scenic_2.score = #{routeDetail.scenic.score}
+            </if>
+            <if test="routeDetail.scenic.viewCount != null">
+                 and scenic_2.view_count = #{routeDetail.scenic.viewCount}
+            </if>
+            <if test="routeDetail.scenic.status != null">
+                 and scenic_2.status = #{routeDetail.scenic.status}
+            </if>
+            <if test="routeDetail.scenic.createTime != null and routeDetail.scenic.createTime != ''">
+                 and scenic_2.create_time LIKE concat('%', #{routeDetail.scenic.createTime}, '%')
+            </if>
+            <if test="routeDetail.scenic.updateTime != null and routeDetail.scenic.updateTime != ''">
+                 and scenic_2.update_time LIKE concat('%', #{routeDetail.scenic.updateTime}, '%')
+            </if>
+        </if>
+        <if test="routeDetail.dayNo != null">
+             and route_detail.day_no = #{routeDetail.dayNo}
+        </if>
+        <if test="routeDetail.sort != null">
+             and route_detail.sort = #{routeDetail.sort}
+        </if>
+        <if test="routeDetail.stayTime != null and routeDetail.stayTime != ''">
+             and route_detail.stay_time LIKE concat('%', #{routeDetail.stayTime}, '%')
+        </if>
+        <if test="routeDetail.createTime != null and routeDetail.createTime != ''">
+             and route_detail.create_time LIKE concat('%', #{routeDetail.createTime}, '%')
+        </if>
+    </sql>
+
+    <select id="queryById" resultMap="routeDetailMap">
+        <include refid="baseSql"></include>
+        AND route_detail.id = #{id}
+    </select>
+
+    <select id="queryAllByLimit" resultMap="routeDetailMap">
+        <include refid="baseSql"></include>
+        <include refid="condition"></include>
+        order by id asc
+        limit #{pageable.offset}, #{pageable.pageSize}
+    </select>
+
+    <select id="count" resultType="java.lang.Long">
+        select count(1)
+        from (
+        <include refid="baseSql"></include>
+        <include refid="condition"></include> ) t
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        insert into route_detail(route_id, scenic_id, day_no, sort, stay_time, create_time)
+        values(#{routeId.id}, #{scenicId.id}, #{dayNo}, #{sort}, #{stayTime}, #{createTime})
+    </insert>
+
+    <update id="update">
+        update route_detail
+        <set>
+            <if test="routeId != null and routeId.id != null">
+                route_id = #{routeId.id},
+            </if>
+            <if test="scenicId != null and scenicId.id != null">
+                scenic_id = #{scenicId.id},
+            </if>
+            <if test="dayNo != null">
+                day_no = #{dayNo},
+            </if>
+            <if test="sort != null">
+                sort = #{sort},
+            </if>
+            <if test="stayTime != null and stayTime != ''">
+                stay_time = #{stayTime},
+            </if>
+            <if test="createTime != null and createTime != ''">
+                create_time = #{createTime},
+            </if>
+            <if test="updateTime != null">
+                update_time = #{updateTime},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="deleteById">
+        UPDATE route_detail SET del_mark = 0 WHERE id = #{id}
+    </update>
+</mapper>
+

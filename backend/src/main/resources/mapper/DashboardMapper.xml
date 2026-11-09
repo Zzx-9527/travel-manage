@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjx.travel.mapper.DashboardMapper">
+
+    <!-- 后台首页统计卡片：用户/景点/攻略/订单 四数 -->
+    <select id="stats" resultType="java.util.HashMap">
+        SELECT
+            (SELECT COUNT(1) FROM travel_user WHERE del_mark = 1) AS userCount,
+            (SELECT COUNT(1) FROM scenic WHERE del_mark = 1) AS scenicCount,
+            (SELECT COUNT(1) FROM strategy WHERE del_mark = 1) AS strategyCount,
+            (SELECT COUNT(1) FROM scenic_orders WHERE del_mark = 1) AS orderCount
+    </select>
+</mapper>

@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 180">
+  <defs>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E8F8F5"/>
+      <stop offset="1" stop-color="#CCFBF1"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 背景柔光 -->
+  <circle cx="120" cy="92" r="78" fill="#F0FDFA"/>
+  <circle cx="120" cy="92" r="78" fill="none" stroke="#99F6E4" stroke-width="1.5" stroke-dasharray="3 6" opacity="0.9"/>
+
+  <!-- 远处山影 -->
+  <path fill="#CBD5E1" opacity="0.55" d="M42 108 L72 76 L96 100 L120 72 L148 102 L172 82 L198 108 Z"/>
+
+  <!-- 地面 -->
+  <ellipse cx="120" cy="128" rx="86" ry="14" fill="url(#ground)"/>
+
+  <!-- 虚线路径 -->
+  <path d="M52 124 C 86 124 92 96 122 96 C 152 96 156 112 188 112"
+        fill="none" stroke="#0D9488" stroke-width="2.5" stroke-dasharray="1 8" stroke-linecap="round"/>
+
+  <!-- 起点标记 -->
+  <circle cx="52" cy="124" r="9" fill="#1CB89D"/>
+  <circle cx="52" cy="124" r="4" fill="#FFFFFF"/>
+  <circle cx="52" cy="124" r="14" fill="none" stroke="#1CB89D" stroke-width="1.5" opacity="0.35"/>
+
+  <!-- 终点旗帜 -->
+  <line x1="188" y1="112" x2="188" y2="78" stroke="#0F766E" stroke-width="3" stroke-linecap="round"/>
+  <path d="M188 78 L214 86 L188 96 Z" fill="#0D9488"/>
+
+  <!-- 太阳 -->
+  <circle cx="196" cy="42" r="11" fill="#FCD34D" opacity="0.9"/>
+  <g stroke="#FCD34D" stroke-width="2" stroke-linecap="round" opacity="0.7">
+    <line x1="196" y1="24" x2="196" y2="28"/>
+    <line x1="196" y1="56" x2="196" y2="60"/>
+    <line x1="178" y1="42" x2="182" y2="42"/>
+    <line x1="210" y1="42" x2="214" y2="42"/>
+  </g>
+
+  <!-- 云 -->
+  <g fill="#E2E8F0">
+    <ellipse cx="66" cy="38" rx="20" ry="7"/>
+    <ellipse cx="78" cy="32" rx="13" ry="6"/>
+    <ellipse cx="130" cy="52" rx="16" ry="5" opacity="0.8"/>
+  </g>
+</svg>

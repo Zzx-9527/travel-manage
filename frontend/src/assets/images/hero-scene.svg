@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 800" preserveAspectRatio="xMidYMax slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0B1626"/>
+      <stop offset="0.55" stop-color="#10314B"/>
+      <stop offset="1" stop-color="#14525C"/>
+    </linearGradient>
+    <radialGradient id="sunGlow" cx="0.72" cy="0.42" r="0.55">
+      <stop offset="0" stop-color="#2DD4BF" stop-opacity="0.45"/>
+      <stop offset="0.4" stop-color="#2DD4BF" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#2DD4BF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="sun" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#A7F3E4"/>
+      <stop offset="0.7" stop-color="#7AE2CC"/>
+      <stop offset="1" stop-color="#7AE2CC" stop-opacity="0.6"/>
+    </radialGradient>
+    <linearGradient id="mist" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9FE8DC" stop-opacity="0"/>
+      <stop offset="1" stop-color="#9FE8DC" stop-opacity="0.08"/>
+    </linearGradient>
+    <linearGradient id="front" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0C2B3D"/>
+      <stop offset="1" stop-color="#081C2A"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 天空与光晕 -->
+  <rect width="1440" height="800" fill="url(#sky)"/>
+  <rect width="1440" height="800" fill="url(#sunGlow)"/>
+  <circle cx="1035" cy="325" r="58" fill="url(#sun)"/>
+
+  <!-- 星星 -->
+  <g fill="#E8F8F5">
+    <circle cx="180" cy="120" r="2" opacity="0.55"/>
+    <circle cx="340" cy="80" r="1.5" opacity="0.4"/>
+    <circle cx="520" cy="150" r="1.6" opacity="0.45"/>
+    <circle cx="700" cy="70" r="1.4" opacity="0.35"/>
+    <circle cx="860" cy="180" r="1.8" opacity="0.5"/>
+    <circle cx="1180" cy="110" r="1.7" opacity="0.45"/>
+    <circle cx="1320" cy="200" r="1.5" opacity="0.4"/>
+    <circle cx="240" cy="240" r="1.3" opacity="0.3"/>
+    <circle cx="1250" cy="60" r="1.4" opacity="0.35"/>
+    <circle cx="620" cy="230" r="1.2" opacity="0.3"/>
+  </g>
+
+  <!-- 云层 -->
+  <g fill="#FFFFFF">
+    <ellipse cx="300" cy="205" rx="150" ry="16" opacity="0.05"/>
+    <ellipse cx="380" cy="188" rx="90" ry="12" opacity="0.05"/>
+    <ellipse cx="1120" cy="150" rx="130" ry="14" opacity="0.06"/>
+    <ellipse cx="1180" cy="135" rx="70" ry="10" opacity="0.05"/>
+    <ellipse cx="640" cy="300" rx="180" ry="15" opacity="0.04"/>
+  </g>
+
+  <!-- 远山 -->
+  <path fill="#1D5468" opacity="0.6"
+    d="M0 520 L110 432 L235 502 L360 408 L505 486 L632 416 L770 502 L898 424 L1042 492 L1168 434 L1300 504 L1440 444 L1440 800 L0 800 Z"/>
+  <!-- 中景山 -->
+  <path fill="#123F53"
+    d="M0 602 L148 502 L298 584 L458 474 L608 572 L758 484 L918 582 L1078 492 L1238 584 L1440 504 L1440 800 L0 800 Z"/>
+  <rect y="560" width="1440" height="60" fill="url(#mist)"/>
+  <!-- 近景山 -->
+  <path fill="url(#front)"
+    d="M0 682 L178 562 L338 662 L518 542 L698 652 L878 552 L1058 662 L1238 572 L1440 662 L1440 800 L0 800 Z"/>
+
+  <!-- 松林剪影 -->
+  <g fill="#071A27">
+    <path d="M150 668 L162 630 L174 668 Z"/>
+    <path d="M178 672 L192 626 L206 672 Z"/>
+    <path d="M500 600 L514 556 L528 600 Z"/>
+    <path d="M532 606 L548 552 L564 606 Z"/>
+    <path d="M880 610 L893 568 L906 610 Z"/>
+    <path d="M1180 626 L1194 580 L1208 626 Z"/>
+    <path d="M1210 632 L1226 584 L1242 632 Z"/>
+  </g>
+
+  <!-- 前景剪影 -->
+  <path fill="#06141F"
+    d="M0 762 L205 662 L425 742 L645 652 L905 752 L1145 672 L1440 752 L1440 800 L0 800 Z"/>
+
+  <!-- 飞鸟 -->
+  <g stroke="#D9F5EE" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.65">
+    <path d="M420 250 q 12 -10 24 0 q 12 -10 24 0"/>
+    <path d="M486 226 q 10 -8 20 0 q 10 -8 20 0"/>
+    <path d="M960 285 q 9 -7 18 0 q 9 -7 18 0"/>
+  </g>
+</svg>

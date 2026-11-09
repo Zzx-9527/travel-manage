@@ -1,0 +1,128 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== 品牌设计 Token ===== */
+:root {
+  /* 品牌青绿 */
+  --brand-50: #F0FDFA;
+  --brand-100: #CCFBF1;
+  --brand-200: #99F6E4;
+  --brand-400: #2DD4BF;
+  --brand-500: #1CB89D;
+  --brand-600: #0D9488;
+  --brand-700: #0F766E;
+  --brand-gradient: linear-gradient(135deg, #1CB89D, #0D9488);
+  --brand-shadow: 0 4px 15px rgba(28, 184, 157, 0.4);
+
+  /* 中性色（slate） */
+  --ink-900: #0D1B2A;
+  --ink-800: #1E293B;
+  --ink-700: #334155;
+  --ink-600: #475569;
+  --ink-500: #64748B;
+  --ink-400: #94A3B8;
+  --ink-300: #CBD5E1;
+  --ink-200: #E2E8F0;
+  --ink-100: #F1F5F9;
+  --ink-50: #F8FAFC;
+
+  /* 卡片 */
+  --radius-card: 16px;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 12px 40px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.05);
+
+  /* ===== Element Plus 主题接管：默认蓝 → 品牌青 ===== */
+  --el-color-primary: #1CB89D;
+  --el-color-primary-light-3: #60CDBA;
+  --el-color-primary-light-5: #8EDCCE;
+  --el-color-primary-light-7: #BBEAE2;
+  --el-color-primary-light-8: #D2F1EB;
+  --el-color-primary-light-9: #E8F8F5;
+  --el-color-primary-dark-2: #16937E;
+  --el-border-radius-base: 8px;
+  --el-color-danger: #EF4444;
+  --el-color-warning: #F59E0B;
+  --el-color-success: #10B981;
+}
+
+/* ===== 全局滚动条样式 ===== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #c1c8d1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #a0aab4;
+}
+
+/* ===== 过渡动画 ===== */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* 页面通用样式 */
+.page-container {
+  @apply p-6;
+}
+
+/* ===== 品牌工具类（收敛散落的内联渐变） ===== */
+.brand-gradient {
+  background: var(--brand-gradient);
+}
+
+.brand-text {
+  color: var(--brand-600);
+}
+
+/* 标准卡片：与 SpotCard/RouteCard/GuideCard 同一视觉 token */
+.ui-card {
+  background: #fff;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--ink-100);
+  box-shadow: var(--shadow-card);
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.ui-card-hover:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-card-hover);
+  border-color: var(--ink-200);
+}
+
+/* ===== Element Plus 全局微调 ===== */
+.el-table {
+  --el-table-border-color: #edf2f7;
+  --el-table-header-bg-color: #f8fafc;
+}
+.el-table th.el-table__cell {
+  font-weight: 600;
+  color: #475569;
+}
+.el-dialog {
+  --el-dialog-border-radius: 12px;
+  border-radius: 12px;
+}
+.el-message {
+  border-radius: 10px;
+  border: none;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.1);
+}
+.el-pagination {
+  --el-pagination-button-color: #475569;
+}
+.el-switch.is-checked .el-switch__core {
+  background: var(--brand-gradient);
+  border-color: transparent;
+}

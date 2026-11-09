@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjx.travel.mapper.StrategyMapper">
+
+    <resultMap id="strategyMap" type="com.zjx.travel.domain.StrategyEntity">
+        <result column="id" property="id" />
+        <result column="title" property="title" />
+        <result column="cover" property="cover" />
+        <result column="content" property="content" />
+        <result column="collect_count" property="collectCount" />
+        <result column="read_count" property="readCount" />
+        <result column="audit_status" property="auditStatus" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <association property="userId" javaType="com.zjx.travel.domain.TravelUserEntity">
+            <result column="id_2" property="id" />
+            <result column="account_2" property="account" />
+            <result column="password_2" property="password" />
+            <result column="nickname_2" property="nickname" />
+            <result column="phone_2" property="phone" />
+            <result column="avatar_2" property="avatar" />
+            <result column="user_role_2" property="userRole" />
+            <result column="status_2" property="status" />
+            <result column="create_time_2" property="createTime" />
+            <result column="update_time_2" property="updateTime" />
+        </association>
+    </resultMap>
+
+    <sql id="baseSql">
+        SELECT
+            strategy.id, strategy.title, strategy.cover, strategy.content, strategy.collect_count, strategy.read_count, strategy.audit_status, strategy.create_time, strategy.update_time, 
+            travel_user_2.id id_2, travel_user_2.account account_2, travel_user_2.password password_2, travel_user_2.nickname nickname_2, travel_user_2.phone phone_2, travel_user_2.avatar avatar_2, travel_user_2.user_role user_role_2, travel_user_2.status status_2, travel_user_2.create_time create_time_2, travel_user_2.update_time update_time_2
+        FROM strategy
+             JOIN travel_user travel_user_2 ON(strategy.user_id = travel_user_2.id)
+        WHERE strategy.del_mark = 1 
+    </sql>
+
+    <sql id="condition">
+        <if test="strategy.id != null">
+             and strategy.id = #{strategy.id}
+        </if>
+        <if test="strategy.title != null and strategy.title != ''">
+             and strategy.title LIKE concat('%', #{strategy.title}, '%')
+        </if>
+        <if test="strategy.cover != null and strategy.cover != ''">
+             and strategy.cover LIKE concat('%', #{strategy.cover}, '%')
+        </if>
+        <if test="strategy.content != null and strategy.content != ''">
+             and strategy.content LIKE concat('%', #{strategy.content}, '%')
+        </if>
+        <if test="strategy.collectCount != null">
+             and strategy.collect_count = #{strategy.collectCount}
+        </if>
+        <if test="strategy.readCount != null">
+             and strategy.read_count = #{strategy.readCount}
+        </if>
+        <if test="strategy.auditStatus != null">
+             and strategy.audit_status = #{strategy.auditStatus}
+        </if>
+        <if test="strategy.createTime != null and strategy.createTime != ''">
+             and strategy.create_time LIKE concat('%', #{strategy.createTime}, '%')
+        </if>
+        <if test="strategy.updateTime != null and strategy.updateTime != ''">
+             and strategy.update_time LIKE concat('%', #{strategy.updateTime}, '%')
+        </if>
+    </sql>
+
+    <select id="queryById" resultMap="strategyMap">
+        <include refid="baseSql"></include>
+        AND strategy.id = #{id}
+    </select>
+
+    <select id="queryAllByLimit" resultMap="strategyMap">
+        <include refid="baseSql"></include>
+        <include refid="condition"></include>
+        order by id asc
+        limit #{pageable.offset}, #{pageable.pageSize}
+    </select>
+
+    <select id="count" resultType="java.lang.Long">
+        select count(1)
+        from (
+        <include refid="baseSql"></include>
+        <include refid="condition"></include> ) t
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        insert into strategy(user_id, title, cover, content, collect_count, read_count, audit_status, create_time, update_time)
+        values(#{userId.id}, #{title}, #{cover}, #{content}, #{collectCount}, #{readCount}, #{auditStatus}, #{createTime}, #{updateTime})
+    </insert>
+
+    <update id="update">
+        update strategy
+        <set>
+            <if test="userId != null and userId.id != null">
+                user_id = #{userId.id},
+            </if>
+            <if test="title != null and title != ''">
+                title = #{title},
+            </if>
+            <if test="cover != null and cover != ''">
+                cover = #{cover},
+            </if>
+            <if test="content != null and content != ''">
+                content = #{content},
+            </if>
+            <if test="collectCount != null">
+                collect_count = #{collectCount},
+            </if>
+            <if test="readCount != null">
+                read_count = #{readCount},
+            </if>
+            <if test="auditStatus != null">
+                audit_status = #{auditStatus},
+            </if>
+            <if test="createTime != null and createTime != ''">
+                create_time = #{createTime},
+            </if>
+            <if test="updateTime != null and updateTime != ''">
+                update_time = #{updateTime},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="deleteById">
+        UPDATE strategy SET del_mark = 0 WHERE id = #{id}
+    </update>
+</mapper>
+
