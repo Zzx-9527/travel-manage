@@ -11,6 +11,6 @@
  <update id="incrementStock">UPDATE scenic_stock SET remaining=remaining+#{count},version=version+1 WHERE scenic_id=#{scenicId} AND play_date=#{playDate} AND ticket_type_id=#{ticketTypeId} AND remaining+#{count} &lt;= total</update>
  <select id="queryCapacity" resultMap="capacityMap">SELECT * FROM scenic_capacity WHERE scenic_id=#{scenicId} AND play_date=#{playDate}</select>
  <select id="queryStock" resultMap="stockMap">SELECT * FROM scenic_stock WHERE scenic_id=#{scenicId} AND play_date=#{playDate} AND ticket_type_id=#{ticketTypeId}</select>
- <update id="updateCapacityTotal">UPDATE scenic_capacity SET total=#{total},remaining=#{total}-(total-remaining) WHERE scenic_id=#{scenicId} AND play_date=#{playDate} AND #{total} &gt;= (total-remaining)</update>
- <update id="updateStockTotal">UPDATE scenic_stock SET total=#{total},remaining=#{total}-(total-remaining),version=version+1 WHERE scenic_id=#{scenicId} AND play_date=#{playDate} AND ticket_type_id=#{ticketTypeId} AND #{total} &gt;= (total-remaining)</update>
+ <update id="updateCapacityTotal">UPDATE scenic_capacity SET remaining=remaining + (#{total} - total), total=#{total} WHERE scenic_id=#{scenicId} AND play_date=#{playDate} AND #{total} &gt;= (total - remaining)</update>
+ <update id="updateStockTotal">UPDATE scenic_stock SET remaining=remaining + (#{total} - total), total=#{total}, version=version+1 WHERE scenic_id=#{scenicId} AND play_date=#{playDate} AND ticket_type_id=#{ticketTypeId} AND #{total} &gt;= (total - remaining)</update>
 </mapper>
