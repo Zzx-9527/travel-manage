@@ -12,6 +12,12 @@
         <result column="total_amount" property="totalAmount" />
         <result column="pay_type" property="payType" />
         <result column="pay_status" property="payStatus" />
+        <result column="status" property="status" />
+        <result column="cancel_time" property="cancelTime" />
+        <result column="cancel_reason" property="cancelReason" />
+        <result column="unit_price" property="unitPrice" />
+        <result column="ticket_type_id" property="ticketTypeId" />
+        <result column="stock_reserved" property="stockReserved" />
         <result column="create_time" property="createTime" />
         <result column="pay_time" property="payTime" />
         <association property="userId" javaType="com.zjx.travel.domain.TravelUserEntity">
@@ -52,7 +58,7 @@
 
     <sql id="baseSql">
         SELECT
-            scenic_orders.id, scenic_orders.order_no, scenic_orders.contact_name, scenic_orders.contact_phone, scenic_orders.play_date, scenic_orders.ticket_count, scenic_orders.total_amount, scenic_orders.pay_type, scenic_orders.pay_status, scenic_orders.create_time, scenic_orders.pay_time, 
+            scenic_orders.id, scenic_orders.order_no, scenic_orders.contact_name, scenic_orders.contact_phone, scenic_orders.play_date, scenic_orders.ticket_count, scenic_orders.total_amount, scenic_orders.pay_type, scenic_orders.pay_status, scenic_orders.status, scenic_orders.cancel_time, scenic_orders.cancel_reason, scenic_orders.unit_price, scenic_orders.ticket_type_id, scenic_orders.stock_reserved, scenic_orders.create_time, scenic_orders.pay_time,
             travel_user_2.id id_2, travel_user_2.account account_2, travel_user_2.password password_2, travel_user_2.nickname nickname_2, travel_user_2.phone phone_2, travel_user_2.avatar avatar_2, travel_user_2.user_role user_role_2, travel_user_2.status status_2, travel_user_2.create_time create_time_2, travel_user_2.update_time update_time_2, 
             scenic_2.id id_3, scenic_2.name name_3, scenic_2.cover cover_3, scenic_2.images images_3, scenic_2.price price_3, scenic_2.open_time open_time_3, scenic_2.address address_3, scenic_2.longitude longitude_3, scenic_2.latitude latitude_3, scenic_2.intro intro_3, scenic_2.score score_3, scenic_2.view_count view_count_3, scenic_2.status status_3, scenic_2.create_time create_time_3, scenic_2.update_time update_time_3,
             scenic_category_5.id id_5, scenic_category_5.name name_5, scenic_category_5.create_time create_time_5
@@ -75,61 +81,61 @@
              and scenic_orders.user_id = #{scenicOrders.userId.id}
         </if>
         <if test="scenicOrders.scenicId != null">
-            <if test="scenicOrders.scenic.id != null">
-                 and scenic_2.id = #{scenicOrders.scenic.id}
+            <if test="scenicOrders.scenicId.id != null">
+                 and scenic_2.id = #{scenicOrders.scenicId.id}
             </if>
-            <if test="scenicOrders.scenic.categoryId != null">
-                <if test="scenicOrders.scenic.scenicCategory.id != null">
-                     and scenic_category_5.id = #{scenicOrders.scenic.scenicCategory.id}
+            <if test="scenicOrders.scenicId.categoryId != null">
+                <if test="scenicOrders.scenicId.categoryId.id != null">
+                     and scenic_category_5.id = #{scenicOrders.scenicId.categoryId.id}
                 </if>
-                <if test="scenicOrders.scenic.scenicCategory.name != null and scenicOrders.scenic.scenicCategory.name != ''">
-                     and scenic_category_5.name LIKE concat('%', #{scenicOrders.scenic.scenicCategory.name}, '%')
+                <if test="scenicOrders.scenicId.categoryId.name != null and scenicOrders.scenicId.categoryId.name != ''">
+                     and scenic_category_5.name LIKE concat('%', #{scenicOrders.scenicId.categoryId.name}, '%')
                 </if>
-                <if test="scenicOrders.scenic.scenicCategory.createTime != null and scenicOrders.scenic.scenicCategory.createTime != ''">
-                     and scenic_category_5.create_time LIKE concat('%', #{scenicOrders.scenic.scenicCategory.createTime}, '%')
+                <if test="scenicOrders.scenicId.categoryId.createTime != null and scenicOrders.scenicId.categoryId.createTime != ''">
+                     and scenic_category_5.create_time LIKE concat('%', #{scenicOrders.scenicId.categoryId.createTime}, '%')
                 </if>
             </if>
-            <if test="scenicOrders.scenic.name != null and scenicOrders.scenic.name != ''">
-                 and scenic_2.name LIKE concat('%', #{scenicOrders.scenic.name}, '%')
+            <if test="scenicOrders.scenicId.name != null and scenicOrders.scenicId.name != ''">
+                 and scenic_2.name LIKE concat('%', #{scenicOrders.scenicId.name}, '%')
             </if>
-            <if test="scenicOrders.scenic.cover != null and scenicOrders.scenic.cover != ''">
-                 and scenic_2.cover LIKE concat('%', #{scenicOrders.scenic.cover}, '%')
+            <if test="scenicOrders.scenicId.cover != null and scenicOrders.scenicId.cover != ''">
+                 and scenic_2.cover LIKE concat('%', #{scenicOrders.scenicId.cover}, '%')
             </if>
-            <if test="scenicOrders.scenic.images != null and scenicOrders.scenic.images != ''">
-                 and scenic_2.images LIKE concat('%', #{scenicOrders.scenic.images}, '%')
+            <if test="scenicOrders.scenicId.images != null and scenicOrders.scenicId.images != ''">
+                 and scenic_2.images LIKE concat('%', #{scenicOrders.scenicId.images}, '%')
             </if>
-            <if test="scenicOrders.scenic.price != null">
-                 and scenic_2.price = #{scenicOrders.scenic.price}
+            <if test="scenicOrders.scenicId.price != null">
+                 and scenic_2.price = #{scenicOrders.scenicId.price}
             </if>
-            <if test="scenicOrders.scenic.openTime != null and scenicOrders.scenic.openTime != ''">
-                 and scenic_2.open_time LIKE concat('%', #{scenicOrders.scenic.openTime}, '%')
+            <if test="scenicOrders.scenicId.openTime != null and scenicOrders.scenicId.openTime != ''">
+                 and scenic_2.open_time LIKE concat('%', #{scenicOrders.scenicId.openTime}, '%')
             </if>
-            <if test="scenicOrders.scenic.address != null and scenicOrders.scenic.address != ''">
-                 and scenic_2.address LIKE concat('%', #{scenicOrders.scenic.address}, '%')
+            <if test="scenicOrders.scenicId.address != null and scenicOrders.scenicId.address != ''">
+                 and scenic_2.address LIKE concat('%', #{scenicOrders.scenicId.address}, '%')
             </if>
-            <if test="scenicOrders.scenic.longitude != null">
-                 and scenic_2.longitude = #{scenicOrders.scenic.longitude}
+            <if test="scenicOrders.scenicId.longitude != null">
+                 and scenic_2.longitude = #{scenicOrders.scenicId.longitude}
             </if>
-            <if test="scenicOrders.scenic.latitude != null">
-                 and scenic_2.latitude = #{scenicOrders.scenic.latitude}
+            <if test="scenicOrders.scenicId.latitude != null">
+                 and scenic_2.latitude = #{scenicOrders.scenicId.latitude}
             </if>
-            <if test="scenicOrders.scenic.intro != null and scenicOrders.scenic.intro != ''">
-                 and scenic_2.intro LIKE concat('%', #{scenicOrders.scenic.intro}, '%')
+            <if test="scenicOrders.scenicId.intro != null and scenicOrders.scenicId.intro != ''">
+                 and scenic_2.intro LIKE concat('%', #{scenicOrders.scenicId.intro}, '%')
             </if>
-            <if test="scenicOrders.scenic.score != null">
-                 and scenic_2.score = #{scenicOrders.scenic.score}
+            <if test="scenicOrders.scenicId.score != null">
+                 and scenic_2.score = #{scenicOrders.scenicId.score}
             </if>
-            <if test="scenicOrders.scenic.viewCount != null">
-                 and scenic_2.view_count = #{scenicOrders.scenic.viewCount}
+            <if test="scenicOrders.scenicId.viewCount != null">
+                 and scenic_2.view_count = #{scenicOrders.scenicId.viewCount}
             </if>
-            <if test="scenicOrders.scenic.status != null">
-                 and scenic_2.status = #{scenicOrders.scenic.status}
+            <if test="scenicOrders.scenicId.status != null">
+                 and scenic_2.status = #{scenicOrders.scenicId.status}
             </if>
-            <if test="scenicOrders.scenic.createTime != null and scenicOrders.scenic.createTime != ''">
-                 and scenic_2.create_time LIKE concat('%', #{scenicOrders.scenic.createTime}, '%')
+            <if test="scenicOrders.scenicId.createTime != null and scenicOrders.scenicId.createTime != ''">
+                 and scenic_2.create_time LIKE concat('%', #{scenicOrders.scenicId.createTime}, '%')
             </if>
-            <if test="scenicOrders.scenic.updateTime != null and scenicOrders.scenic.updateTime != ''">
-                 and scenic_2.update_time LIKE concat('%', #{scenicOrders.scenic.updateTime}, '%')
+            <if test="scenicOrders.scenicId.updateTime != null and scenicOrders.scenicId.updateTime != ''">
+                 and scenic_2.update_time LIKE concat('%', #{scenicOrders.scenicId.updateTime}, '%')
             </if>
         </if>
         <if test="scenicOrders.contactName != null and scenicOrders.contactName != ''">
@@ -153,6 +159,9 @@
         <if test="scenicOrders.payStatus != null">
              and scenic_orders.pay_status = #{scenicOrders.payStatus}
         </if>
+        <if test="scenicOrders.status != null">
+             and scenic_orders.status = #{scenicOrders.status}
+        </if>
         <if test="scenicOrders.createTime != null and scenicOrders.createTime != ''">
              and scenic_orders.create_time LIKE concat('%', #{scenicOrders.createTime}, '%')
         </if>
@@ -169,7 +178,7 @@
     <select id="queryAllByLimit" resultMap="scenicOrdersMap">
         <include refid="baseSql"></include>
         <include refid="condition"></include>
-        order by id asc
+        order by scenic_orders.id asc
         limit #{pageable.offset}, #{pageable.pageSize}
     </select>
 
@@ -181,55 +190,34 @@
     </select>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        insert into scenic_orders(order_no, user_id, scenic_id, contact_name, contact_phone, play_date, ticket_count, total_amount, pay_type, pay_status, create_time, pay_time)
-        values(#{orderNo}, #{userId.id}, #{scenicId.id}, #{contactName}, #{contactPhone}, #{playDate}, #{ticketCount}, #{totalAmount}, #{payType}, #{payStatus}, #{createTime}, #{payTime})
+        insert into scenic_orders(order_no, user_id, scenic_id, contact_name, contact_phone, play_date, ticket_count, total_amount, unit_price, ticket_type_id, stock_reserved, pay_type, pay_status, status, create_time, pay_time)
+        values(#{orderNo}, #{userId.id}, #{scenicId.id}, #{contactName}, #{contactPhone}, #{playDate}, #{ticketCount}, #{totalAmount}, #{unitPrice}, #{ticketTypeId}, #{stockReserved}, #{payType}, #{payStatus}, #{status}, #{createTime}, #{payTime})
     </insert>
 
-    <update id="update">
-        update scenic_orders
-        <set>
-            <if test="orderNo != null and orderNo != ''">
-                order_no = #{orderNo},
-            </if>
-            <if test="userId != null and userId.id != null">
-                user_id = #{userId.id},
-            </if>
-            <if test="scenicId != null and scenicId.id != null">
-                scenic_id = #{scenicId.id},
-            </if>
-            <if test="contactName != null and contactName != ''">
-                contact_name = #{contactName},
-            </if>
-            <if test="contactPhone != null and contactPhone != ''">
-                contact_phone = #{contactPhone},
-            </if>
-            <if test="playDate != null and playDate != ''">
-                play_date = #{playDate},
-            </if>
-            <if test="ticketCount != null">
-                ticket_count = #{ticketCount},
-            </if>
-            <if test="totalAmount != null">
-                total_amount = #{totalAmount},
-            </if>
-            <if test="payType != null">
-                pay_type = #{payType},
-            </if>
-            <if test="payStatus != null">
-                pay_status = #{payStatus},
-            </if>
-            <if test="createTime != null and createTime != ''">
-                create_time = #{createTime},
-            </if>
-            <if test="payTime != null and payTime != ''">
-                pay_time = #{payTime},
-            </if>
-        </set>
-        WHERE id = #{id}
-    </update>
-
     <update id="deleteById">
-        UPDATE scenic_orders SET del_mark = 0 WHERE id = #{id}
+        UPDATE scenic_orders SET del_mark = 0 WHERE id = #{id} AND del_mark = 1 AND status <> 0
     </update>
+    <update id="updateContact">
+        UPDATE scenic_orders SET contact_name=#{contactName}, contact_phone=#{contactPhone}
+        WHERE id=#{id} AND user_id=#{userId} AND del_mark=1 AND status=0
+    </update>
+    <update id="transitionToCancelled">
+        UPDATE scenic_orders SET status=2, cancel_time=NOW(), cancel_reason=#{reason}
+        WHERE id=#{id} AND status=0 AND del_mark=1 AND stock_reserved=1
+    </update>
+    <update id="transitionToTimeout">
+        UPDATE scenic_orders SET status=2, cancel_time=NOW(), cancel_reason='TIMEOUT'
+        WHERE id=#{id} AND status=0 AND del_mark=1 AND stock_reserved=1 AND create_time &lt;= DATE_SUB(NOW(), INTERVAL 30 MINUTE)
+    </update>
+    <update id="transitionToPaid">
+        UPDATE scenic_orders SET status=1, pay_status=1, pay_time=NOW()
+        WHERE id=#{id} AND user_id=#{userId} AND status=0 AND del_mark=1 AND create_time &gt; DATE_SUB(NOW(), INTERVAL 30 MINUTE)
+    </update>
+    <select id="findTimeoutOrders" resultMap="scenicOrdersMap">
+        <include refid="baseSql"/> AND scenic_orders.status=0 AND scenic_orders.stock_reserved=1
+        AND scenic_orders.create_time &lt;= DATE_SUB(NOW(), INTERVAL 30 MINUTE)
+        AND scenic_orders.id &gt; #{afterId}
+        ORDER BY scenic_orders.id LIMIT #{limit}
+    </select>
 </mapper>
 

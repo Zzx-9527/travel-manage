@@ -2,23 +2,23 @@ package com.zjx.travel.controller;
 
 import cn.dev33.satoken.exception.NotPermissionException;
 import cn.dev33.satoken.stp.StpUtil;
-import com.zjx.travel.domain.ScenicEntity;
 import com.zjx.travel.domain.ScenicOrdersEntity;
 import com.zjx.travel.domain.TravelUserEntity;
 import com.zjx.travel.service.ScenicOrdersService;
-import com.zjx.travel.service.ScenicService;
-import com.zjx.travel.util.*;
+import com.zjx.travel.dto.*;
+import com.zjx.travel.util.SecurityUtil;
+import com.zjx.travel.util.LockUtil;
+import com.zjx.travel.util.MessageNotifier;
+import com.zjx.travel.util.RedisKeys;
+import com.zjx.travel.util.ReturnVO;
 
 import javax.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.http.ResponseEntity;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("scenicOrders")
@@ -26,22 +26,9 @@ public class ScenicOrdersController {
     @Resource
     private ScenicOrdersService scenicOrdersService;
     @Resource
-    private ScenicService scenicService;
-    @Resource
     private MessageNotifier messageNotifier;
     @Resource
     private LockUtil lockUtil;
-
-    /** 查库解析景区名称用于消息文案（提交体里 scenicId 可能只带 id，查不到时用兜底文案） */
-    private String resolveScenicName(ScenicOrdersEntity scenicOrders) {
-        if (scenicOrders.getScenicId() != null && scenicOrders.getScenicId().getId() != null) {
-            ScenicEntity scenic = this.scenicService.queryById(scenicOrders.getScenicId().getId());
-            if (scenic != null && scenic.getName() != null) {
-                return scenic.getName();
-            }
-        }
-        return "景区";
-    }
 
     @GetMapping("queryById/{id}")
     public ReturnVO queryById(@PathVariable("id") Integer id) {
@@ -62,6 +49,7 @@ public class ScenicOrdersController {
 
     @GetMapping("queryByPage")
     public ReturnVO queryByPage(ScenicOrdersEntity scenicOrders, Integer page, Integer size, String orderCol, String orderDirect) {
+        if (scenicOrders == null) scenicOrders = new ScenicOrdersEntity();
 
         // 越权防护：非管理员强制按当前登录人过滤，忽略前端传来的 userId，避免"改个参数查全站订单"
         applyOwnerScope(scenicOrders);
@@ -87,76 +75,39 @@ public class ScenicOrdersController {
     }
 
     @PostMapping("add")
-    public ReturnVO add(@RequestBody ScenicOrdersEntity scenicOrders) {
+    public ReturnVO add(@RequestBody ScenicOrderCreateDTO request) {
+        Integer uid = SecurityUtil.currentUserId();
+        if (!lockUtil.trySetOnce(RedisKeys.orderSubmit(uid), Duration.ofSeconds(5)))
+            return new ReturnVO(0, "请勿重复提交，请 5 秒后再试");
+        ScenicOrdersEntity created = scenicOrdersService.createOrder(request, uid);
+        // 事务已提交，再发消息；消息失败只记日志，不影响已生成的订单
+        messageNotifier.sendOrder(uid, "下单成功", "门票订单已创建：" + created.getOrderNo());
+        Map<String, Object> content = new HashMap<>();
+        content.put("id", created.getId());
+        content.put("orderNo", created.getOrderNo());
+        return new ReturnVO(1, "添加成功", content);
+    }
 
-        //定义失败的返回对象
-        ReturnVO returnVO = ReturnVO.getNodataFoundReturnVO();
+    @PostMapping("cancel/{id}")
+    public ReturnVO cancel(@PathVariable Integer id){
+        Integer uid = SecurityUtil.currentUserId();
+        ScenicOrdersEntity order = scenicOrdersService.queryById(id);
+        scenicOrdersService.cancel(id, uid, SecurityUtil.isAdmin(), "MANUAL");
+        if (order != null && order.getUserId() != null)
+            messageNotifier.sendOrder(order.getUserId().getId(), "订单已取消", "门票订单已取消，余票已回补");
+        return new ReturnVO(1,"取消成功");
+    }
 
-        // 防重复提交：同一用户 5 秒内只允许提交一次。
-        // 用 RBucket.trySet（SETNX 语义）而不是"先查再插"，并发下不会两个请求都认为自己是第一次。
-        Integer orderUserId = scenicOrders.getUserId() == null ? null : scenicOrders.getUserId().getId();
-        if (orderUserId != null
-                && !lockUtil.trySetOnce(RedisKeys.orderSubmit(orderUserId), Duration.ofSeconds(5))) {
-            returnVO.setMsg("请勿重复提交，请 5 秒后再试");
-            return returnVO;
-        }
-
-        //入库
-        if(!this.scenicOrdersService.insert(scenicOrders)){
-            //入库失败
-            return returnVO;
-        }
-
-        // 下单成功通知（订单号由 insert 生成并回写；景区名查库解析，不依赖前端提交体）
-        if (scenicOrders.getUserId() != null && scenicOrders.getUserId().getId() != null) {
-            this.messageNotifier.sendOrder(scenicOrders.getUserId().getId(), "下单成功",
-                    this.resolveScenicName(scenicOrders) + "门票生成订单 " + scenicOrders.getOrderNo());
-        }
-
-        //入库成功
-        returnVO.setCode(1);
-        returnVO.setMsg("添加成功");
-
-        return returnVO;
+    @PostMapping("pay/{id}")
+    public ReturnVO pay(@PathVariable Integer id){
+        Integer uid = SecurityUtil.currentUserId();
+        scenicOrdersService.pay(id, uid);
+        messageNotifier.sendOrder(uid, "订单支付成功", "门票订单已模拟支付成功");
+        return new ReturnVO(1,"支付成功");
     }
 
     @PostMapping("edit")
-    public ReturnVO edit(@RequestBody ScenicOrdersEntity scenicOrders) {
-
-        //定义失败的返回对象
-        ReturnVO returnVO = ReturnVO.getNodataFoundReturnVO();
-
-        // 越权防护：普通用户不能修改别人的订单
-        if (scenicOrders.getId() != null) {
-            requireSelfOrAdmin(this.scenicOrdersService.queryById(scenicOrders.getId()));
-        }
-
-        // 检测支付状态变化：0(未支付) → 1(已支付) 才通知，避免重复支付/免费单重复打扰用户
-        boolean payChanged = false;
-        if (scenicOrders.getId() != null && scenicOrders.getPayStatus() != null && scenicOrders.getPayStatus() == 1) {
-            ScenicOrdersEntity old = this.scenicOrdersService.queryById(scenicOrders.getId());
-            payChanged = old != null && old.getPayStatus() != null && old.getPayStatus() == 0;
-        }
-
-        //修改
-        if(!this.scenicOrdersService.update(scenicOrders)){
-            //修改失败
-            return returnVO;
-        }
-
-        // 支付成功通知（景区名同样查库解析）
-        if (payChanged && scenicOrders.getUserId() != null && scenicOrders.getUserId().getId() != null) {
-            this.messageNotifier.sendOrder(scenicOrders.getUserId().getId(), "订单支付成功",
-                    "您预订的「" + this.resolveScenicName(scenicOrders)
-                            + "」门票订单已支付成功，凭订单号入园。");
-        }
-
-        //修改成功
-        returnVO.setCode(1);
-        returnVO.setMsg("修改成功");
-
-        return returnVO;
-    }
+    public ReturnVO edit(@RequestBody ScenicOrderEditDTO request) { if(!scenicOrdersService.editContact(request,SecurityUtil.currentUserId())) return new ReturnVO(0,"订单不可编辑"); return new ReturnVO(1,"修改成功"); }
 
     @PostMapping("deleteById/{id}")
     public ReturnVO deleteById(@PathVariable("id") Integer id) {        //定义失败的返回对象

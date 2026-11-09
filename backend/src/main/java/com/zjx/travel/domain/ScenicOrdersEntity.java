@@ -21,6 +21,12 @@ public class ScenicOrdersEntity{
     private Double totalAmount;
     private Integer payType;
     private Integer payStatus;
+    private Integer status;
+    private Date cancelTime;
+    private String cancelReason;
+    private Double unitPrice;
+    private Integer ticketTypeId = 1;
+    private Integer stockReserved;
     @TableField(fill = FieldFill.INSERT)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date createTime;
