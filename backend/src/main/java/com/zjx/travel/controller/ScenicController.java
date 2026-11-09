@@ -134,6 +134,14 @@ public class ScenicController {
         } catch (DateTimeParseException e) { return new ReturnVO("日期格式无效"); }
     }
 
+    /** 首次部署或补录时手动补齐未来 30 天库存；每日 0:05 任务只补缺失记录 */
+    @PostMapping("stock/generate")
+    @SaCheckRole("admin")
+    public ReturnVO generateStock() {
+        scenicStockService.generateNext30Days();
+        return new ReturnVO(1, "库存已补齐");
+    }
+
     @PostMapping("stock/adjust")
     @SaCheckRole("admin")
     public ReturnVO adjustStock(@RequestParam Integer scenicId, @RequestParam String playDate,

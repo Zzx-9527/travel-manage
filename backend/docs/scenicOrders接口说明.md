@@ -48,6 +48,7 @@
 
 - `GET /scenic/stock?scenicId=1&playDate=2026-11-10`：可售余票取场地容量与成人票库存 `remaining` 的较小值；无库存记录为“暂未开放”。读值仅展示，下单时仍可能被其他用户抢完。
 - 管理员 `POST /scenic/stock/adjust?scenicId=1&playDate=2026-11-10&capacity=100&adultStock=100`：安全调整单日总量，不得低于已占用数量；已售余量不被重置。
+- 管理员 `POST /scenic/stock/generate`：手动补齐今天起 30 天的缺失库存，首次部署后调用一次；已有记录不会被重置。
 - 管理员可在景区编辑接口配置 `dayTicketCutoffTime`（`HH:mm` 或 `HH:mm:ss`，默认 17:00）、长期覆盖 `defaultCapacity` 与 `defaultAdultStock`（不配置则均为 100）。定时任务每天补齐今天至 +29 天，仅新增缺失记录，不覆盖旧库存；下架景区不生成新记录。
 
 ## 与旧接口文档相比必须修改的前端行为
