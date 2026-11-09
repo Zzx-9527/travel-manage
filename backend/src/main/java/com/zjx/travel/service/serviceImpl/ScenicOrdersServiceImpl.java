@@ -21,7 +21,7 @@ public class ScenicOrdersServiceImpl implements ScenicOrdersService {
     private static final DateTimeFormatter DATE = DateTimeFormatter.ISO_LOCAL_DATE;
     @Resource private ScenicOrdersMapper mapper;
     @Resource private ScenicStockMapper stockMapper;
-    @Resource private OrderScenicMapper scenicMapper;
+    @Resource private OrderScenicMapper orderScenicMapper;
 
     public ScenicOrdersEntity queryById(Integer id){ return mapper.queryById(id); }
     public Page<ScenicOrdersEntity> queryByPage(ScenicOrdersEntity q,Integer p,Integer s,String c,String d){
@@ -39,7 +39,7 @@ public class ScenicOrdersServiceImpl implements ScenicOrdersService {
         LocalDate date; try { date=LocalDate.parse(r.getPlayDate(),DATE); } catch(Exception e){ throw new OrderBusinessException("游玩日期格式无效"); }
         LocalDate today=LocalDate.now(ZoneId.of("Asia/Shanghai"));
         if (!TicketSaleWindow.isSellableDate(date, today)) throw new OrderBusinessException("游玩日期不可售");
-        ScenicEntity scenic=scenicMapper.findForOrder(r.getScenicId().getId()); if (scenic == null || !Integer.valueOf(1).equals(scenic.getStatus())) throw new OrderBusinessException("景区不可售");
+        ScenicEntity scenic=orderScenicMapper.findForOrder(r.getScenicId().getId()); if (scenic == null || !Integer.valueOf(1).equals(scenic.getStatus())) throw new OrderBusinessException("景区不可售");
         if (scenic.getPrice() == null || scenic.getPrice() < 0) throw new OrderBusinessException("景区票价无效");
         if (TicketSaleWindow.isClosedForToday(date, today, LocalTime.now(ZoneId.of("Asia/Shanghai")), scenic.getDayTicketCutoffTime()))
             throw new OrderBusinessException("今日已停止售票");

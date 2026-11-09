@@ -100,12 +100,14 @@
 ### 实施进度（2026-11-10）
 
 - 已完成：库存/容量实体与 Mapper、事务下单、手动与超时取消、模拟支付、30 天滚动生成、管理员单日调整、景区停售时间与默认值、余票查询、业务异常统一映射、订单编辑/删除收口。
-- 已编译：`mvn test-compile`（JDK 1.8.0_201）通过。
-- 已写测试：[TicketStockIntegrationTest](../src/test/java/com/zjx/travel/service/TicketStockIntegrationTest.java) 覆盖 20 并发抢 10、取消幂等、支付后不可取消、INSERT 失败回滚、调整总量保持已售；默认跳过，需要 `TRAVEL_TEST_DB_URL` 指向 `travel_management_test`。
+- 已生成开发库库存：10 个在售景区 × 30 天 = 300 条容量 + 300 条成人票库存，日期 2026-11-10 ~ 2026-12-09，均为 100/100。
+- 已跑通开发库验收（2026-11-10）：`TRAVEL_ALLOW_DEV_DB=true mvn -Dtest=TicketStockIntegrationTest test`，5 项全部通过（20 并发抢 10、取消幂等、支付后不可取消、INSERT 失败回滚、调整总量保持已售）；结束后订单恢复为 37 条、库存恢复为 300/300。
+- 验收中发现并修复启动级问题：`ScenicOrdersServiceImpl` 的 `@Resource OrderScenicMapper scenicMapper` 与容器中同名 `ScenicMapper` 冲突，导致 ApplicationContext 创建失败；已改名为 `orderScenicMapper`。
+- 已写测试：[TicketStockIntegrationTest](../src/test/java/com/zjx/travel/service/TicketStockIntegrationTest.java) 覆盖上述场景，默认跳过，需 `TRAVEL_ALLOW_DEV_DB=true`。
 - 纯单元测试已通过：[TicketSaleWindowTest](../src/test/java/com/zjx/travel/util/TicketSaleWindowTest.java) 4 项（过去/当天/+29/+30 边界、17:00 截止、未来日期不受截止影响、非法截止时间），不启动 Spring、不连库。
 - 已修复：MySQL 单表 UPDATE 从左到右赋值导致“调高总量后剩余量不跟着变”的问题；已用事务内临时数据验证（15/14）后回滚，开发库无残留。
-- 前端已适配：下单不再提交金额/支付状态，支付改 `/scenicOrders/pay/{id}`、取消改 `/scenicOrders/cancel/{id}`，订单页按 `status` 展示，`npm run build` 通过。
-- 待完成：在隔离测试库执行集成测试并记录结果；启动应用后由管理员调用一次 `POST /scenic/stock/generate` 补齐首日库存；真实回归旧列表/详情/消息接口。
+- 前端已适配：下单不再提交金额/支付状态，支付改 `/scenicOrders/pay/{id}`、取消改 `/scenicOrders/cancel/{id}`，订单页按 `status` 展示，购票弹窗显示余票，景区编辑可配置停售时间与默认库存；`npm run build` 通过。
+- 待完成：启动应用做一次真实 HTTP 冒烟（登录/下单/支付/取消）；观察定时超时任务在真实数据上的表现；旧订单列表/详情/消息接口回归。
 
 ## 变更记录
 
@@ -116,3 +118,4 @@
 | 2026-11-09 | v1.2 | 用户已执行迁移；只读验证历史订单状态、库存表和新字段，开始后端实现。 |
 | 2026-11-10 | v1.3 | 后端实现完成并编译通过；新增隔离集成测试但尚未执行；文档已同步，前端待适配。 |
 | 2026-11-10 | v1.4 | 前端支付/取消与订单状态适配完成；新增管理员手动补齐库存接口，首次部署可立即生成 30 天库存。 |
+| 2026-11-10 | v1.5 | 开发库生成 30 天库存；完成 20 并发等 5 项集成验收；修复 `@Resource` 同名注入导致的启动失败。 |

@@ -187,22 +187,6 @@ com.zjx.travel
 > 订单的列表/详情/支付/取消/编辑/删除均做归属校验，越权返回 403；下单同一用户 5 秒防重复提交。
 > 仅可购买含当天 30 个自然日内、且已生成库存的日期；当天到景区截止时间（默认 17:00）后停售；未支付满 30 分钟自动取消并回补。
 
-### 测试
-
-常规测试需要本地 Redis；`mvn test` 中的库存集成测试默认跳过，不会写开发库。要真实验证并发与事务，先准备独立库并执行迁移：
-
-```sql
-CREATE DATABASE travel_management_test DEFAULT CHARSET utf8mb4;
-```
-
-```powershell
-# 在 travel_management_test 上执行 docs/sql/2026-11-09_ticket_stock_migration.sql，并准备基础数据
-$env:TRAVEL_TEST_DB_URL='jdbc:mysql://localhost:3306/travel_management_test?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai'
-mvn -Dtest=TicketStockIntegrationTest test
-```
-
-测试只删除自己创建的订单和当日库存行；不要把它指向 `travel_management`。
-
 
 ### 收藏模块
 
@@ -231,6 +215,20 @@ mvn -Dtest=TicketStockIntegrationTest test
 | 接口 | 方法 | 说明 |
 |------|------|------|
 | `/dashboard/stats` | GET | 后台首页统计（管理员） |
+
+---
+
+## 测试
+
+- 常规 `mvn test` 需要本地 MySQL / Redis；库存集成测试默认跳过，不会写库。
+- 需要做并发/事务验收时，显式设置 `TRAVEL_ALLOW_DEV_DB=true`，它使用 `application.yml` 配置的数据源：
+
+```powershell
+$env:TRAVEL_ALLOW_DEV_DB='true'
+mvn -Dtest=TicketStockIntegrationTest test
+```
+
+该测试临时把 1 个在售景区、今天+14 天的库存改成 10 张，覆盖 20 并发抢 10、取消回补幂等、支付后不可取消、订单插入失败回滚、调整总量保持已售；结束时删除自己创建的订单并恢复原库存行。**不要指向多人共用的生产库**；如需隔离，先把 `spring.datasource.url` 覆盖到专用库。
 
 ---
 
