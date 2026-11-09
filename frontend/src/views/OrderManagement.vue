@@ -15,11 +15,12 @@
           <i class="fa fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-sm" style="color: #94A3B8; z-index: 1;"></i>
           <el-input v-model="searchKeyword" placeholder="输入用户昵称或景点名称..." clearable :prefix-icon="null" style="width: 100%;" @keyup.enter="handleSearch" />
         </div>
-        <el-select v-model="filterPayStatus" placeholder="全部状态" clearable style="width: 160px;" @change="handleSearch">
+        <el-select v-model="filterStatus" placeholder="全部状态" clearable style="width: 160px;" @change="handleSearch">
           <el-option label="全部状态" value="" />
-          <el-option label="未支付" :value="0" />
+          <el-option label="待支付" :value="0" />
           <el-option label="已支付" :value="1" />
-          <el-option label="免费" :value="2" />
+          <el-option label="已取消" :value="2" />
+          <el-option label="已完成" :value="3" />
         </el-select>
         <el-button @click="handleSearch" style="border-radius: 8px;"><i class="fa fa-search mr-1.5"></i>搜索</el-button>
         <el-button @click="resetSearch" style="border-radius: 8px;"><i class="fa fa-refresh mr-1.5"></i>重置</el-button>
@@ -51,7 +52,7 @@
           <i class="fa fa-clock-o text-orange-500 text-xl"></i>
         </div>
         <div>
-          <p class="text-xs text-gray-500 uppercase tracking-wider">未支付</p>
+          <p class="text-xs text-gray-500 uppercase tracking-wider">待支付</p>
           <p class="text-2xl font-bold text-gray-800">{{ unpaidCount }}</p>
         </div>
       </div>
@@ -104,25 +105,25 @@
         <el-table-column label="支付时间" width="170" align="center">
           <template #default="{ row }"><span style="color: #64748B;">{{ formatTime(row.payTime) }}</span></template>
         </el-table-column>
-        <el-table-column label="支付状态" width="100" align="center">
+        <el-table-column label="订单状态" width="120" align="center">
           <template #default="{ row }">
             <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium"
-              :style="payStatusStyle(row)"
+              :style="orderStatusStyle(row)"
             >
-              <i :class="payStatusIcon(row)"></i>
-              {{ payStatusText(row) }}
+              <i :class="orderStatusIcon(row)"></i>
+              {{ orderStatusText(row) }}
             </span>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="100" fixed="right" align="center">
           <template #default="{ row }">
             <div class="flex items-center justify-center gap-2" @click.stop>
-              <el-tooltip content="修改状态" placement="top" :show-after="300">
-                <button @click="openEditDialog(row)" class="action-btn edit-btn" title="修改状态">
-                  <i class="fa fa-pencil-square-o"></i>
+              <el-tooltip v-if="Number(row.status) === 0" content="取消订单" placement="top" :show-after="300">
+                <button @click="handleCancel(row)" class="action-btn edit-btn" title="取消订单">
+                  <i class="fa fa-ban"></i>
                 </button>
               </el-tooltip>
-              <el-tooltip content="删除" placement="top" :show-after="300">
+              <el-tooltip v-else content="删除" placement="top" :show-after="300">
                 <button @click="handleDelete(row)" class="action-btn delete-btn" title="删除">
                   <i class="fa fa-trash-o"></i>
                 </button>
@@ -145,53 +146,6 @@
         />
       </div>
     </div>
-
-    <!-- 编辑对话框（修改支付状态） -->
-    <el-dialog v-model="editVisible" title="修改支付状态" :width="480" :close-on-click-modal="false" top="15vh">
-      <div v-if="editRow">
-        <div class="flex gap-4 mb-5 p-4 rounded-xl" style="background: #F8FAFC;">
-          <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-lg font-bold flex-shrink-0">
-            <i class="fa fa-ticket"></i>
-          </div>
-          <div class="flex-1 min-w-0">
-            <p class="text-xs text-gray-400 mb-1">订单编号</p>
-            <p class="font-mono font-semibold text-gray-800 text-sm">{{ editRow.orderNo }}</p>
-            <p class="text-xs text-gray-400 mt-1.5">景点：{{ editRow.scenicId?.name || '--' }}</p>
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-4 mb-4">
-          <div class="rounded-lg p-3" style="background: #F8FAFC;">
-            <p class="text-xs text-gray-400 mb-1">联系人</p>
-            <p class="text-gray-800 font-medium text-sm">{{ editRow.contactName || '--' }}</p>
-          </div>
-          <div class="rounded-lg p-3" style="background: #F8FAFC;">
-            <p class="text-xs text-gray-400 mb-1">总金额</p>
-            <p class="text-gray-800 font-semibold text-sm">¥{{ (editRow.totalAmount ?? 0).toFixed(2) }}</p>
-          </div>
-        </div>
-        <el-form label-width="0">
-          <el-form-item>
-            <el-select v-model="editPayStatusValue" style="width: 100%;" size="large" :disabled="editRow.payStatus === 2">
-              <el-option :value="1"><span><i class="fa fa-check-circle text-emerald-500 mr-2"></i>已支付</span></el-option>
-              <el-option :value="0"><span><i class="fa fa-clock-o text-amber-500 mr-2"></i>未支付</span></el-option>
-            </el-select>
-          </el-form-item>
-        </el-form>
-        <div v-if="editRow.payStatus === 2" class="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-          <i class="fa fa-info-circle text-amber-500 mt-0.5 flex-shrink-0"></i>
-          <p class="text-xs text-amber-700">免费订单不可修改支付状态。</p>
-        </div>
-      </div>
-      <template #footer>
-        <div class="flex justify-end gap-3">
-          <el-button @click="editVisible = false" style="border-radius: 8px;">取 消</el-button>
-          <el-button type="primary" @click="handleEdit" :loading="editSubmitting"
-            style="border-radius: 8px; background: linear-gradient(135deg, #3B82F6, #2563EB); border: none;">
-            <i class="fa fa-check mr-1"></i>确认修改
-          </el-button>
-        </div>
-      </template>
-    </el-dialog>
 
     <!-- 详情对话框 -->
     <el-dialog v-model="detailVisible" title="订单详情" :width="640" top="5vh" destroy-on-close>
@@ -250,11 +204,15 @@
             <p class="text-gray-700 text-sm">{{ payTypeText(detailData.payType) }}</p>
           </div>
           <div class="rounded-lg p-3" style="background: #F8FAFC;">
-            <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">支付状态</p>
+            <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">订单状态</p>
             <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium mt-1"
-              :style="payStatusStyle(detailData)">
-              <i :class="payStatusIcon(detailData)"></i>{{ payStatusText(detailData) }}
+              :style="orderStatusStyle(detailData)">
+              <i :class="orderStatusIcon(detailData)"></i>{{ orderStatusText(detailData) }}
             </span>
+          </div>
+          <div v-if="detailData.cancelTime" class="rounded-lg p-3" style="background: #F8FAFC;">
+            <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">取消时间</p>
+            <p class="text-gray-600 text-sm">{{ formatTime(detailData.cancelTime) }}</p>
           </div>
           <div class="rounded-lg p-3" style="background: #F8FAFC;">
             <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">创建时间</p>
@@ -273,10 +231,11 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getOrdersByPage, editOrder, deleteOrder } from '@/api/order'
+import { getOrdersByPage, cancelOrder, deleteOrder } from '@/api/order'
+import { orderStatusText, orderStatusIcon, orderStatusStyle } from '@/utils/format'
 
 const searchKeyword = ref('')
-const filterPayStatus = ref('')
+const filterStatus = ref('')
 
 // 后端不支持按用户昵称/景点名称模糊搜索，这里拉全量后前端过滤 + 本地分页
 const allRows = ref([])
@@ -307,33 +266,17 @@ function formatTime(dt) {
   return dt ? String(dt).replace(/\.0$/, '').replace('T', ' ') : '--'
 }
 
-function payStatusText(row) {
-  if (row.payStatus === 2) return '免费'
-  return row.payStatus === 1 ? '已支付' : '未支付'
-}
-function payStatusIcon(row) {
-  if (row.payStatus === 2) return 'fa fa-gift'
-  return row.payStatus === 1 ? 'fa fa-check-circle' : 'fa fa-clock-o'
-}
-function payStatusStyle(row) {
-  if (row.payStatus === 2) return { background: '#F0FDF4', color: '#16A34A', border: '1px solid #BBF7D0' }
-  if (row.payStatus === 1) return { background: '#F0FDF4', color: '#16A34A', border: '1px solid #BBF7D0' }
-  return { background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA' }
-}
-
 function payTypeText(v) {
   const map = { 1: '微信', 2: '支付宝', 3: '现金' }
   return map[v] || '未知'
 }
 
-// 前端过滤：匹配用户昵称或景点名称 + 支付状态
+// 前端过滤：匹配用户昵称或景点名称 + 订单状态
 const filteredList = computed(() => {
   const kw = searchKeyword.value.trim().toLowerCase()
-  const st = filterPayStatus.value
+  const st = filterStatus.value === '' ? '' : Number(filterStatus.value)
   return allRows.value.filter(o => {
-    if (st === 0 || st === 1 || st === 2) {
-      if (Number(o.payStatus) !== st) return false
-    }
+    if (st !== '' && Number(o.status) !== st) return false
     if (!kw) return true
     const nick = o.userId?.nickname || ''
     const scenic = o.scenicId?.name || ''
@@ -342,8 +285,8 @@ const filteredList = computed(() => {
 })
 
 // 统计（基于当前筛选结果）
-const paidCount = computed(() => filteredList.value.filter(o => o.payStatus === 1).length)
-const unpaidCount = computed(() => filteredList.value.filter(o => o.payStatus === 0).length)
+const paidCount = computed(() => filteredList.value.filter(o => Number(o.status) === 1).length)
+const unpaidCount = computed(() => filteredList.value.filter(o => Number(o.status) === 0).length)
 
 // 本地分页
 const totalElements = computed(() => filteredList.value.length)
@@ -358,55 +301,31 @@ watch(totalPages, tp => { if (currentPage.value > tp) currentPage.value = tp })
 
 // ---- 查询 ----
 function handleSearch() { currentPage.value = 1 }
-function resetSearch() { searchKeyword.value = ''; filterPayStatus.value = ''; currentPage.value = 1 }
+function resetSearch() { searchKeyword.value = ''; filterStatus.value = ''; currentPage.value = 1 }
 function handleSizeChange() { currentPage.value = 1 }
 
-// ---- 编辑 ----
-const editVisible = ref(false)
-const editSubmitting = ref(false)
-const editRow = ref(null)
-const editPayStatusValue = ref(1)
-
-function openEditDialog(row) {
-  if (row.payStatus === 2) {
-    ElMessage.warning('免费订单无需修改支付状态')
-    return
-  }
-  editRow.value = row
-  editPayStatusValue.value = row.payStatus === 1 ? 1 : 0
-  editVisible.value = true
-}
-
-async function handleEdit() {
-  if (!editRow.value) return
-  editSubmitting.value = true
+// ---- 取消（待支付）----
+async function handleCancel(row) {
   try {
-    const r = editRow.value
-    const payload = {
-      id: r.id,
-      orderNo: r.orderNo,
-      userId: r.userId ? { id: r.userId.id } : null,
-      scenicId: r.scenicId ? { id: r.scenicId.id } : null,
-      contactName: r.contactName,
-      contactPhone: r.contactPhone,
-      playDate: r.playDate,
-      ticketCount: r.ticketCount,
-      totalAmount: r.totalAmount,
-      payType: r.payType,
-      payStatus: editPayStatusValue.value
-    }
-    const res = await editOrder(payload)
+    await ElMessageBox.confirm(
+      `确定要取消订单「${row.orderNo}」吗？取消后余票会回补，订单记录保留。`,
+      '取消确认',
+      { confirmButtonText: '确定取消', cancelButtonText: '再想想', type: 'warning', icon: undefined }
+    )
+    const res = await cancelOrder(row.id)
     if (res.code === 1) {
-      ElMessage.success('支付状态已更新')
-      editVisible.value = false
+      ElMessage.success('订单已取消，余票已回补')
       loadAll()
     }
-  } catch (err) { console.error(err)
-  } finally { editSubmitting.value = false }
+  } catch (err) { if (err !== 'cancel') console.error(err) }
 }
 
-// ---- 删除 ----
+// ---- 删除（待支付不可删）----
 async function handleDelete(row) {
+  if (Number(row.status) === 0) {
+    ElMessage.warning('待支付订单请先取消，不能直接删除')
+    return
+  }
   try {
     await ElMessageBox.confirm(
       `确定要删除订单「${row.orderNo}」吗？此操作不可撤销。`,

@@ -303,12 +303,13 @@ async function loadCharts() {
     renderPie(categoryChartRef, 'category', '景点分类分布',
       Object.entries(spotCount).filter(([, n]) => n > 0).map(([name, value]) => ({ name, value })))
 
-    // ② 订单状态分布：scenicOrders 按 payStatus 分组
+    // ② 订单状态分布：scenicOrders 按订单状态 status 分组
     const orders = await fetchAll(getOrdersByPage)
-    const statusMap = { 0: '未支付', 1: '已支付', 2: '免费' }
+    const statusMap = { 0: '待支付', 1: '已支付', 2: '已取消', 3: '已完成' }
     const orderCount = {}
     orders.forEach(o => {
-      const name = statusMap[o.payStatus] ?? `其他(${o.payStatus})`
+      const s = Number(o.status)
+      const name = statusMap[s] ?? `其他(${o.status})`
       orderCount[name] = (orderCount[name] || 0) + 1
     })
     renderPie(orderChartRef, 'order', '订单状态分布',
