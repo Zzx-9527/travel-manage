@@ -55,7 +55,19 @@ public class ScenicOrdersServiceImpl implements ScenicOrdersService {
     }
     private TravelUserEntity user(Integer id){TravelUserEntity u=new TravelUserEntity();u.setId(id);return u;} private ScenicEntity ref(Integer id){ScenicEntity s=new ScenicEntity();s.setId(id);return s;}
     @Transactional(rollbackFor=Exception.class)
-    public void cancel(Integer id,Integer uid,boolean admin,String reason){ ScenicOrdersEntity o=mapper.queryById(id); if(o==null) throw new OrderBusinessException("订单不存在"); if(!admin&&!uid.equals(o.getUserId().getId())) throw new NotPermissionException("order:access:other"); if(mapper.transitionToCancelled(id,reason)!=1) throw new OrderBusinessException("订单已处理"); if(o.getStockReserved()!=null&&o.getStockReserved()==1){ if(stockMapper.incrementCapacity(o.getScenicId().getId(),LocalDate.parse(o.getPlayDate()),o.getTicketCount())!=1||stockMapper.incrementStock(o.getScenicId().getId(),LocalDate.parse(o.getPlayDate()),o.getTicketTypeId(),o.getTicketCount())!=1) throw new OrderBusinessException("库存回补失败"); }}
+    public void cancel(Integer id,Integer uid,boolean admin,String reason){
+        ScenicOrdersEntity o=mapper.queryById(id);
+        if(o==null) throw new OrderBusinessException("订单不存在");
+        if(!admin&&!uid.equals(o.getUserId().getId())) throw new NotPermissionException("order:access:other");
+        if(Integer.valueOf(1).equals(o.getStatus())) throw new OrderBusinessException("已支付订单不可取消");
+        if(Integer.valueOf(3).equals(o.getStatus())) throw new OrderBusinessException("已完成订单不可取消");
+        if(mapper.transitionToCancelled(id,reason)!=1) throw new OrderBusinessException("订单已取消或状态已变更");
+        if(o.getStockReserved()!=null&&o.getStockReserved()==1){
+            if(stockMapper.incrementCapacity(o.getScenicId().getId(),LocalDate.parse(o.getPlayDate()),o.getTicketCount())!=1
+                    ||stockMapper.incrementStock(o.getScenicId().getId(),LocalDate.parse(o.getPlayDate()),o.getTicketTypeId(),o.getTicketCount())!=1)
+                throw new OrderBusinessException("库存回补失败");
+        }
+    }
     @Transactional(rollbackFor=Exception.class)
     public void timeoutCancel(ScenicOrdersEntity candidate){
         ScenicOrdersEntity o = mapper.queryById(candidate.getId());
