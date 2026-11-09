@@ -5,6 +5,7 @@ import com.zjx.travel.dto.*;
 import com.zjx.travel.exception.OrderBusinessException;
 import com.zjx.travel.mapper.*;
 import com.zjx.travel.service.ScenicOrdersService;
+import com.zjx.travel.util.TicketSaleWindow;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,10 +37,12 @@ public class ScenicOrdersServiceImpl implements ScenicOrdersService {
                 || r.getContactPhone().trim().isEmpty() || r.getContactPhone().length() > 20)
             throw new OrderBusinessException("下单参数无效");
         LocalDate date; try { date=LocalDate.parse(r.getPlayDate(),DATE); } catch(Exception e){ throw new OrderBusinessException("游玩日期格式无效"); }
-        LocalDate today=LocalDate.now(ZoneId.of("Asia/Shanghai")); if(date.isBefore(today)||date.isAfter(today.plusDays(29))) throw new OrderBusinessException("游玩日期不可售");
+        LocalDate today=LocalDate.now(ZoneId.of("Asia/Shanghai"));
+        if (!TicketSaleWindow.isSellableDate(date, today)) throw new OrderBusinessException("游玩日期不可售");
         ScenicEntity scenic=scenicMapper.findForOrder(r.getScenicId().getId()); if (scenic == null || !Integer.valueOf(1).equals(scenic.getStatus())) throw new OrderBusinessException("景区不可售");
         if (scenic.getPrice() == null || scenic.getPrice() < 0) throw new OrderBusinessException("景区票价无效");
-        if(date.equals(today)&&scenic.getDayTicketCutoffTime()!=null&&LocalTime.now(ZoneId.of("Asia/Shanghai")).compareTo(LocalTime.parse(scenic.getDayTicketCutoffTime()))>=0) throw new OrderBusinessException("今日已停止售票");
+        if (TicketSaleWindow.isClosedForToday(date, today, LocalTime.now(ZoneId.of("Asia/Shanghai")), scenic.getDayTicketCutoffTime()))
+            throw new OrderBusinessException("今日已停止售票");
         BigDecimal unit=BigDecimal.valueOf(scenic.getPrice()).setScale(2,BigDecimal.ROUND_HALF_UP); int n=r.getTicketCount();
         if (stockMapper.queryCapacity(r.getScenicId().getId(), date) == null
                 || stockMapper.queryStock(r.getScenicId().getId(), date, 1) == null)
