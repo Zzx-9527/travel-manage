@@ -127,13 +127,18 @@ const stockText = computed(() => {
   return stockHint.value || '该日期暂未开放'
 })
 
+// 日期连续切换时只采用最后一次查询结果，避免旧响应覆盖新日期
+let stockSeq = 0
+
 async function fetchStock() {
+  const seq = ++stockSeq
   stock.value = null
   stockHint.value = ''
   if (!form.playDate || !props.spot?.id) return
   stockLoading.value = true
   try {
     const res = await getStock(props.spot.id, form.playDate)
+    if (seq !== stockSeq) return
     if (res.code === 1 && res.content) {
       stock.value = Number(res.content.remaining ?? 0)
       if (stock.value > 0 && form.ticketCount > stock.value) form.ticketCount = stock.value
@@ -141,9 +146,9 @@ async function fetchStock() {
       stockHint.value = res.msg || '该日期暂未开放'
     }
   } catch (err) {
-    stockHint.value = '余票查询失败，可稍后重试'
+    if (seq === stockSeq) stockHint.value = '余票查询失败，可稍后重试'
   } finally {
-    stockLoading.value = false
+    if (seq === stockSeq) stockLoading.value = false
   }
 }
 
