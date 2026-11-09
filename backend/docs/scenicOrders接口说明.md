@@ -1,191 +1,57 @@
-# 订单模块接口说明（scenicOrders）
+# 门票订单接口说明（scenicOrders）
 
-> 适用前端：AI 前端开发请严格按照本文档字段名与取值实现。
+> 版本：v2.0；最后更新：2026-11-09。数据库迁移已完成，**后端库存版功能正在实现/验收**；新接口只在部署新版后端后生效，前端需同步替换旧的编辑支付、删除取消逻辑。具体实施状态见 [库存规划](plan-ticket-stock.md)。
 
-## 本次重要变更
+## 通用约定
 
-- **订单号 `orderNo` 改为后端自动生成**（需重启后端服务后生效），规则：`ORDER` + 年月日时分秒毫秒 + 3位随机数，例如 `ORDER20260906143102588123`。
-- 新增订单时**前端不要传 `orderNo`**，传了也会被后端覆盖；数据库 `order_no` 为唯一索引。
-- `createTime` 由后端自动填充，前端不传；`payTime` 初始为 null，支付完成后通过修改接口更新。
+- Base URL：`http://localhost:8081/travel`；除登录/注册白名单外需 `Authorization: Bearer <token>`。
+- 返回仍为 `ReturnVO {"code":1,"msg":"...","content":...}`。业务失败 HTTP 200 + `code=0`；未登录 HTTP 401，越权 HTTP 403。
+- 订单 `status`：0 待支付、1 已支付、2 已取消、3 已完成（完成入口本期不开放）。`payStatus` 是兼容旧数据的字段：0 未支付、1 已支付、**2 仅代表历史退款**，不是“免费订单”或新的取消状态。请以 `status` 为 UI 主状态。
+- `cancelReason`：`MANUAL` 手动、`TIMEOUT` 超时、`LEGACY_UNPAID` 历史未支付取消、`LEGACY_REFUNDED` 历史退款；`cancelTime` 记录取消时间。`unitPrice` 是订单单价快照；历史订单可能为 null（不能用当前景区价冒充历史价）。
+- 仅允许购买 **Asia/Shanghai 当天到当天 +29 天**共 30 个自然日；当天到景区 `dayTicketCutoffTime`（默认 17:00）即停止售票；只能购买系统已生成库存的日期。下单时占用库存，未支付满 30 分钟自动取消并回补；已取消订单保留可见，不自动逻辑删除。
 
-## 公共信息
-
-- **Base URL**：`http://<host>:8081/travel/scenicOrders`（端口 8081，服务 context-path 为 `/travel`）
-- **统一返回结构（ReturnVO）**：
-
-```json
-{
-  "code": 1,          // 1=成功，0=失败
-  "msg": "提示消息",
-  "content": null     // 数据；按接口而定
-}
-```
-
-- 时间字段格式：`createTime`/`payTime` 为 `yyyy-MM-dd HH:mm:ss`，`playDate` 为日期 `yyyy-MM-dd`。
-- 订单对象内嵌 `userId`（下单用户对象）和 `scenicId`（景点对象，内含 `categoryId` 分类对象）。
-
----
-
-## 1. 新增订单
-
-- **Method / URL**：`POST /travel/scenicOrders/add`
-- **请求体**（JSON，必填字段如下）：
+## 1. 下单 `POST /scenicOrders/add`
 
 ```json
 {
-  "userId": { "id": 1 },
-  "scenicId": { "id": 1 },
+  "scenicId": {"id": 1},
+  "playDate": "2026-11-10",
+  "ticketCount": 2,
   "contactName": "张三",
   "contactPhone": "13800138000",
-  "playDate": "2026-09-10",
-  "ticketCount": 2,
-  "totalAmount": 380.0,
-  "payStatus": 0,
   "payType": 1
 }
 ```
 
-- **参数说明**：
+必填景区、合法日期、正数票数、联系人姓名/电话；当前仅成人票 `ticketTypeId=1`。无需且不得依赖客户端提供的 `userId`、`totalAmount`、`unitPrice`、`payStatus`、`status`、`orderNo`：身份取 token，价格取景区当前价，金额服务端计算；新单状态均为 0，支付时间为 null。成功返回 `content: {"id": 123, "orderNo": "ORDER..."}`；库存不存在提示“暂未开放”，余票不足提示“已售罄/库存不足”，均不生成订单。每用户 5 秒防重复提交，防超卖由 MySQL 条件扣减与事务保证，不依赖 Redis 防重。
 
-| 字段 | 必填 | 说明 |
-| --- | --- | --- |
-| `userId.id` | 是 | 下单用户ID |
-| `scenicId.id` | 是 | 景点ID |
-| `contactName` | 是 | 联系人姓名，最长 20 字 |
-| `contactPhone` | 是 | 联系电话，最长 20 字 |
-| `playDate` | 是 | 游玩日期，`yyyy-MM-dd` |
-| `ticketCount` | 是 | 票数，正整数 |
-| `totalAmount` | 是 | 订单总金额，保留 2 位小数；后端**不校验**是否等于 单价×票数，由前端计算后传入 |
-| `payStatus` | 是 | 支付状态编码，新增订单传 `0`（待支付）；现有数据取值 0/1/2，常见约定 0=待支付、1=已支付、2=已退款 |
-| `payType` | 否 | 支付方式编码，现有数据取值 1/2 |
-| `orderNo` | 传了无效 | 后端自动生成并覆盖 |
-| `createTime` / `payTime` | 传了无效 | 后端处理 |
+## 2. 取消 `POST /scenicOrders/cancel/{id}`
 
-- **响应**：成功 `{"code":1,"msg":"添加成功"}`；失败（如必填字段缺失）`{"code":0,"msg":"没有找到数据！"}`。
+本人或管理员可取消**待支付**订单；订单状态原子改为 `status=2`，库存仅回补一次，历史订单仍可在订单列表查看。已支付、已取消等不可再次取消；跨用户返回 HTTP 403。历史订单在迁移前未占用新库存，不因历史取消而回补。
 
----
+## 3. 模拟支付 `POST /scenicOrders/pay/{id}`
 
-## 2. 修改订单
+仅订单本人；订单仍处于待支付、创建未满 30 分钟才可支付（不接真实网关）。成功后 `status=1`、`payStatus=1`、`payTime` 有值；不扣减第二次库存。已到期时即使超时任务尚未来得及执行也不能支付。**不要通过 `/scenicOrders/edit` 修改 `payStatus` 或 `payTime`**。
 
-- **Method / URL**：`POST /travel/scenicOrders/edit`
-- **请求体**（JSON，`id` 必传，仅传需要修改的字段，未传的字段不会被更新）：
+## 4. 查询列表和详情
 
-```json
-{
-  "id": 1,
-  "payStatus": 1,
-  "payTime": "2026-09-06 14:40:00"
-}
-```
+- `GET /scenicOrders/queryByPage?page=1&size=10`：普通用户仅看本人订单；管理员可查全部。`content.content` 是订单列表；可按 `status`、`orderNo`、`playDate` 等字段筛选（以实际接口映射为准）。
+- `GET /scenicOrders/queryById/{id}`：查询单条订单；非本人/非管理员返回 HTTP 403。订单对象保留 `userId`、`scenicId` 关联结构，同时新增 `status`、`cancelTime`、`cancelReason`、`unitPrice`、`ticketTypeId`。
+- 自动取消原因是 `TIMEOUT` 时展示“已超时取消”；历史 `LEGACY_REFUNDED` 展示“历史退款（已取消）”。订单软删标记为 0 的迁移前旧记录仍维持原先不可见状态。
 
-- **典型场景**：支付成功 → 传 `payStatus: 1` 和 `payTime`；申请退款 → 传 `payStatus: 2`。
-- **响应**：成功 `{"code":1,"msg":"修改成功"}`；失败 `{"code":0,"msg":"没有找到数据！"}`。
+## 5. 编辑与删除边界
 
----
+- `POST /scenicOrders/edit`：仅能修改本人**待支付**订单的联系人信息，例如 `{"id":123,"contactName":"李四","contactPhone":"13800138000"}`。不可修改用户、景区、日期、数量、金额、订单号、支付或业务状态；多余字段不会成为修改权限。
+- `POST /scenicOrders/deleteById/{id}`：待支付订单不能直接删除，应调用取消接口；取消历史需保留以供用户查询。删除不能被用作库存回补或逃避支付状态约束的入口。
 
-## 3. 按ID查询单条订单
+## 6. 库存查询与后台配置
 
-- **Method / URL**：`GET /travel/scenicOrders/queryById/{id}`
-- **示例**：`GET /travel/scenicOrders/queryById/1`
-- **响应**：`content` 为单条订单对象，字段与第 4 节列表项一致；无数据 `{"code":0,"msg":"没有找到数据！"}`。
+- `GET /scenic/stock?scenicId=1&playDate=2026-11-10`：可售余票取场地容量与成人票库存 `remaining` 的较小值；无库存记录为“暂未开放”。读值仅展示，下单时仍可能被其他用户抢完。
+- 管理员 `POST /scenic/stock/adjust?scenicId=1&playDate=2026-11-10&capacity=100&adultStock=100`：安全调整单日总量，不得低于已占用数量；已售余量不被重置。
+- 管理员可在景区编辑接口配置 `dayTicketCutoffTime`（`HH:mm` 或 `HH:mm:ss`，默认 17:00）、长期覆盖 `defaultCapacity` 与 `defaultAdultStock`（不配置则均为 100）。定时任务每天补齐今天至 +29 天，仅新增缺失记录，不覆盖旧库存；下架景区不生成新记录。
 
----
+## 与旧接口文档相比必须修改的前端行为
 
-## 4. 分页查询订单列表
-
-- **Method / URL**：`GET /travel/scenicOrders/queryByPage`
-- **Query 参数**：
-
-| 参数 | 说明 |
-| --- | --- |
-| `page` | 页码，从 1 开始，默认 1 |
-| `size` | 每页条数，默认 10 |
-| `orderCol` | 排序字段，如 `createTime`、`id`、`totalAmount` |
-| `orderDirect` | `ASC` / `DESC` |
-| `orderNo` | 按订单号**模糊**过滤 |
-| `contactName` | 按联系人**模糊**过滤 |
-| `contactPhone` | 按电话**模糊**过滤 |
-| `playDate` | 按游玩日期**模糊**过滤（如 `2026-09`） |
-| `ticketCount` | 精确匹配 |
-| `totalAmount` | 精确匹配 |
-| `payType` / `payStatus` | 精确匹配 |
-| `id` | 按订单ID精确匹配 |
-
-- **示例**：`GET /travel/scenicOrders/queryByPage?page=1&size=10&orderCol=createTime&orderDirect=DESC&payStatus=0`
-- **响应**（`content` 为 Spring Data 分页对象，关键字段）：
-
-```json
-{
-  "code": 1,
-  "msg": "找到数据！",
-  "content": {
-    "content": [
-      {
-        "id": 1,
-        "orderNo": "ORDER2025001",
-        "userId": {
-          "id": 1,
-          "account": "user001",
-          "nickname": "张三",
-          "avatar": "https://..."
-        },
-        "scenicId": {
-          "id": 1,
-          "name": "黄山风景区",
-          "cover": "https://...",
-          "price": 190.0,
-          "openTime": "06:00-18:00",
-          "address": "安徽省黄山市黄山区汤口镇",
-          "categoryId": { "id": 1, "name": "自然景观" }
-        },
-        "contactName": "张三",
-        "contactPhone": "13800138000",
-        "playDate": "2026-09-10",
-        "ticketCount": 2,
-        "totalAmount": 380.0,
-        "payType": 1,
-        "payStatus": 0,
-        "createTime": "2026-09-06 14:31:02",
-        "payTime": null
-      }
-    ],
-    "totalElements": 20,
-    "totalPages": 2,
-    "number": 0,
-    "size": 10,
-    "first": true,
-    "last": false,
-    "empty": false
-  }
-}
-```
-
-- **列表项字段说明**：
-  - `userId` 内嵌完整用户对象（含 `password` 密文字段，前端忽略即可，勿展示）。
-  - `scenicId` 内嵌景点对象与 `categoryId` 分类对象，可直接用于订单列表展示，无需再查景点详情。
-  - 无数据时返回 `{"code":0,"msg":"没有找到数据！"}`。
-
-### ⚠️ 已知限制（前端规避）
-
-1. **不支持按用户查订单**：本接口没有 `userId` 过滤参数，"我的订单"功能当前无法实现，需后端在查询条件中补充 `user_id` 过滤后再对接。
-2. **禁止传 `scenicId.*` 过滤参数**（如 `scenicId.id=1`）：当前实现会触发后端 500 错误，按景点筛选需后端修复后再用。
-3. `orderCol` 的值会直接作为排序列名，请只使用上文列出的字段名。
-
----
-
-## 5. 删除订单（软删除）
-
-- **Method / URL**：`POST /travel/scenicOrders/deleteById/{id}`
-- **示例**：`POST /travel/scenicOrders/deleteById/1`
-- **说明**：实际是把记录的 `del_mark` 置 0，之后所有查询接口均不再返回该订单。
-- **响应**：成功 `{"code":1,"msg":"删除成功"}`；失败 `{"code":0,"msg":"没有找到数据！"}`。
-
----
-
-## 前端实现清单
-
-1. 新增订单：必传 `userId.id`、`scenicId.id`、`contactName`、`contactPhone`、`playDate`、`ticketCount`、`totalAmount`、`payStatus`；**不要传 `orderNo`**。
-2. 下单成功后如需展示订单号，重新调 `queryById` 获取后端生成的 `orderNo`。
-3. 支付/退款流程：调 `edit` 更新 `payStatus`（和 `payTime`），不要重复下单。
-4. 订单列表：`queryByPage` 分页参数 + 过滤参数，过滤参数只使用第 4 节列出的项。
-5. 删除订单走 `deleteById/{id}`，为软删除，无需二次确认数据库状态。
+1. 不再在下单时信任客户端金额、用户 ID、支付状态；成功后直接取响应中的订单 ID/订单号。
+2. 不再用编辑接口“支付/退款”，模拟支付改 `/pay/{id}`；不再用逻辑删除代替取消，改 `/cancel/{id}`。
+3. 不再把 `payStatus=2` 解释为免费；订单页显示新 `status` 和 `cancelReason`；待支付倒计时 30 分钟，但以后端判断为准。

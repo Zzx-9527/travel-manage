@@ -11,7 +11,7 @@
 | Java | 8 |
 | Spring Boot | 2.7.5 |
 | MyBatis-Plus | 3.5.9（ORM + 自动填充 + 分页） |
-| MySQL | 5.7+，数据库 `travel_management` |
+| MySQL | 库存迁移脚本按 8.0 编写，数据库 `travel_management` |
 | Sa-Token | 1.44.0，会话存 Redis（24h 绝对过期 + 30min 无操作过期） |
 | Spring Security Crypto | BCrypt 密码加密 |
 | 接口文档 | Knife4j 4.5.0 + SpringDoc 1.7.0（OpenAPI 3） |
@@ -53,7 +53,11 @@ spring.datasource.username=root
 spring.datasource.password=你的密码
 ```
 
-### 3. 启动服务
+### 3. 库存迁移与上线前检查
+
+在部署带库存功能的后端前，先停止旧版下单入口、备份数据库，运行 [迁移前检查](docs/sql/2026-11-09_ticket_stock_precheck.sql)，确认无异常后由数据库管理员执行 [库存迁移](docs/sql/2026-11-09_ticket_stock_migration.sql)。当前本地开发库已由用户执行并核验，无须重复执行；其他环境需要分别迁移。旧版服务不能在迁移后继续接受不扣库存的下单请求。库存由每日任务为在售景区补齐含当天的未来 30 个自然日；部署后首次开放下单前需确认库存已生成。
+
+### 4. 启动服务
 
 ```bash
 mvn clean package -Dmaven.test.skip=true
@@ -62,7 +66,7 @@ mvn spring-boot:run
 
 服务默认启动在：`http://localhost:8081/travel`
 
-### 4. 访问接口文档
+### 5. 访问接口文档
 
 启动后访问：`http://localhost:8081/travel/doc.html`（Knife4j 界面；旧的 `/swagger-ui/index.html` 已随 springfox 一起移除）
 
@@ -117,6 +121,8 @@ com.zjx.travel
 | `/scenic/add` | POST | 新增景点 |
 | `/scenic/edit` | POST | 编辑景点 |
 | `/scenic/deleteById/{id}` | POST | 删除景点 |
+| `/scenic/stock?scenicId=&playDate=` | GET | 查询场地与成人票库存，返回可售余量 |
+| `/scenic/stock/adjust` | POST | 管理员调整单日容量与成人票库存（保留已占用数量） |
 
 ### 景点分类
 
@@ -169,13 +175,33 @@ com.zjx.travel
 | 接口 | 方法 | 说明 |
 |------|------|------|
 | `/scenicOrders/queryById/{id}` | GET | 查询订单详情 |
-| `/scenicOrders/queryByPage` | GET | 分页查询订单列表 |
-| `/scenicOrders/add` | POST | 新增订单（自动生成订单号 + 消息通知） |
-| `/scenicOrders/edit` | POST | 编辑订单 |
-| `/scenicOrders/deleteById/{id}` | POST | 删除订单 |
+| `/scenicOrders/queryByPage` | GET | 分页查询订单列表，支持按 `status` 筛选 |
+| `/scenicOrders/add` | POST | 下单：服务端取 token 身份、按景区价算金额、事务内扣容量与票种库存，返回 `id`/`orderNo` |
+| `/scenicOrders/cancel/{id}` | POST | 本人或管理员取消待支付订单，回补库存（保留历史，不逻辑删除） |
+| `/scenicOrders/pay/{id}` | POST | 本人 30 分钟内模拟支付，不调用真实网关 |
+| `/scenicOrders/edit` | POST | 仅修改本人待支付订单的联系人 |
+| `/scenicOrders/deleteById/{id}` | POST | 删除订单；待支付订单必须先取消，不能借此绕过库存回补 |
 
-> 订单的列表/详情/编辑/删除均做归属校验：普通用户只能操作自己的订单，越权返回 403；管理员可操作全部。
-> 下单接口对同一用户有 5 秒防重复提交。
+> 订单状态 `status`：0 待支付、1 已支付、2 已取消、3 已完成；`cancelReason=TIMEOUT` 表示超时取消。
+> 订单的列表/详情/支付/取消/编辑/删除均做归属校验，越权返回 403；下单同一用户 5 秒防重复提交。
+> 仅可购买含当天 30 个自然日内、且已生成库存的日期；当天到景区截止时间（默认 17:00）后停售；未支付满 30 分钟自动取消并回补。
+
+### 测试
+
+常规测试需要本地 Redis；`mvn test` 中的库存集成测试默认跳过，不会写开发库。要真实验证并发与事务，先准备独立库并执行迁移：
+
+```sql
+CREATE DATABASE travel_management_test DEFAULT CHARSET utf8mb4;
+```
+
+```powershell
+# 在 travel_management_test 上执行 docs/sql/2026-11-09_ticket_stock_migration.sql，并准备基础数据
+$env:TRAVEL_TEST_DB_URL='jdbc:mysql://localhost:3306/travel_management_test?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai'
+mvn -Dtest=TicketStockIntegrationTest test
+```
+
+测试只删除自己创建的订单和当日库存行；不要把它指向 `travel_management`。
+
 
 ### 收藏模块
 

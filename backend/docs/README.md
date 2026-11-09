@@ -11,7 +11,10 @@
 | [前端接口对接说明.md](前端接口对接说明.md) | 前端接口契约：通用约定、各模块接口、**第 8 节 Sa-Token 鉴权契约** | 现行，第 8 节待落地 |
 | [新增API接口说明.md](新增API接口说明.md) | 后续新增接口的字段与用法 | 现行 |
 | [collect接口说明.md](collect接口说明.md) | 收藏模块接口细节 | 现行 |
-| [scenicOrders接口说明.md](scenicOrders接口说明.md) | 门票订单模块接口细节 | 现行 |
+| [scenicOrders接口说明.md](scenicOrders接口说明.md) | 门票订单模块接口细节（库存版，含取消/模拟支付/库存查询） | 现行 |
+| [plan-ticket-stock.md](plan-ticket-stock.md) | 门票库存、事务下单、取消回补、迁移与并发验收的执行规划 | 后端已实现，测试待隔离库执行 |
+| [sql/2026-11-09_ticket_stock_precheck.sql](sql/2026-11-09_ticket_stock_precheck.sql) | 库存迁移前只读检查 | 已执行 |
+| [sql/2026-11-09_ticket_stock_migration.sql](sql/2026-11-09_ticket_stock_migration.sql) | 库存表与历史订单状态迁移 | 已由用户执行并核验 |
 | [消息模块后端实现方案.md](消息模块后端实现方案.md) | 消息中心的数据模型与实现方案 | 现行 |
 | [订单与审核消息自动发送-后端实现说明.md](订单与审核消息自动发送-后端实现说明.md) | 业务事件触发消息通知的实现说明 | 现行 |
 | [redis-integration-plan.md](redis-integration-plan.md) | **技术栈治理 + Redis / Redisson / Sa-Token 接入规划**（唯一执行基准） | 执行中 |
