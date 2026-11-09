@@ -16,7 +16,7 @@
 | 分页参数 | `page`（从 1 开始）、`size` |
 | 删除 | 一律**逻辑删除**（`deleteById`，POST） |
 | 审核/上架字段 | 攻略 `auditStatus`、路线 `status`、景点 `status`：`0=禁用/未通过`、`1=启用/通过` |
-| 订单支付状态 | `payStatus`：`0=未支付`、`1=已支付`、`2=已取消`（前端 OrderManagement 按此过滤） |
+| 订单状态 | `status`：`0=待支付`、`1=已支付`、`2=已取消`、`3=已完成`；`cancelReason=TIMEOUT` 表示超时取消。`payStatus` 仅保留历史兼容（2=历史退款，不再代表“免费”） |
 | 静默降级 | 标注 🔕 的接口历史上前端加过 `silent: true`；**2026-11 起前端已无任何 silent 标记**（仅 `logout` 保留一处 UX 性质的使用，与 🔕 无关），当前 🔕 仅表示「后端未实现的旧规划路径」 |
 
 ---
@@ -140,13 +140,13 @@
 
 | 接口 | 方法 | 参数 |
 |---|---|---|
-| `scenicOrders/queryByPage` | GET | `page, size, orderNo?, payStatus?`（管理端） |
-| `scenicOrders/create` | POST 🔕 | `{ scenicId, playDate, ticketCount, contactName, contactPhone, totalAmount }`；需登录；返回生成的订单（含 `orderNo`） |
-| `scenicOrders/myOrders` | GET 🔕 | `page, size`；返回条目需带景点信息（scenicName/cover/price） |
-| `scenicOrders/pay/{id}` | POST 🔕 | 模拟支付：订单状态 → 已支付 |
-| `scenicOrders/cancel/{id}` | POST 🔕 | 取消订单（需校验未支付状态） |
-| `scenicOrders/edit` | POST | 含 id；状态流转走此接口 |
-| `scenicOrders/deleteById/{id}` | POST | 逻辑删除 |
+| `scenicOrders/queryByPage` | GET | `page, size, orderNo?, status?`；普通用户后端只返回本人订单，管理员可查全部 |
+| `scenicOrders/add` | POST | `{ scenicId: { id }, playDate, ticketCount, contactName, contactPhone }`；身份取 token，金额/状态/订单号由后端决定；返回 `{ id, orderNo }` |
+| `scenicOrders/pay/{id}` | POST | 模拟支付：仅本人、待支付且创建未满 30 分钟，状态 → 已支付 |
+| `scenicOrders/cancel/{id}` | POST | 本人或管理员取消待支付订单，回补库存，订单保留 |
+| `scenicOrders/edit` | POST | 仅允许修改本人待支付订单的联系人 |
+| `scenicOrders/deleteById/{id}` | POST | 逻辑删除；待支付订单不可删除，需先取消 |
+| `scenic/stock` | GET | `scenicId, playDate`：查询可售余票，仅展示 |
 
 ---
 
