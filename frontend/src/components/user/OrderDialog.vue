@@ -25,7 +25,8 @@
           <p class="date-tip">仅可预订今天起 30 天内；当天售票截止时间以景区设置为准</p>
         </el-form-item>
         <el-form-item label="门票数量" prop="ticketCount">
-          <el-input-number v-model="form.ticketCount" :min="1" :max="20" style="width: 100%;" />
+          <el-input-number v-model="form.ticketCount" :min="1" :max="maxTicketCount" style="width: 100%;" />
+          <p class="stock-tip" :class="{ 'is-empty': soldOut }">{{ stockText }}</p>
         </el-form-item>
         <el-form-item label="联系人" prop="contactName">
           <el-input v-model="form.contactName" placeholder="请输入联系人姓名" maxlength="20" />
@@ -44,7 +45,7 @@
     <template #footer>
       <div class="flex justify-end gap-3">
         <el-button @click="dialogVisible = false" style="border-radius: 8px;">取 消</el-button>
-        <el-button type="primary" :loading="submitting" @click="submit" style="border-radius: 8px; background: linear-gradient(135deg, #1CB89D, #0D9488); border: none;">
+        <el-button type="primary" :loading="submitting" :disabled="soldOut" @click="submit" style="border-radius: 8px; background: linear-gradient(135deg, #1CB89D, #0D9488); border: none;">
           确认下单
         </el-button>
       </div>
@@ -68,6 +69,7 @@ import { ref, reactive, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { priceText } from '@/utils/format'
 import { createOrder, payOrder } from '@/api/order'
+import { getStock } from '@/api/scenic'
 import { useAuthStore } from '@/stores/auth'
 import PayDialog from '@/components/user/PayDialog.vue'
 
@@ -111,6 +113,42 @@ const totalAmount = computed(() => {
 const payVisible = ref(false)
 const payAmount = computed(() => ((props.spot?.price || 0) * (form.ticketCount || 1)).toLocaleString('zh-CN'))
 
+// ---- 余票查询（仅展示，最终以下单时的原子扣减为准）----
+const stock = ref(null)        // null=未知/未开放；数字=剩余
+const stockLoading = ref(false)
+const stockHint = ref('')
+const soldOut = computed(() => stock.value === 0)
+const maxTicketCount = computed(() => (stock.value != null ? Math.max(1, Math.min(20, stock.value)) : 20))
+const stockText = computed(() => {
+  if (!form.playDate) return '选择日期后显示余票'
+  if (stockLoading.value) return '正在查询余票…'
+  if (stock.value === 0) return '该日期已售罄'
+  if (stock.value != null) return `剩余 ${stock.value} 张`
+  return stockHint.value || '该日期暂未开放'
+})
+
+async function fetchStock() {
+  stock.value = null
+  stockHint.value = ''
+  if (!form.playDate || !props.spot?.id) return
+  stockLoading.value = true
+  try {
+    const res = await getStock(props.spot.id, form.playDate)
+    if (res.code === 1 && res.content) {
+      stock.value = Number(res.content.remaining ?? 0)
+      if (stock.value > 0 && form.ticketCount > stock.value) form.ticketCount = stock.value
+    } else {
+      stockHint.value = res.msg || '该日期暂未开放'
+    }
+  } catch (err) {
+    stockHint.value = '余票查询失败，可稍后重试'
+  } finally {
+    stockLoading.value = false
+  }
+}
+
+watch(() => form.playDate, fetchStock)
+
 function disabledDate(date) {
   const min = new Date()
   min.setHours(0, 0, 0, 0)
@@ -133,6 +171,15 @@ async function submit() {
   if (!formRef.value) return
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
+
+  if (soldOut.value) {
+    ElMessage.warning('该日期已售罄，请选择其他日期')
+    return
+  }
+  if (stock.value == null) {
+    ElMessage.warning(stockHint.value || '该日期暂未开放')
+    return
+  }
 
   // 付费景点先弹模拟支付窗；免费景点（0 元）直接创建并支付
   if ((props.spot?.price || 0) > 0) {
@@ -213,6 +260,16 @@ async function doCreate(payNow) {
   margin: 4px 0 0;
   line-height: 1.5;
 }
+
+.stock-tip {
+  width: 100%;
+  font-size: 12px;
+  color: #059669;
+  margin: 4px 0 0;
+  line-height: 1.5;
+}
+
+.stock-tip.is-empty { color: #DC2626; }
 
 .brief-name {
   font-size: 15px;

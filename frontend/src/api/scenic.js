@@ -17,6 +17,16 @@ export function getSpotDetail(id) {
   })
 }
 
+// 查询某景区某日的可售余票（silent：无库存/售罄是正常业务态，不弹全局错误）
+export function getStock(scenicId, playDate) {
+  return request({
+    url: 'scenic/stock',
+    method: 'get',
+    params: { scenicId, playDate },
+    silent: true
+  })
+}
+
 // 添加景点
 export function addSpot(data) {
   return request({
