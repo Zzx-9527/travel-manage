@@ -60,6 +60,10 @@ public class TravelUserServiceImpl implements TravelUserService {
                 || (travelUser.getUserRole() != 0 && travelUser.getUserRole() != 1)) {
             travelUser.setUserRole(0);
         }
+        // 注册接口不传 status，插入语句显式写入会导致非空约束失败，这里默认启用
+        if (travelUser.getStatus() == null) {
+            travelUser.setStatus(1);
+        }
         // 自定义 XML 插入不会触发 MyBatis-Plus 的自动填充，这里兜底补时间
         Date now = new Date();
         if (travelUser.getCreateTime() == null) {
