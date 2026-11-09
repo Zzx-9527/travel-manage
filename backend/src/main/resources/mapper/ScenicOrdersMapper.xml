@@ -195,7 +195,7 @@
     </insert>
 
     <update id="deleteById">
-        UPDATE scenic_orders SET del_mark = 0 WHERE id = #{id} AND del_mark = 1 AND status <> 0
+        UPDATE scenic_orders SET del_mark = 0 WHERE id = #{id} AND del_mark = 1 AND status != 0
     </update>
     <update id="updateContact">
         UPDATE scenic_orders SET contact_name=#{contactName}, contact_phone=#{contactPhone}
