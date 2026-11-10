@@ -19,13 +19,17 @@ export function usePageList(fetchFn, options = {}) {
   const degraded = ref(false)
 
   let lastParams = {}
+  // 请求序号守卫：快速搜索/翻页时，先发出的旧请求晚返回不能覆盖新结果
+  let latestSeq = 0
 
   async function load(extraParams = {}) {
+    const seq = ++latestSeq
     lastParams = extraParams
     loading.value = true
     try {
       const params = { page: page.value, size: size.value, ...lastParams }
       const res = await fetchFn(params)
+      if (seq !== latestSeq) return // 已有更新的查询发出，丢弃过期结果
       if (res.code === 1) {
         list.value = normalizeList(res.content)
         total.value = res.content?.totalElements ?? list.value.length
@@ -39,18 +43,22 @@ export function usePageList(fetchFn, options = {}) {
         degraded.value = false
       }
     } catch (err) {
+      if (seq !== latestSeq) return
       // 拦截器已处理提示（silent 除外），这里标记降级
       degraded.value = true
     } finally {
-      loading.value = false
+      if (seq === latestSeq) loading.value = false
     }
   }
 
   function reset() {
+    // 使可能仍在途的旧请求失效，避免 reset 后旧数据回填
+    latestSeq++
     page.value = 1
     list.value = []
     total.value = 0
     totalPages.value = 0
+    loading.value = false
   }
 
   function setPage(p) {
