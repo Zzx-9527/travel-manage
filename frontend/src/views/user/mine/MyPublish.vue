@@ -141,14 +141,11 @@ async function fetchGuides() {
   }
   guideLoading.value = true
   try {
-    const res = await getStrategiesByPage({ page: 1, size: 200 })
+    const res = await getStrategiesByPage({ page: guidePage.value, size: guideSize.value, mine: true })
     if (res.code === 1) {
-      const all = res.content?.content || res.content || []
-      const mine = all.filter(g => Number(g.userId?.id) === Number(id))
-      guideTotal.value = mine.length
-      guideTotalPages.value = Math.ceil(mine.length / guideSize.value)
-      const start = (guidePage.value - 1) * guideSize.value
-      guideList.value = mine.slice(start, start + guideSize.value)
+      guideList.value = res.content?.content || []
+      guideTotal.value = res.content?.totalElements ?? guideList.value.length
+      guideTotalPages.value = res.content?.totalPages ?? Math.ceil(guideTotal.value / guideSize.value)
       guideDegraded.value = false
     }
   } catch (err) {
@@ -168,14 +165,11 @@ async function fetchRoutes() {
   }
   routeLoading.value = true
   try {
-    const res = await getRoutesByPage({ page: 1, size: 200 })
+    const res = await getRoutesByPage({ page: routePage.value, size: routeSize.value, mine: true })
     if (res.code === 1) {
-      const all = res.content?.content || res.content || []
-      const mine = all.filter(r => Number(r.userId?.id) === Number(id))
-      routeTotal.value = mine.length
-      routeTotalPages.value = Math.ceil(mine.length / routeSize.value)
-      const start = (routePage.value - 1) * routeSize.value
-      routeList.value = mine.slice(start, start + routeSize.value)
+      routeList.value = res.content?.content || []
+      routeTotal.value = res.content?.totalElements ?? routeList.value.length
+      routeTotalPages.value = res.content?.totalPages ?? Math.ceil(routeTotal.value / routeSize.value)
       routeDegraded.value = false
     }
   } catch (err) {

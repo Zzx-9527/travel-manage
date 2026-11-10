@@ -96,17 +96,15 @@ const size = ref(8)
 const loading = ref(false)
 const degraded = ref(false)
 
-// 后端 queryByPage 已按 token 只返回本人订单，这里直接本地分页
+// 后端 queryByPage 已按 token 只返回本人订单，这里直接服务端分页
 async function fetchList() {
   loading.value = true
   try {
-    const res = await getMyOrders({ page: 1, size: 200 })
+    const res = await getMyOrders({ page: page.value, size: size.value })
     if (res.code === 1) {
-      const all = res.content?.content || res.content || []
-      total.value = all.length
-      totalPages.value = Math.ceil(all.length / size.value)
-      const start = (page.value - 1) * size.value
-      list.value = all.slice(start, start + size.value)
+      list.value = res.content?.content || []
+      total.value = res.content?.totalElements ?? list.value.length
+      totalPages.value = res.content?.totalPages ?? Math.ceil(total.value / size.value)
       degraded.value = false
     }
   } catch (err) {

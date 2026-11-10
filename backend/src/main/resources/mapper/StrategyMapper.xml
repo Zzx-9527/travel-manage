@@ -39,6 +39,9 @@
         <if test="strategy.id != null">
              and strategy.id = #{strategy.id}
         </if>
+        <if test="strategy.userId != null and strategy.userId.id != null">
+             and travel_user_2.id = #{strategy.userId.id}
+        </if>
         <if test="strategy.title != null and strategy.title != ''">
              and strategy.title LIKE concat('%', #{strategy.title}, '%')
         </if>

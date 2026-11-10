@@ -5,9 +5,14 @@ import request from './request'
 export const BANNER_ADMIN_ID = 10
 
 // 分页查询消息（userId 传接收人用户ID数字；内部序列化为 userId.id=1 走 Spring 嵌套绑定）
+// 额外支持 userIdNe（排除指定接收人）、typeNe（排除指定类型）、keyword（标题/昵称/账号联合搜索）
 export function getMessagesByPage(params) {
-  const { userId, ...rest } = params || {}
-  const query = userId != null ? { ...rest, 'userId.id': userId } : rest
+  const { userId, userIdNe, typeNe, keyword, ...rest } = params || {}
+  const query = { ...rest }
+  if (userId != null) query['userId.id'] = userId
+  if (userIdNe != null) query.userIdNe = userIdNe
+  if (typeNe != null) query.typeNe = typeNe
+  if (keyword != null && keyword !== '') query.keyword = keyword
   return request({
     url: 'message/queryByPage',
     method: 'get',

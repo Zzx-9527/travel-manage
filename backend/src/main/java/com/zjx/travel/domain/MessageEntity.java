@@ -18,6 +18,15 @@ public class MessageEntity {
     // 用于批量已读（非数据库字段）
     @TableField(exist = false)
     private List<Integer> ids;
+    // 查询用：排除指定消息类型（非数据库字段）
+    @TableField(exist = false)
+    private Integer typeNe;
+    // 查询用：排除指定接收人（非数据库字段）
+    @TableField(exist = false)
+    private Integer userIdNe;
+    // 查询用：标题/昵称/账号联合关键词（非数据库字段）
+    @TableField(exist = false)
+    private String keyword;
     @TableField(fill = FieldFill.INSERT)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date createTime;

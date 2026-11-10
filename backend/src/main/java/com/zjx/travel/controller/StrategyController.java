@@ -40,7 +40,12 @@ public class StrategyController {
     }
 
     @GetMapping("queryByPage")
-    public ReturnVO queryByPage(StrategyEntity strategy, Integer page, Integer size, String orderCol, String orderDirect) {
+    public ReturnVO queryByPage(StrategyEntity strategy, Integer page, Integer size, String orderCol, String orderDirect, Boolean mine) {
+
+        // “我的发布”场景：非管理员强制按当前登录人过滤，避免传 userId 查到别人的数据
+        if (Boolean.TRUE.equals(mine) && !SecurityUtil.isAdmin()) {
+            strategy.setUserId(SecurityUtil.currentUserRef());
+        }
 
         //定义失败的返回对象
         ReturnVO returnVO = ReturnVO.getNodataFoundReturnVO();

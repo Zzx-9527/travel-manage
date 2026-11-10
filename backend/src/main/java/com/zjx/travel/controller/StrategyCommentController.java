@@ -37,7 +37,12 @@ public class StrategyCommentController {
     }
 
     @GetMapping("queryByPage")
-    public ReturnVO queryByPage(StrategyCommentEntity strategyComment, Integer page, Integer size, String orderCol, String orderDirect) {
+    public ReturnVO queryByPage(StrategyCommentEntity strategyComment, Integer page, Integer size, String orderCol, String orderDirect, Boolean mine) {
+
+        // “我的评论”场景：非管理员强制按当前登录人过滤，避免传 userId 查到别人的数据
+        if (Boolean.TRUE.equals(mine) && !SecurityUtil.isAdmin()) {
+            strategyComment.setUserId(SecurityUtil.currentUserRef());
+        }
 
         //定义失败的返回对象
         ReturnVO returnVO = ReturnVO.getNodataFoundReturnVO();

@@ -40,6 +40,9 @@
         <if test="message.userId != null and message.userId.id != null">
              and travel_user_2.id = #{message.userId.id}
         </if>
+        <if test="message.userIdNe != null">
+             and travel_user_2.id != #{message.userIdNe}
+        </if>
         <if test="message.title != null and message.title != ''">
              and message.title LIKE concat('%', #{message.title}, '%')
         </if>
@@ -49,11 +52,21 @@
         <if test="message.type != null">
              and message.type = #{message.type}
         </if>
+        <if test="message.typeNe != null">
+             and message.type != #{message.typeNe}
+        </if>
         <if test="message.isRead != null">
              and message.is_read = #{message.isRead}
         </if>
         <if test="message.createTime != null and message.createTime != ''">
              and message.create_time LIKE concat('%', #{message.createTime}, '%')
+        </if>
+        <if test="message.keyword != null and message.keyword != ''">
+            and (
+                message.title LIKE concat('%', #{message.keyword}, '%')
+                or travel_user_2.nickname LIKE concat('%', #{message.keyword}, '%')
+                or travel_user_2.account LIKE concat('%', #{message.keyword}, '%')
+            )
         </if>
     </sql>
 

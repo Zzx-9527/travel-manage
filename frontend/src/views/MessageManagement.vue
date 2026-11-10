@@ -143,7 +143,8 @@
             v-model:current-page="currentPage" v-model:page-size="pageSize"
             :page-sizes="[10, 20, 50]" :total="totalElements" :pager-count="5"
             layout="sizes, prev, pager, next" background
-            @size-change="currentPage = 1"
+            @current-change="loadHistory"
+            @size-change="handleHistorySizeChange"
           />
         </div>
       </div>
@@ -235,59 +236,69 @@ async function handlePublish() {
   } finally { publishing.value = false }
 }
 
-// ---- 发送历史（本地分页；系统公告与用户消息分开查询） ----
-const bannerList = ref([])      // 系统公告：管理员（id=10）的全部消息
-const userMsgList = ref([])     // 用户消息：发给指定用户的公告及订单/审核/系统通知
+// ---- 发送历史（服务端分页；系统公告与用户消息分开查询） ----
+const bannerList = ref([])      // 系统公告：管理员（id=10）的消息，按 id 倒序
+const userMsgList = ref([])     // 用户消息：排除管理员接收人的消息，按 id 升序
 const historyLoading = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const historyTab = ref('banner')
 const historyKeyword = ref('')
+const bannerTotal = ref(0)
+const bannerTotalPages = ref(0)
+const userMsgTotal = ref(0)
+const userMsgTotalPages = ref(0)
 
 async function loadHistory() {
   historyLoading.value = true
   try {
-    // 系统公告：管理员（id=10）的全部消息（最新在前）；用户消息：全量排除管理员收到的，按 ID 升序与其他表一致
-    const [bannerRes, allRes] = await Promise.all([
-      getMessagesByPage({ page: 1, size: 200, userId: BANNER_ADMIN_ID }),
-      getMessagesByPage({ page: 1, size: 200 })
-    ])
-    bannerList.value = (bannerRes.content?.content || bannerRes.content || [])
-      .sort((a, b) => (b.id ?? 0) - (a.id ?? 0))
-    const allRows = (allRes.content?.content || allRes.content || [])
-    userMsgList.value = allRows
-      .filter(m => Number(m.userId?.id) !== BANNER_ADMIN_ID)
-      .sort((a, b) => (a.id ?? 0) - (b.id ?? 0))
+    if (historyTab.value === 'banner') {
+      const res = await getMessagesByPage({
+        page: currentPage.value,
+        size: pageSize.value,
+        userId: BANNER_ADMIN_ID,
+        orderCol: 'id',
+        orderDirect: 'DESC',
+        keyword: historyKeyword.value.trim() || undefined
+      })
+      if (res.code === 1) {
+        bannerList.value = res.content?.content || []
+        bannerTotal.value = res.content?.totalElements ?? bannerList.value.length
+        bannerTotalPages.value = res.content?.totalPages ?? Math.ceil(bannerTotal.value / pageSize.value)
+      }
+    } else {
+      const res = await getMessagesByPage({
+        page: currentPage.value,
+        size: pageSize.value,
+        userIdNe: BANNER_ADMIN_ID,
+        keyword: historyKeyword.value.trim() || undefined
+      })
+      if (res.code === 1) {
+        userMsgList.value = res.content?.content || []
+        userMsgTotal.value = res.content?.totalElements ?? userMsgList.value.length
+        userMsgTotalPages.value = res.content?.totalPages ?? Math.ceil(userMsgTotal.value / pageSize.value)
+      }
+    }
   } catch (e) { console.error(e) } finally { historyLoading.value = false }
 }
 
 const historyList = computed(() => {
-  // 关键词过滤：用户消息匹配昵称/账号/标题，系统公告（接收人固定为管理员）只匹配标题
-  const base = historyTab.value === 'banner' ? bannerList.value : userMsgList.value
-  const kw = historyKeyword.value.trim().toLowerCase()
-  if (!kw) return base
-  return base.filter(m => {
-    if (historyTab.value === 'banner') {
-      return (m.title || '').toLowerCase().includes(kw)
-    }
-    const nick = (m.userId?.nickname || '').toLowerCase()
-    const account = (m.userId?.account || '').toLowerCase()
-    const title = (m.title || '').toLowerCase()
-    return nick.includes(kw) || account.includes(kw) || title.includes(kw)
-  })
+  return historyTab.value === 'banner' ? bannerList.value : userMsgList.value
 })
-const bannerCount = computed(() => bannerList.value.length)
-const userMsgCount = computed(() => userMsgList.value.length)
+const bannerCount = computed(() => bannerTotal.value)
+const userMsgCount = computed(() => userMsgTotal.value)
 
-const totalElements = computed(() => historyList.value.length)
-const totalPages = computed(() => Math.max(1, Math.ceil(totalElements.value / pageSize.value)))
-const pagedList = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  return historyList.value.slice(start, start + pageSize.value)
-})
-watch(historyTab, () => { currentPage.value = 1 })
-watch(historyKeyword, () => { currentPage.value = 1 })
+const totalElements = computed(() => historyTab.value === 'banner' ? bannerTotal.value : userMsgTotal.value)
+const totalPages = computed(() => historyTab.value === 'banner' ? bannerTotalPages.value : userMsgTotalPages.value)
+const pagedList = computed(() => historyList.value)
+watch(historyTab, () => { currentPage.value = 1; loadHistory() })
+watch(historyKeyword, () => { currentPage.value = 1; loadHistory() })
 watch(totalPages, tp => { if (currentPage.value > tp) currentPage.value = tp })
+
+function handleHistorySizeChange() {
+  currentPage.value = 1
+  loadHistory()
+}
 
 // ---- 工具 ----
 function formatTime(dt) {

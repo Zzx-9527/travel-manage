@@ -61,7 +61,7 @@ const size = ref(8)
 const loading = ref(false)
 const degraded = ref(false)
 
-// 后端 queryByPage 不按用户过滤，取全量后在前端按 userId 过滤 + 本地分页
+// 后端 queryByPage 支持 mine 参数：非管理员强制按当前登录人过滤，服务端真分页
 async function fetchList() {
   const uid = authStore.userInfo?.id
   if (!uid) {
@@ -72,14 +72,11 @@ async function fetchList() {
   }
   loading.value = true
   try {
-    const res = await getMyComments({ page: 1, size: 200 })
+    const res = await getMyComments({ page: page.value, size: size.value, mine: true })
     if (res.code === 1) {
-      const all = res.content?.content || res.content || []
-      const mine = all.filter(c => Number(c.userId?.id) === Number(uid))
-      total.value = mine.length
-      totalPages.value = Math.ceil(mine.length / size.value)
-      const start = (page.value - 1) * size.value
-      list.value = mine.slice(start, start + size.value)
+      list.value = res.content?.content || []
+      total.value = res.content?.totalElements ?? list.value.length
+      totalPages.value = res.content?.totalPages ?? Math.ceil(total.value / size.value)
       degraded.value = false
     }
   } catch (err) {

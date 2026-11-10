@@ -40,6 +40,9 @@
         <if test="route.id != null">
              and route.id = #{route.id}
         </if>
+        <if test="route.userId != null and route.userId.id != null">
+             and travel_user_2.id = #{route.userId.id}
+        </if>
         <if test="route.name != null and route.name != ''">
              and route.name LIKE concat('%', #{route.name}, '%')
         </if>
