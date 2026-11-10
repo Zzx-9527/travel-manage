@@ -806,6 +806,7 @@ function handleCommand(cmd) {
 
 @media (max-width: 600px) {
   .nav-links { display: none; }
-  .publish-btn { display: none; }
+  /* 只隐藏顶栏发布按钮，抽屉里的“发布内容/注册”仍需保留 */
+  .top-bar-right .publish-btn { display: none; }
 }
 </style>
