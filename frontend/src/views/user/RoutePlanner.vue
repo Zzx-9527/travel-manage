@@ -139,7 +139,7 @@
         <!-- 景点选择器 -->
         <div class="side-search">
           <i class="fa fa-search"></i>
-          <input v-model="keyword" class="side-search-input" placeholder="搜索景点名称…" />
+          <input v-model="keyword" class="side-search-input" placeholder="搜索景点名称…" @input="handleSpotSearch" />
         </div>
 
         <div v-loading="loading" class="side-list">
@@ -159,8 +159,10 @@
           </div>
         </div>
 
-        <div class="side-footer" v-if="list.length > filteredList.length">
-          <span class="foot-note">还有 {{ list.length - filteredList.length }} 个景点未显示（名称不匹配）</span>
+        <div class="side-footer" v-if="spotPage < spotTotalPages">
+          <button class="load-more-btn" :disabled="loadingMore" @click="loadMoreSpots">
+            {{ loadingMore ? '加载中…' : '加载更多' }}
+          </button>
         </div>
       </aside>
 
@@ -199,11 +201,15 @@ import { planRouteOrder, planRouteOrderFrom } from '@/utils/routePlanner'
 
 const router = useRouter()
 
-const list = ref([])          // 全部已上架景点
+const list = ref([])          // 当前页已上架景点
 const selected = ref([])      // 已选景点（顺序即访问顺序）
 const mode = ref('driving')   // 交通模式：driving 驾车 / hsr 高铁 / train 火车 / flight 飞机
 const keyword = ref('')
 const loading = ref(false)
+const loadingMore = ref(false)
+const spotPage = ref(1)
+const spotTotalPages = ref(1)
+let spotSearchTimer = null
 const mapHeight = ref(480)
 
 // ---- 出发地 ----
@@ -234,14 +240,9 @@ function coordArr(spot) {
   return [Number(spot.longitude ?? spot.lng), Number(spot.latitude ?? spot.lat)]
 }
 
-// 可勾选列表：有坐标 + 名称匹配搜索
+// 可勾选列表：只过滤无坐标景点（名称搜索已交给服务端）
 const filteredList = computed(() => {
-  const kw = keyword.value.trim()
-  return list.value.filter(s => {
-    if (!hasCoord(s)) return false
-    if (kw && !String(s.name || '').includes(kw)) return false
-    return true
-  })
+  return list.value.filter(s => hasCoord(s))
 })
 
 function isSelected(id) {
@@ -473,18 +474,41 @@ function viewSpot(spot) {
   router.push({ path: `/travel/home/spots/${spot.id}`, state: { spot } })
 }
 
-async function loadSpots() {
-  loading.value = true
+async function loadSpots(reset = true) {
+  if (reset) {
+    spotPage.value = 1
+    loading.value = true
+  } else {
+    loadingMore.value = true
+  }
   try {
-    const res = await getSpotsByPage({ page: 1, size: 200, status: 1 })
+    const params = { page: spotPage.value, size: 20, status: 1 }
+    const kw = keyword.value.trim()
+    if (kw) params.name = kw
+    const res = await getSpotsByPage(params)
     if (res.code === 1) {
-      list.value = res.content?.content || res.content || []
+      const rows = res.content?.content || res.content || []
+      if (reset) list.value = rows
+      else list.value.push(...rows)
+      spotTotalPages.value = res.content?.totalPages ?? 1
     }
   } catch (err) {
     console.error(err)
   } finally {
     loading.value = false
+    loadingMore.value = false
   }
+}
+
+function handleSpotSearch() {
+  clearTimeout(spotSearchTimer)
+  spotSearchTimer = setTimeout(() => loadSpots(true), 300)
+}
+
+function loadMoreSpots() {
+  if (spotPage.value >= spotTotalPages.value) return
+  spotPage.value += 1
+  loadSpots(false)
 }
 
 function updateHeight() {
@@ -500,6 +524,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', updateHeight)
+  clearTimeout(spotSearchTimer)
 })
 </script>
 
@@ -993,6 +1018,28 @@ onBeforeUnmount(() => {
   border-top: 1px solid var(--ink-100);
   font-size: 12px;
   color: var(--ink-400);
+}
+
+.load-more-btn {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--ink-200);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink-600);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.load-more-btn:hover:not(:disabled) {
+  border-color: var(--brand-400);
+  color: var(--brand-600);
+}
+
+.load-more-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* ===== 地图区 ===== */

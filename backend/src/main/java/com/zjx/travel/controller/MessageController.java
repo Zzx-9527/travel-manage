@@ -168,6 +168,21 @@ public class MessageController {
     }
 
     /**
+     * 全部标记已读（当前登录人）
+     * POST /travel/message/markAllRead
+     */
+    @PostMapping("markAllRead")
+    public ReturnVO markAllRead() {
+        int count = this.messageService.markAllRead(SecurityUtil.currentUserId());
+        if (count < 0) {
+            return new ReturnVO(0, "参数不完整");
+        }
+        ReturnVO returnVO = new ReturnVO(1, "标记成功");
+        returnVO.setContent(count);
+        return returnVO;
+    }
+
+    /**
      * 未读消息数量（消息中心小红点）
      * GET /travel/message/unreadCount
      */

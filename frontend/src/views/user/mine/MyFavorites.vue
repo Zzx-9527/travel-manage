@@ -69,8 +69,6 @@ import { usePageList } from '@/composables/usePageList'
 import { useAuthStore } from '@/stores/auth'
 import { formatTime, collectTarget, collectTypeText, collectTypeStyle } from '@/utils/format'
 import { getMyFavorites, deleteCollectByTarget } from '@/api/collect'
-import { getStrategyDetail } from '@/api/strategy'
-import { getRouteDetail } from '@/api/route'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -91,25 +89,7 @@ const emptyText = computed(() => {
 
 const { list, total, totalPages, page, size, loading, degraded, load, setPage, setSize } = usePageList(getMyFavorites, { size: 8 })
 
-// 收藏支持 攻略(1)/景点(2)/路线(3)。
-// 新契约：收藏列表不内嵌攻略对象；路线对象也很薄。
-// 攻略用 targetId 调详情挂 item.guide，路线挂 item.route（详情页/卡片需要完整字段）
-async function enrichTargets() {
-  const tasks = list.value
-    .filter(f => Number(f.targetType) === 1 || Number(f.targetType) === 3)
-    .map(async f => {
-      try {
-        const isGuide = Number(f.targetType) === 1
-        const res = isGuide ? await getStrategyDetail(f.targetId) : await getRouteDetail(f.targetId)
-        if (res.code === 1) {
-          if (isGuide) f.guide = res.content
-          else f.route = res.content
-        }
-      } catch (err) { /* 拉取失败则显示占位 */ }
-    })
-  await Promise.all(tasks)
-}
-
+// 收藏接口已内嵌 strategyId / scenicId / routeId，列表直接使用，避免逐条补详情
 async function reload() {
   const uid = authStore.userInfo?.id
   if (!uid) return
@@ -117,7 +97,6 @@ async function reload() {
   const params = {}
   if (activeType.value) params.targetType = activeType.value
   await load(params)
-  await enrichTargets()
 }
 
 function switchType(v) {

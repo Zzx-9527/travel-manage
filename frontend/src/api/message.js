@@ -29,6 +29,14 @@ export function markMessageRead(data) {
   })
 }
 
+// 将当前登录人的全部未读消息一次标记为已读
+export function markAllMessageRead() {
+  return request({
+    url: 'message/markAllRead',
+    method: 'post'
+  })
+}
+
 // 未读数量（铃铛小红点）：后端只统计当前登录人，不收参数（§4.3，传了也会被忽略）
 export function getMessageUnreadCount() {
   return request({

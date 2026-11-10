@@ -87,6 +87,13 @@ public class MessageServiceImpl implements MessageService {
         return this.messageMapper.markRead(id, ids, userId);
     }
 
+    public int markAllRead(Integer userId){
+        if (userId == null) {
+            return -1;
+        }
+        return this.messageMapper.markAllRead(userId);
+    }
+
     public long unreadCount(Integer userId){
         if (userId == null) {
             return 0;

@@ -10,6 +10,13 @@
     <template v-else>
       <div ref="mapEl" class="map-container" :style="{ height: height + 'px' }"></div>
 
+      <!-- 地图加载失败：可重试，不与“缺少经纬度”混淆 -->
+      <div v-if="loadError" class="map-error">
+        <EmptyState title="地图加载失败" desc="请检查高德 Key、网络连接，或稍后重试">
+          <el-button type="primary" @click="retryLoad">重新加载</el-button>
+        </EmptyState>
+      </div>
+
       <!-- 加载遮罩（初始化 / 路径规划中） -->
       <div v-if="busy || planning" class="map-mask">
         <i class="fa fa-spinner fa-spin text-3xl" style="color: #1CB89D;"></i>
@@ -61,6 +68,7 @@ const configured = isAmapConfigured()
 
 const mapEl = ref(null)
 const busy = ref(false)
+const loadError = ref(false)
 const planning = ref(false)        // 驾车路径规划请求进行中
 const routeFallback = ref(false)   // 规划失败退化为直线时提示
 const placedCount = ref(0)
@@ -88,8 +96,13 @@ function coordOf(spot) {
 
 async function initMap() {
   if (!configured) return
+  loadError.value = false
   busy.value = true
   try {
+    if (map) {
+      try { map.destroy() } catch (e) { /* 忽略重复销毁 */ }
+      map = null
+    }
     amap = await loadAMap()
     if (destroyed) return
     // 有坐标时，地图初始化就直接定位到该景点（详情页单景点场景），不闪城市全景
@@ -103,11 +116,17 @@ async function initMap() {
     if (props.pickPoint) map.setDefaultCursor('crosshair')
     renderMarkers()
   } catch (err) {
-    // key 错误 / 网络失败：保持空白并提示
+    // key 错误 / 网络失败 / 脚本加载失败：显示可重试的失败态
+    loadError.value = true
     console.error('地图初始化失败:', err)
   } finally {
     if (!destroyed) busy.value = false
   }
+}
+
+function retryLoad() {
+  loadError.value = false
+  initMap()
 }
 
 function renderMarkers() {
@@ -462,6 +481,14 @@ onBeforeUnmount(() => {
   font-size: 13px;
   color: #64748B;
   margin: 0;
+}
+
+.map-error {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background: rgba(255, 255, 255, 0.94);
+  overflow-y: auto;
 }
 
 .route-hint {

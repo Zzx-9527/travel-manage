@@ -26,6 +26,11 @@ public interface MessageMapper extends BaseMapper<MessageEntity> {
     int markRead(@Param("id") Integer id, @Param("ids") List<Integer> ids, @Param("userId") Integer userId);
 
     /**
+     * 将当前用户全部未读消息标记为已读
+     */
+    int markAllRead(@Param("userId") Integer userId);
+
+    /**
      * 未读消息数量
      */
     long unreadCount(@Param("userId") Integer userId);

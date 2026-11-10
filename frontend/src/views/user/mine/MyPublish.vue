@@ -97,7 +97,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import EmptyState from '@/components/user/EmptyState.vue'
 import { useAuthStore } from '@/stores/auth'
@@ -126,6 +126,7 @@ const routePage = ref(1)
 const routeSize = ref(8)
 const routeLoading = ref(false)
 const routeDegraded = ref(false)
+const routeLoaded = ref(false)
 
 function uid() {
   return authStore.userInfo?.id
@@ -171,6 +172,7 @@ async function fetchRoutes() {
       routeTotal.value = res.content?.totalElements ?? routeList.value.length
       routeTotalPages.value = res.content?.totalPages ?? Math.ceil(routeTotal.value / routeSize.value)
       routeDegraded.value = false
+      routeLoaded.value = true
     }
   } catch (err) {
     routeDegraded.value = true
@@ -196,9 +198,12 @@ function configItinerary(r) {
   router.push({ path: '/travel/home/mine/publish/itinerary', query: { routeId: r.id } })
 }
 
+watch(activeTab, (tab) => {
+  if (tab === 'route' && !routeLoaded.value) fetchRoutes()
+})
+
 onMounted(() => {
   fetchGuides()
-  fetchRoutes()
 })
 </script>
 

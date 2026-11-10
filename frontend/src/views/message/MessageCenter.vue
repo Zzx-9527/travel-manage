@@ -65,7 +65,7 @@ import { ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 import { usePageList } from '@/composables/usePageList'
 import { formatTime } from '@/utils/format'
-import { getMessagesByPage, markMessageRead, deleteMessage } from '@/api/message'
+import { getMessagesByPage, markMessageRead, markAllMessageRead, deleteMessage } from '@/api/message'
 
 const authStore = useAuthStore()
 
@@ -125,27 +125,12 @@ async function openMessage(m) {
 }
 
 async function markAllRead() {
-  const uid = authStore.userInfo?.id
-  if (!uid) return
   try {
-    // 逐页取齐该用户全部未读消息 id 再批量标记，避免只处理当前页
-    const ids = []
-    let p = 1
-    while (p <= 50) {
-      const res = await getMessagesByPage({ page: p, size: 200, userId: uid, isRead: 0 })
-      if (res.code !== 1) break
-      const rows = res.content?.content || res.content || []
-      ids.push(...rows.map(m => m.id))
-      if (rows.length < 200) break
-      p++
-    }
-    if (!ids.length) {
-      ElMessage.info('没有未读消息')
-      return
-    }
-    const res = await markMessageRead({ ids })
+    // 服务端一次更新当前登录人的全部未读消息，不再逐页拉取 id
+    const res = await markAllMessageRead()
     if (res.code === 1) {
-      ElMessage.success('已全部标记为已读')
+      const count = Number(res.content || 0)
+      ElMessage.success(count > 0 ? `已标记 ${count} 条为已读` : '没有未读消息')
       fetchList()
       // 通知顶栏刷新未读徽标
       window.dispatchEvent(new Event('unread-refresh'))

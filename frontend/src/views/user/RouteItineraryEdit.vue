@@ -68,7 +68,15 @@
     <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑途经景点' : '添加途经景点'" :width="480" :close-on-click-modal="false" top="15vh">
       <el-form ref="formRef" :model="formData" :rules="formRules" label-width="90px" label-position="left">
         <el-form-item label="景点" prop="scenicId">
-          <el-select v-model="formData.scenicId" placeholder="搜索选择景点" filterable style="width: 100%;">
+          <el-select
+            v-model="formData.scenicId"
+            placeholder="输入关键词搜索景点"
+            filterable
+            remote
+            :remote-method="searchScenicOptions"
+            :loading="scenicLoading"
+            style="width: 100%;"
+          >
             <el-option v-for="s in scenicOptions" :key="s.id" :label="s.name" :value="s.id" />
           </el-select>
         </el-form-item>
@@ -120,6 +128,7 @@ const isOwner = ref(false)
 const items = ref([])
 const itineraryLoading = ref(true)
 const scenicOptions = ref([])
+const scenicLoading = ref(false)
 
 // 按天分组（与详情页一致的排序规则）
 const dayGroups = computed(() => {
@@ -174,11 +183,26 @@ async function loadItinerary() {
   }
 }
 
-async function loadScenicOptions() {
+async function searchScenicOptions(query = '') {
+  scenicLoading.value = true
   try {
-    const res = await getSpotsByPage({ page: 1, size: 200, status: 1 })
+    const params = { page: 1, size: 20, status: 1 }
+    const kw = String(query || '').trim()
+    if (kw) params.name = kw
+    const res = await getSpotsByPage(params)
     if (res.code === 1) scenicOptions.value = res.content?.content || res.content || []
-  } catch (err) { /* 留空，让用户换入口 */ }
+  } catch (err) {
+    scenicOptions.value = []
+  } finally {
+    scenicLoading.value = false
+  }
+}
+
+function ensureScenicOption(spot) {
+  if (!spot?.id) return
+  if (!scenicOptions.value.some(s => s.id === spot.id)) {
+    scenicOptions.value.unshift({ id: spot.id, name: spot.name || `景点 #${spot.id}` })
+  }
 }
 
 // ---- 弹窗表单 ----
@@ -209,6 +233,7 @@ function openAddDialog() {
 function openEditDialog(item) {
   isEdit.value = true
   editingId.value = item.id
+  ensureScenicOption(item.scenicId)
   formData.value = {
     scenicId: item.scenicId?.id ?? null,
     dayNo: item.dayNo ?? 1,
@@ -262,7 +287,7 @@ async function handleDelete(item) {
 onMounted(() => {
   loadRoute()
   loadItinerary()
-  loadScenicOptions()
+  searchScenicOptions('')
 })
 </script>
 
