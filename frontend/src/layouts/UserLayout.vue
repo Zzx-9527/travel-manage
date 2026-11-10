@@ -808,5 +808,9 @@ function handleCommand(cmd) {
   .nav-links { display: none; }
   /* 只隐藏顶栏发布按钮，抽屉里的“发布内容/注册”仍需保留 */
   .top-bar-right .publish-btn { display: none; }
+  /* 320px 下收窄用户区，避免菜单按钮被挤出视口 */
+  .top-bar-right { gap: 8px; }
+  .user-name { display: none; }
+  .user-avatar-wrap { padding: 4px; }
 }
 </style>

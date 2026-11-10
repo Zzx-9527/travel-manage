@@ -196,6 +196,13 @@ onMounted(loadProfile)
   gap: 16px;
 }
 
+@media (max-width: 600px) {
+  .avatar-field {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+}
+
 .pwd-card {
   margin-top: 32px;
   border-top: 1px solid #F1F5F9;

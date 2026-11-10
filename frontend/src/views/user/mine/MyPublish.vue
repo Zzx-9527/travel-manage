@@ -376,4 +376,22 @@ onMounted(() => {
 }
 
 .pager-text b { color: #475569; }
+
+@media (max-width: 600px) {
+  .pub-item {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .pub-cover {
+    width: 80px;
+    height: 52px;
+  }
+  .pub-body {
+    flex: 1 1 calc(100% - 96px);
+  }
+  .pub-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
 </style>

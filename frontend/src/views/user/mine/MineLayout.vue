@@ -161,4 +161,10 @@ const authStore = useAuthStore()
   .side-profile { flex-direction: row; justify-content: flex-start; gap: 14px; }
   .side-nav { flex-direction: row; flex-wrap: wrap; }
 }
+
+@media (max-width: 600px) {
+  .mine { padding: 20px 12px 40px; }
+  .mine-card { padding: 12px; }
+  .mine-content { padding: 16px; }
+}
 </style>

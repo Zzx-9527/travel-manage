@@ -113,6 +113,12 @@
 .el-dialog {
   --el-dialog-border-radius: 12px;
   border-radius: 12px;
+  max-width: calc(100vw - 32px);
+  box-sizing: border-box;
+}
+.el-message-box {
+  max-width: calc(100vw - 32px);
+  box-sizing: border-box;
 }
 .el-message {
   border-radius: 10px;
@@ -121,6 +127,17 @@
 }
 .el-pagination {
   --el-pagination-button-color: #475569;
+}
+@media (max-width: 600px) {
+  .el-pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 8px;
+  }
+  .el-pagination__jump,
+  .el-pagination__classifier {
+    display: none;
+  }
 }
 .el-switch.is-checked .el-switch__core {
   background: var(--brand-gradient);

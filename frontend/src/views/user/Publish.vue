@@ -238,4 +238,17 @@ async function submitRoute() {
 .form-row .el-form-item {
   flex: 1;
 }
+
+@media (max-width: 600px) {
+  .publish-card {
+    padding: 18px 16px;
+  }
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+  .form-row .el-form-item {
+    width: 100%;
+  }
+}
 </style>

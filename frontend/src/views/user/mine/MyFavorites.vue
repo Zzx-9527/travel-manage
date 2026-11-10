@@ -345,4 +345,21 @@ onMounted(reload)
 }
 
 .pager-text b { color: #475569; }
+
+@media (max-width: 600px) {
+  .fav-item {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .fav-cover {
+    width: 80px;
+    height: 52px;
+  }
+  .fav-body {
+    flex: 1 1 calc(100% - 96px);
+  }
+  .unfav-btn {
+    margin-left: auto;
+  }
+}
 </style>
