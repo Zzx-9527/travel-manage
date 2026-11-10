@@ -1,4 +1,5 @@
 import request from './request'
+import { ASSET_BASE_URL } from '@/config'
 
 // 文件上传（§10）：POST file/upload，multipart/form-data，字段名固定 file。
 // 需登录（普通用户即可）；后端限制：单文件 ≤ 10MB，仅 jpg/jpeg/png/gif/webp。
@@ -27,11 +28,11 @@ export function imageFileError(file) {
   return null
 }
 
-// 上传返回的 url 是相对路径（/travel/uploads/...），拼上后端域名才可直接访问。
+// 上传返回的 url 是相对路径（/travel/uploads/...），按当前环境拼上后端域名才可直接访问。
 // 库里现有头像/封面均为绝对 URL（<img :src> 直接渲染），故入库统一存绝对地址。
 // 注意：外部手填的 URL 不受后端「单图覆盖删旧图」管理（deleteByUrl 只认 /travel/uploads/ 下的文件），
 // 这是安全行为而非 bug。
 export function resolveUploadUrl(url) {
   if (!url || /^https?:\/\//i.test(url)) return url
-  return 'http://localhost:8081' + url
+  return ASSET_BASE_URL + url
 }

@@ -327,13 +327,11 @@ const quickActions = ref([
   { icon: 'fa-ticket', label: '查看订单', path: '/travel/orders', bg: '#F5F3FF', borderColor: '#DDD6FE', iconBg: '#EDE9FE', iconColor: '#8B5CF6' },
 ])
 
-// 系统信息
+// 系统信息（只展示与运行环境无关的静态技术栈，避免部署后误导）
 const systemInfo = ref([
   { label: '后端框架', value: 'Spring Boot' },
   { label: '前端框架', value: 'Vue 3 + Vite' },
   { label: 'UI 组件', value: 'Element Plus' },
-  { label: '接口地址', value: 'localhost:8081' },
-  { label: '运行状态', value: '正常运行中' },
 ])
 
 function handleQuickAction(action) {
