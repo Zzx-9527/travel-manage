@@ -99,19 +99,20 @@ async function loadCategories() {
   } catch (e) { console.error(e) }
 }
 
-onMounted(async () => {
-  await loadCategories()
+onMounted(() => {
   // 读取 URL query（来自首页搜索 / 分类卡片 / 顶部搜索框）
   if (route.query.keyword) keyword.value = String(route.query.keyword)
   if (route.query.categoryId != null) {
     categoryId.value = Number(route.query.categoryId)
   }
-  load(currentParams())
+  // 分类和景点互不依赖，并行加载，减少首屏等待
+  Promise.all([loadCategories(), load(currentParams())])
 })
 
-// 组件被复用（已在当前页时再次搜索）时，query 变化不会重新触发 onMounted，这里监听刷新
-watch(() => route.query.keyword, (val) => {
-  keyword.value = val ? String(val) : ''
+// 组件被复用（已在当前页时再次搜索 / 切分类）时，query 变化不会重新触发 onMounted，这里监听刷新
+watch(() => [route.query.keyword, route.query.categoryId], ([kw, cid]) => {
+  keyword.value = kw ? String(kw) : ''
+  categoryId.value = cid != null ? Number(cid) : null
   page.value = 1
   load(currentParams())
 })
