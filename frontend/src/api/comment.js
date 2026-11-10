@@ -19,8 +19,12 @@ export function addComment(data) {
   })
 }
 
-// 按攻略查询评论（用户端）——后端通用 CRUD 用 queryByPage，页面内按 strategyId 过滤
-export function getCommentsByStrategy(params) {
+// 按攻略查询评论（用户端）——服务端按 strategyId + 审核状态过滤，支持真分页
+// 传参：{ strategyId, status, page, size }，内部组装成后端嵌套绑定需要的 strategyId.id
+export function getCommentsByStrategy({ strategyId, status, page = 1, size = 20 } = {}) {
+  const params = { page, size }
+  if (strategyId != null) params['strategyId.id'] = strategyId
+  if (status != null) params.status = status
   return request({
     url: 'strategyComment/queryByPage',
     method: 'get',

@@ -184,12 +184,16 @@ async function toggleCollect() {
 async function loadComments() {
   commentsLoading.value = true
   try {
-    // 后端 queryByPage 不支持按攻略过滤，取全量后在前端过滤
-    const res = await getCommentsByStrategy({ page: 1, size: 200 })
+    // 服务端按当前攻略 + 已通过审核过滤，真分页；不再拉全站前 200 条再前端筛
+    const res = await getCommentsByStrategy({
+      strategyId: guide.value.id,
+      status: 1,
+      page: 1,
+      size: 20
+    })
     if (res.code === 1) {
-      const all = res.content?.content || res.content || []
-      commentList.value = all.filter(c => Number(c.strategyId?.id) === Number(guide.value.id))
-      commentTotal.value = commentList.value.length
+      commentList.value = res.content?.content || []
+      commentTotal.value = res.content?.totalElements ?? commentList.value.length
     }
   } catch (err) {
     commentsDegraded.value = true

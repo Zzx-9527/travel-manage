@@ -62,33 +62,36 @@
              and strategy_comment.id = #{strategyComment.id}
         </if>
         <if test="strategyComment.strategyId != null">
-            <if test="strategyComment.strategy.id != null">
-                 and strategy.id = #{strategyComment.strategy.id}
+            <if test="strategyComment.strategyId.id != null">
+                 and strategy.id = #{strategyComment.strategyId.id}
             </if>
-            <if test="strategyComment.strategy.title != null and strategyComment.strategy.title != ''">
-                 and strategy.title LIKE concat('%', #{strategyComment.strategy.title}, '%')
+            <if test="strategyComment.strategyId.title != null and strategyComment.strategyId.title != ''">
+                 and strategy.title LIKE concat('%', #{strategyComment.strategyId.title}, '%')
             </if>
-            <if test="strategyComment.strategy.cover != null and strategyComment.strategy.cover != ''">
-                 and strategy.cover LIKE concat('%', #{strategyComment.strategy.cover}, '%')
+            <if test="strategyComment.strategyId.cover != null and strategyComment.strategyId.cover != ''">
+                 and strategy.cover LIKE concat('%', #{strategyComment.strategyId.cover}, '%')
             </if>
-            <if test="strategyComment.strategy.content != null and strategyComment.strategy.content != ''">
-                 and strategy.content LIKE concat('%', #{strategyComment.strategy.content}, '%')
+            <if test="strategyComment.strategyId.content != null and strategyComment.strategyId.content != ''">
+                 and strategy.content LIKE concat('%', #{strategyComment.strategyId.content}, '%')
             </if>
-            <if test="strategyComment.strategy.collectCount != null">
-                 and strategy.collect_count = #{strategyComment.strategy.collectCount}
+            <if test="strategyComment.strategyId.collectCount != null">
+                 and strategy.collect_count = #{strategyComment.strategyId.collectCount}
             </if>
-            <if test="strategyComment.strategy.readCount != null">
-                 and strategy.read_count = #{strategyComment.strategy.readCount}
+            <if test="strategyComment.strategyId.readCount != null">
+                 and strategy.read_count = #{strategyComment.strategyId.readCount}
             </if>
-            <if test="strategyComment.strategy.auditStatus != null">
-                 and strategy.audit_status = #{strategyComment.strategy.auditStatus}
+            <if test="strategyComment.strategyId.auditStatus != null">
+                 and strategy.audit_status = #{strategyComment.strategyId.auditStatus}
             </if>
-            <if test="strategyComment.strategy.createTime != null and strategyComment.strategy.createTime != ''">
-                 and strategy.create_time LIKE concat('%', #{strategyComment.strategy.createTime}, '%')
+            <if test="strategyComment.strategyId.createTime != null and strategyComment.strategyId.createTime != ''">
+                 and strategy.create_time LIKE concat('%', #{strategyComment.strategyId.createTime}, '%')
             </if>
-            <if test="strategyComment.strategy.updateTime != null and strategyComment.strategy.updateTime != ''">
-                 and strategy.update_time LIKE concat('%', #{strategyComment.strategy.updateTime}, '%')
+            <if test="strategyComment.strategyId.updateTime != null and strategyComment.strategyId.updateTime != ''">
+                 and strategy.update_time LIKE concat('%', #{strategyComment.strategyId.updateTime}, '%')
             </if>
+        </if>
+        <if test="strategyComment.userId != null and strategyComment.userId.id != null">
+             and travel_user_4.id = #{strategyComment.userId.id}
         </if>
         <if test="strategyComment.content != null and strategyComment.content != ''">
              and strategy_comment.content LIKE concat('%', #{strategyComment.content}, '%')
