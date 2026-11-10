@@ -3,15 +3,38 @@ import { ref, computed } from 'vue'
 import { login as loginApi, logout as logoutApi } from '@/api/auth'
 
 export const useAuthStore = defineStore('auth', () => {
-  const token = ref(localStorage.getItem('travel_admin_token') || '')
+  const TOKEN_KEY = 'travel_admin_token'
+  const USER_KEY = 'travel_admin_user'
+
+  // 记住我：勾选写 localStorage，不勾选写 sessionStorage；读取时两种都兼容
+  function readStorage(key) {
+    return localStorage.getItem(key) ?? sessionStorage.getItem(key)
+  }
+
+  function writeAuthStorage(key, value, remember) {
+    const target = remember ? localStorage : sessionStorage
+    const other = remember ? sessionStorage : localStorage
+    target.setItem(key, value)
+    other.removeItem(key)
+  }
+
+  function clearAuthStorage() {
+    localStorage.removeItem(TOKEN_KEY)
+    localStorage.removeItem(USER_KEY)
+    sessionStorage.removeItem(TOKEN_KEY)
+    sessionStorage.removeItem(USER_KEY)
+  }
+
+  const token = ref(readStorage(TOKEN_KEY) || '')
   const userInfo = ref(readStoredUser())
 
   function readStoredUser() {
+    const raw = readStorage(USER_KEY)
     try {
-      return JSON.parse(localStorage.getItem('travel_admin_user') || 'null')
+      return JSON.parse(raw || 'null')
     } catch {
-      // localStorage 数据被污染时按未登录处理，避免启动白屏
-      localStorage.removeItem('travel_admin_user')
+      // 存储数据被污染时按未登录处理，避免启动白屏
+      clearAuthStorage()
       return null
     }
   }
@@ -22,24 +45,25 @@ export const useAuthStore = defineStore('auth', () => {
   const roleName = computed(() => (userInfo.value?.userRole === 1 ? '管理员' : '普通用户'))
   const avatar = computed(() => userInfo.value?.avatar || '')
 
-  function saveAuth(t, user) {
-    // 后端返回的用户对象可能带 password（哈希）字段。它一旦进入 localStorage，
+  function saveAuth(t, user, remember) {
+    // 资料更新等场景不会传 remember：沿用当前 token 所在存储，避免把会话登录意外变成持久登录
+    const persist = remember === undefined ? localStorage.getItem(TOKEN_KEY) != null : remember
+    // 后端返回的用户对象可能带 password（哈希）字段。它一旦进入存储，
     // 后续资料保存整包回传 travelUser/edit 时会被后端二次加密，等于改掉了密码。
     const { password, ...safeUser } = user || {}
     token.value = t
     userInfo.value = safeUser
-    localStorage.setItem('travel_admin_token', t)
-    localStorage.setItem('travel_admin_user', JSON.stringify(safeUser))
+    writeAuthStorage(TOKEN_KEY, t, persist)
+    writeAuthStorage(USER_KEY, JSON.stringify(safeUser), persist)
   }
 
   function clearAuth() {
     token.value = ''
     userInfo.value = null
-    localStorage.removeItem('travel_admin_token')
-    localStorage.removeItem('travel_admin_user')
+    clearAuthStorage()
   }
 
-  async function login(account, password) {
+  async function login(account, password, remember = true) {
     const res = await loginApi({ account, password })
     if (res.code === 1) {
       const data = res.content
@@ -58,7 +82,7 @@ export const useAuthStore = defineStore('auth', () => {
         throw new Error('登录失败：未获取到有效的令牌')
       }
 
-      saveAuth(jwt, user)
+      saveAuth(jwt, user, remember)
       return user
     }
     throw new Error(res.msg || '登录失败')

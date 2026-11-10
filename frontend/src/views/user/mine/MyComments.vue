@@ -107,7 +107,11 @@ async function removeComment(c) {
     const res = await deleteMyComment(c.id)
     if (res.code === 1) {
       ElMessage.success('评论已删除')
-      list.value = list.value.filter(item => item.id !== c.id)
+      // 当前页只剩这一条且不在第一页时回退一页，避免停在空页
+      if (list.value.length === 1 && page.value > 1) {
+        page.value -= 1
+      }
+      await fetchList()
     }
   } catch (err) {
     // 拦截器已提示

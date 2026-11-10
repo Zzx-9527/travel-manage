@@ -228,12 +228,14 @@ const router = createRouter({
   routes
 })
 
-// 导航守卫 — 直接读 localStorage，与 authStore 共享同一套键
+// 导航守卫 — 读取 localStorage/sessionStorage，与 authStore 共享同一套键
 router.beforeEach((to, _from, next) => {
-  const token = localStorage.getItem('travel_admin_token')
+  const token = localStorage.getItem('travel_admin_token') || sessionStorage.getItem('travel_admin_token')
   let userInfo = null
   try {
-    userInfo = JSON.parse(localStorage.getItem('travel_admin_user') || 'null')
+    userInfo = JSON.parse(
+      localStorage.getItem('travel_admin_user') || sessionStorage.getItem('travel_admin_user') || 'null'
+    )
   } catch {
     userInfo = null
   }

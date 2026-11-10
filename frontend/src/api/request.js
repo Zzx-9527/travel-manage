@@ -16,7 +16,7 @@ const request = axios.create({
 // 不能再按 eyJ 前缀过滤；要求后端配置 token-name: Authorization、token-prefix: Bearer）
 request.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('travel_admin_token')
+    const token = localStorage.getItem('travel_admin_token') || sessionStorage.getItem('travel_admin_token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -48,6 +48,8 @@ request.interceptors.response.use(
       try { useAuthStore().clearAuth() } catch { /* store 未就绪时仅清 localStorage */ }
       localStorage.removeItem('travel_admin_token')
       localStorage.removeItem('travel_admin_user')
+      sessionStorage.removeItem('travel_admin_token')
+      sessionStorage.removeItem('travel_admin_user')
       const current = router.currentRoute.value
       if (!error.config?.silent) ElMessage.error(error.response?.data?.msg || '登录已过期，请重新登录')
       if (current.path !== '/travel/login') {

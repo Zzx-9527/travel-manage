@@ -108,7 +108,7 @@ async function handleLogin() {
 
   loading.value = true
   try {
-    const user = await authStore.login(form.account, form.password)
+    const user = await authStore.login(form.account, form.password, remember.value)
     ElMessage.success(`欢迎回来，${user.nickname || '用户'}！`)
     // 401 跳转登录时会带上原页面地址，登录后回跳；仅允许站内路径
     const redirect = route.query.redirect
@@ -383,7 +383,19 @@ onMounted(() => {
 }
 
 .remember-me input {
-  display: none;
+  /* 视觉隐藏但保留键盘可聚焦能力 */
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.remember-me input:focus-visible + .checkmark {
+  outline: 2px solid #1CB89D;
+  outline-offset: 2px;
 }
 
 .checkmark {

@@ -41,14 +41,14 @@
 
         <el-empty v-if="!itineraryLoading && !items.length" description="还没有行程，点击右上角添加第一个景点" :image-size="90" />
         <div v-else class="journey">
-          <div v-for="(group, gidx) in dayGroups" :key="group.day" class="day-block">
+          <div v-for="group in dayGroups" :key="group.day" class="day-block">
             <div class="day-head">
               <span class="day-num">Day {{ group.day }}</span>
               <span class="day-desc">第 {{ group.day }} 天</span>
             </div>
             <div class="day-items">
               <div v-for="(item, idx) in group.items" :key="item.id" class="day-item">
-                <div class="item-index">{{ gidx * 100 + idx + 1 }}</div>
+                <div class="item-index">{{ group.startIndex + idx + 1 }}</div>
                 <div class="item-main">
                   <p class="item-name">{{ item.scenicId?.name || '未知景点' }}</p>
                   <p class="item-stay"><i class="fa fa-clock-o mr-1"></i>停留 {{ item.stayTime || '未标注' }}</p>
@@ -74,7 +74,7 @@
         </el-form-item>
         <div class="form-row">
           <el-form-item label="第几天" prop="dayNo">
-            <el-input-number v-model="formData.dayNo" :min="1" :max="30" style="width: 100%;" />
+            <el-input-number v-model="formData.dayNo" :min="1" :max="routeData?.dayCount || 30" style="width: 100%;" />
           </el-form-item>
           <el-form-item label="排序" prop="sort">
             <el-input-number v-model="formData.sort" :min="1" :max="999" style="width: 100%;" />
@@ -129,12 +129,15 @@ const dayGroups = computed(() => {
     if (!map[day]) map[day] = []
     map[day].push(d)
   }
+  let startIndex = 0
   return Object.keys(map)
     .sort((a, b) => Number(a) - Number(b))
-    .map(day => ({
-      day: Number(day),
-      items: map[day].sort((a, b) => (a.sort || 0) - (b.sort || 0))
-    }))
+    .map(day => {
+      const items = map[day].sort((a, b) => (a.sort || 0) - (b.sort || 0))
+      const group = { day: Number(day), items, startIndex }
+      startIndex += items.length
+      return group
+    })
 })
 
 async function loadRoute() {

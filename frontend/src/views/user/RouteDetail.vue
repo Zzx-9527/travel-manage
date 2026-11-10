@@ -67,7 +67,7 @@
         <EmptyState v-else-if="itineraryDegraded" title="路线行程暂未收录" desc="行程数据待后端完善" />
         <el-empty v-else-if="!dayGroups.length" description="该路线暂无行程安排" :image-size="90" />
         <div v-else class="journey">
-          <div v-for="(group, gidx) in dayGroups" :key="group.day" class="day-block">
+          <div v-for="group in dayGroups" :key="group.day" class="day-block">
             <div class="day-head">
               <span class="day-num">Day {{ group.day }}</span>
               <span class="day-desc">第 {{ group.day }} 天</span>
@@ -78,7 +78,7 @@
                   <i class="fa" :class="idx === 0 ? 'fa-flag-checkered' : 'fa-map-marker'"></i>
                 </div>
                 <div class="item-content">
-                  <span class="item-index">{{ gidx * 100 + idx + 1 }}</span>
+                  <span class="item-index">{{ group.startIndex + idx + 1 }}</span>
                   <div class="item-main">
                     <p class="item-name">{{ item.scenicId?.name || '未知景点' }}</p>
                     <p class="item-stay"><i class="fa fa-clock-o mr-1"></i>停留 {{ item.stayTime || '未标注' }}</p>
@@ -127,12 +127,15 @@ const dayGroups = computed(() => {
     if (!map[day]) map[day] = []
     map[day].push(d)
   }
+  let startIndex = 0
   return Object.keys(map)
     .sort((a, b) => Number(a) - Number(b))
-    .map(day => ({
-      day: Number(day),
-      items: map[day].sort((a, b) => (a.sort || 0) - (b.sort || 0))
-    }))
+    .map(day => {
+      const items = map[day].sort((a, b) => (a.sort || 0) - (b.sort || 0))
+      const group = { day: Number(day), items, startIndex }
+      startIndex += items.length
+      return group
+    })
 })
 
 async function resolveRoute() {
