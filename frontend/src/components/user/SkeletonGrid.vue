@@ -1,5 +1,5 @@
 <template>
-  <div class="skeleton-grid" :style="{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }">
+  <div class="skeleton-grid" :style="{ '--skeleton-cols': cols }">
     <div v-for="i in count" :key="i" class="skeleton-card">
       <el-skeleton animated>
         <template #template>
@@ -29,7 +29,20 @@ defineProps({
 <style scoped>
 .skeleton-grid {
   display: grid;
+  grid-template-columns: repeat(var(--skeleton-cols, 3), minmax(0, 1fr));
   gap: 20px;
+}
+
+@media (max-width: 900px) {
+  .skeleton-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .skeleton-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .skeleton-card {

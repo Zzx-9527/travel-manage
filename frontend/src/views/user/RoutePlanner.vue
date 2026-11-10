@@ -882,6 +882,7 @@ onBeforeUnmount(() => {
 }
 
 .stop-item:hover .stop-ops { display: flex; }
+.stop-item:focus-within .stop-ops { display: flex; }
 
 .stop-ops button {
   width: 22px; height: 22px;
@@ -892,6 +893,16 @@ onBeforeUnmount(() => {
   font-size: 12px;
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
+}
+
+@media (hover: none), (max-width: 900px) {
+  .stop-ops {
+    display: flex;
+  }
+  .stop-ops button {
+    width: 32px;
+    height: 32px;
+  }
 }
 
 .stop-ops button:hover:not(:disabled) { background: var(--ink-100); color: var(--ink-700); }

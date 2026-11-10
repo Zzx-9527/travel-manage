@@ -63,7 +63,13 @@
           </div>
 
           <!-- 移动端菜单按钮 -->
-          <button class="menu-toggle" title="菜单" @click="mobileOpen = true">
+          <button
+            class="menu-toggle"
+            title="菜单"
+            :aria-expanded="mobileOpen"
+            aria-controls="mobile-drawer"
+            @click="openMobileDrawer"
+          >
             <i class="fa fa-bars"></i>
           </button>
         </div>
@@ -100,16 +106,32 @@
 
     <!-- ====== 移动端抽屉导航 ====== -->
     <transition name="mask">
-      <div v-if="mobileOpen" class="drawer-mask" @click="mobileOpen = false"></div>
+      <div v-if="mobileOpen" class="drawer-mask" @click="closeMobileDrawer"></div>
     </transition>
     <transition name="slide">
-      <aside v-if="mobileOpen" class="mobile-drawer">
+      <aside
+        v-if="mobileOpen"
+        id="mobile-drawer"
+        class="mobile-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-label="移动端导航"
+        @keydown.esc="closeMobileDrawer"
+      >
         <div class="drawer-head">
           <div class="logo">
             <div class="logo-icon"><i class="fa fa-globe"></i></div>
             <span class="logo-text">旅迹</span>
           </div>
-          <button class="icon-btn" @click="mobileOpen = false"><i class="fa fa-times"></i></button>
+          <button
+            ref="drawerCloseRef"
+            class="icon-btn"
+            title="关闭"
+            aria-label="关闭导航"
+            @click="closeMobileDrawer"
+          >
+            <i class="fa fa-times"></i>
+          </button>
         </div>
 
         <div class="drawer-search">
@@ -137,7 +159,7 @@
 
         <div class="drawer-actions">
           <router-link to="/travel/home/publish" class="publish-btn drawer-publish"><i class="fa fa-pencil mr-1"></i>发布内容</router-link>
-          <button class="drawer-msg" @click="router.push('/travel/home/messages'); mobileOpen = false">
+          <button class="drawer-msg" @click="router.push('/travel/home/messages'); closeMobileDrawer()">
             <i class="fa fa-bell-o"></i>消息通知
             <span v-if="unreadCount > 0" class="msg-badge-static">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
           </button>
@@ -168,7 +190,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
@@ -184,6 +206,29 @@ const unreadCount = ref(0)
 
 // 移动端抽屉
 const mobileOpen = ref(false)
+const drawerCloseRef = ref(null)
+let mobileTrigger = null
+
+function openMobileDrawer() {
+  mobileTrigger = document.activeElement
+  mobileOpen.value = true
+}
+
+function closeMobileDrawer() {
+  mobileOpen.value = false
+}
+
+// 打开时锁定页面滚动并聚焦关闭按钮；关闭时恢复焦点和滚动
+watch(mobileOpen, async (open) => {
+  document.body.style.overflow = open ? 'hidden' : ''
+  if (open) {
+    await nextTick()
+    drawerCloseRef.value?.focus()
+  } else if (mobileTrigger && typeof mobileTrigger.focus === 'function') {
+    mobileTrigger.focus()
+    mobileTrigger = null
+  }
+})
 
 const navItems = [
   { path: '/travel/home', label: '首页' },
@@ -215,6 +260,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('unread-refresh', loadUnread)
+  document.body.style.overflow = ''
 })
 
 const keyword = ref('')
