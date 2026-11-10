@@ -1,8 +1,8 @@
 import request from './request'
 
-// 全站公告约定：接收人为管理员（id=10）的消息都是系统公告（存库）；
-// 横幅组件取其最新一条在用户端顶部展示
-export const BANNER_ADMIN_ID = 10
+// 全站横幅使用独立消息类型（3=公告），不再依赖“发给某个固定管理员 ID”的约定；
+// 后端在新增 type=3 消息时会自动把接收人补成当前管理员，并置为已读。
+export const BANNER_MESSAGE_TYPE = 3
 
 // 分页查询消息（userId 传接收人用户ID数字；内部序列化为 userId.id=1 走 Spring 嵌套绑定）
 // 额外支持 userIdNe（排除指定接收人）、typeNe（排除指定类型）、keyword（标题/昵称/账号联合搜索）

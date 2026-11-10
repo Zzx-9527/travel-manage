@@ -13,7 +13,7 @@ public class MessageEntity {
     private TravelUserEntity userId;// 接收人
     private String title;// 消息标题
     private String content;// 消息内容
-    private Integer type;// 消息类型 0系统 1订单 2审核
+    private Integer type;// 消息类型 0系统 1订单 2审核 3全站公告
     private Integer isRead;// 是否已读 0未读 1已读
     // 用于批量已读（非数据库字段）
     @TableField(exist = false)

@@ -15,18 +15,23 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { getMessagesByPage, BANNER_ADMIN_ID } from '@/api/message'
+import { getMessagesByPage, BANNER_MESSAGE_TYPE } from '@/api/message'
 
-// 全站横幅：管理员（id=10）的消息都视为系统公告，
-// 取其最新一条在用户端顶部展示；关闭后本次会话（sessionStorage）不再打扰
+// 全站横幅：取 type=3 的公告消息，按 id 倒序取最新一条；
+// 关闭后本次会话（sessionStorage）不再打扰
 const announcement = ref(null)
 const visible = ref(false)
 
 async function load() {
   try {
-    const res = await getMessagesByPage({ page: 1, size: 20, userId: BANNER_ADMIN_ID })
-    const rows = res.content?.content || []
-    const latest = [...rows].sort((a, b) => (b.id ?? 0) - (a.id ?? 0))[0]
+    const res = await getMessagesByPage({
+      page: 1,
+      size: 1,
+      type: BANNER_MESSAGE_TYPE,
+      orderCol: 'id',
+      orderDirect: 'DESC'
+    })
+    const latest = res.content?.content?.[0]
     if (latest && sessionStorage.getItem('announce_closed_' + latest.id) !== '1') {
       announcement.value = latest
       visible.value = true

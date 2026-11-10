@@ -155,7 +155,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { addMessage, getMessagesByPage, deleteMessage, markMessageRead, BANNER_ADMIN_ID } from '@/api/message'
+import { addMessage, getMessagesByPage, deleteMessage, BANNER_MESSAGE_TYPE } from '@/api/message'
 import { getUsersByPage } from '@/api/user'
 
 // ---- 发布表单 ----
@@ -205,20 +205,13 @@ async function handlePublish() {
   publishing.value = true
   try {
     if (scope.value === 'banner') {
-      // 全站横幅：统一存到管理员（id=10）的消息里，横幅组件取其最新一条展示
+      // 全站横幅：使用独立的公告类型，后端自动补当前管理员为接收人并置为已读
       const res = await addMessage({
-        userId: { id: BANNER_ADMIN_ID },
-        type: 0,
+        type: BANNER_MESSAGE_TYPE,
         title: form.value.title.trim(),
         content: form.value.content.trim()
       })
       if (res.code !== 1) { ElMessage.error(res.msg || '发布失败'); return }
-      // 立即把横幅消息标记已读，避免管理员的铃铛亮红点
-      try {
-        const list = await getMessagesByPage({ page: 1, size: 20, userId: BANNER_ADMIN_ID, isRead: 0 })
-        const mine = (list.content?.content || []).find(m => m.title === form.value.title.trim())
-        if (mine) await markMessageRead({ id: mine.id })
-      } catch (e) { /* 标记失败无碍 */ }
       ElMessage.success('横幅已发布，用户端顶部将展示最新公告')
     } else {
       const res = await addMessage({
@@ -237,8 +230,8 @@ async function handlePublish() {
 }
 
 // ---- 发送历史（服务端分页；系统公告与用户消息分开查询） ----
-const bannerList = ref([])      // 系统公告：管理员（id=10）的消息，按 id 倒序
-const userMsgList = ref([])     // 用户消息：排除管理员接收人的消息，按 id 升序
+const bannerList = ref([])      // 系统公告：type=3 的公告消息，按 id 倒序
+const userMsgList = ref([])     // 用户消息：排除 type=3 公告，按 id 升序
 const historyLoading = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -256,7 +249,7 @@ async function loadHistory() {
       const res = await getMessagesByPage({
         page: currentPage.value,
         size: pageSize.value,
-        userId: BANNER_ADMIN_ID,
+        type: BANNER_MESSAGE_TYPE,
         orderCol: 'id',
         orderDirect: 'DESC',
         keyword: historyKeyword.value.trim() || undefined
@@ -270,7 +263,7 @@ async function loadHistory() {
       const res = await getMessagesByPage({
         page: currentPage.value,
         size: pageSize.value,
-        userIdNe: BANNER_ADMIN_ID,
+        typeNe: BANNER_MESSAGE_TYPE,
         keyword: historyKeyword.value.trim() || undefined
       })
       if (res.code === 1) {
@@ -309,6 +302,7 @@ function truncate(text, max) {
   return text.length > max ? text.substring(0, max) + '...' : text
 }
 function typeText(t) {
+  if (t === 3) return '公告'
   return t === 1 ? '订单' : t === 2 ? '审核' : '系统'
 }
 function typeStyle(t) {

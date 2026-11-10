@@ -79,8 +79,8 @@ const hasUnread = computed(() => list.value.some(m => m.isRead === 0))
 function fetchList() {
   const uid = authStore.userInfo?.id
   if (!uid) return
-  // 统一用 userId 传接收人
-  const params = { userId: uid }
+  // 统一用 userId 传接收人；type=3 是全站横幅，不在个人消息中心展示
+  const params = { userId: uid, typeNe: 3 }
   if (typeFilter.value !== -1) params.type = typeFilter.value
   if (readFilter.value !== -1) params.isRead = readFilter.value
   load(params)

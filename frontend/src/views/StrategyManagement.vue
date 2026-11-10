@@ -333,7 +333,6 @@ async function handleAdd() {
   addSubmitting.value = true
   try {
     const payload = {
-      userId: { id: 10 },
       title: addForm.title, cover: addForm.cover, content: addForm.content,
       collectCount: addForm.collectCount, readCount: addForm.readCount, auditStatus: addForm.auditStatus
     }

@@ -378,7 +378,6 @@ async function handleAdd() {
   addSubmitting.value = true
   try {
     const payload = {
-      userId: { id: 10 },
       name: addForm.name,
       dayCount: addForm.dayCount,
       startCity: addForm.startCity,

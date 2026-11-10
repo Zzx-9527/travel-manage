@@ -68,10 +68,17 @@ public class MessageController {
      * 新增消息（后台发送通知）
      * POST /travel/message/add
      * body: { "userId": {"id": 1}, "title": "标题", "content": "内容", "type": 0 }
+     * type=3 表示全站横幅，此时 userId 可省略，后端自动补当前管理员并置为已读。
      */
     @PostMapping("add")
     @SaCheckRole("admin")
     public ReturnVO add(@RequestBody MessageEntity message) {
+
+        // 全站横幅：接收人固定为当前管理员，并直接置为已读，避免个人消息中心多出未读横幅
+        if (Integer.valueOf(3).equals(message.getType())) {
+            message.setUserId(SecurityUtil.currentUserRef());
+            message.setIsRead(1);
+        }
 
         //定义失败的返回对象
         ReturnVO returnVO = ReturnVO.getNodataFoundReturnVO();
