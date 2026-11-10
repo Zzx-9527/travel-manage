@@ -47,7 +47,7 @@
         <el-table-column label="封面" width="80" align="center">
           <template #default="{ row }">
             <el-image
-              v-if="row.cover" :src="row.cover" style="width: 56px; height: 38px; border-radius: 6px; cursor: pointer;" fit="cover"
+              v-if="row.cover" :src="row.cover" style="width: 56px; height: 38px; border-radius: 6px; cursor: pointer;" fit="cover" lazy
               :preview-src-list="[row.cover]" preview-teleported @click.stop
             >
               <template #error><div class="w-[56px] h-[38px] bg-gray-100 rounded flex items-center justify-center text-gray-400 text-xs"><i class="fa fa-image"></i></div></template>

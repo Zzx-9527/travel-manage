@@ -27,6 +27,15 @@ export function getMyOrders(params) {
   })
 }
 
+// 管理端订单状态统计（支持同一套 keyword 筛选）
+export function getOrderStatusStats(params) {
+  return request({
+    url: 'scenicOrders/statusStats',
+    method: 'get',
+    params
+  })
+}
+
 // 模拟支付：仅本人、待支付且创建未满 30 分钟
 export function payOrder(id) {
   return request({

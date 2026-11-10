@@ -94,7 +94,11 @@ export function collectTarget(item) {
     const r = item.routeId
     return { id: r.id, type: 3, obj: r, name: r.name, cover: r.cover, stateKey: 'route' }
   }
-  // 攻略：需前端用 targetId 调攻略详情，取得后可挂到 item.guide 上
+  // 攻略：后台收藏接口已内嵌 strategyId（title/cover），用户端旧数据仍兼容 item.guide
+  if (t === 1 && item?.strategyId) {
+    const s = item.strategyId
+    return { id: s.id, type: 1, obj: s, name: s.title, cover: s.cover, stateKey: 'guide' }
+  }
   const g = item?.guide
   return { id: item?.targetId, type: 1, obj: g, name: g?.title, cover: g?.cover, stateKey: 'guide' }
 }

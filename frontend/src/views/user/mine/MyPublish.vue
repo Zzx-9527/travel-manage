@@ -16,7 +16,7 @@
         <div v-else class="pub-list">
           <div v-for="g in guideList" :key="g.id" class="pub-item">
             <div class="pub-cover" @click="viewGuide(g)">
-              <el-image v-if="g.cover" :src="g.cover" fit="cover" class="pub-cover-img">
+              <el-image v-if="g.cover" :src="g.cover" fit="cover" lazy class="pub-cover-img">
                 <template #error><div class="pub-cover-fallback"><i class="fa fa-book"></i></div></template>
               </el-image>
               <div v-else class="pub-cover-fallback"><i class="fa fa-book"></i></div>

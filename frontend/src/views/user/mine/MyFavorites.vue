@@ -25,7 +25,7 @@
       <div v-for="fav in list" :key="fav.id" class="fav-item">
         <!-- 路线纯文字展示：不渲染封面/图标盒子；攻略/景点有封面才加载 -->
         <div v-if="collectTarget(fav).type !== 3" class="fav-cover" @click="viewFav(fav)">
-          <el-image v-if="collectTarget(fav).cover" :src="collectTarget(fav).cover" fit="cover" class="fav-cover-img">
+          <el-image v-if="collectTarget(fav).cover" :src="collectTarget(fav).cover" fit="cover" lazy class="fav-cover-img">
             <template #error><div class="fav-cover-fallback"><i class="fa" :class="favFallbackIcon(fav)"></i></div></template>
           </el-image>
           <div v-else class="fav-cover-fallback"><i class="fa" :class="favFallbackIcon(fav)"></i></div>

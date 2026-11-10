@@ -1,5 +1,6 @@
 package com.zjx.travel.controller;
 
+import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.dev33.satoken.exception.NotPermissionException;
 import cn.dev33.satoken.stp.StpUtil;
 import com.zjx.travel.domain.ScenicOrdersEntity;
@@ -72,6 +73,17 @@ public class ScenicOrdersController {
         returnVO = ReturnVO.getSuccessDataReturnVO(pageVO);
 
         return returnVO;
+    }
+
+    /**
+     * 管理端订单状态统计：total / paidCount / unpaidCount
+     * GET /travel/scenicOrders/statusStats?keyword=...
+     */
+    @GetMapping("statusStats")
+    @SaCheckRole("admin")
+    public ReturnVO statusStats(ScenicOrdersEntity scenicOrders) {
+        if (scenicOrders == null) scenicOrders = new ScenicOrdersEntity();
+        return ReturnVO.getSuccessDataReturnVO(this.scenicOrdersService.statusStats(scenicOrders));
     }
 
     @PostMapping("add")

@@ -14,6 +14,9 @@ public interface ScenicOrdersMapper {
 
     long count(@Param("scenicOrders") ScenicOrdersEntity scenicOrders);
 
+    /** 管理端筛选项下的订单状态统计：total / paidCount / unpaidCount */
+    java.util.Map<String, Object> statusStats(@Param("scenicOrders") ScenicOrdersEntity scenicOrders);
+
     int insert(ScenicOrdersEntity scenicOrders);
 
 

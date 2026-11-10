@@ -7,3 +7,11 @@ export function getStats() {
     method: 'get'
   })
 }
+
+// 后台首页饼图：景点分类分布 + 订单状态分布
+export function getCharts() {
+  return request({
+    url: 'dashboard/charts',
+    method: 'get'
+  })
+}

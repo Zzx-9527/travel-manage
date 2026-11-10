@@ -53,6 +53,11 @@
             <result column="create_time_7" property="createTime" />
             <result column="update_time_7" property="updateTime" />
         </association>
+        <association property="strategyId" javaType="com.zjx.travel.domain.StrategyEntity">
+            <result column="id_8" property="id" />
+            <result column="title_8" property="title" />
+            <result column="cover_8" property="cover" />
+        </association>
     </resultMap>
 
     <sql id="baseSql">
@@ -61,11 +66,13 @@
             scenic_5.id id_5, scenic_5.name name_5, scenic_5.cover cover_5, scenic_5.images images_5, scenic_5.price price_5, scenic_5.open_time open_time_5, scenic_5.address address_5, scenic_5.longitude longitude_5, scenic_5.latitude latitude_5, scenic_5.intro intro_5, scenic_5.score score_5, scenic_5.view_count view_count_5, scenic_5.status status_5, scenic_5.create_time create_time_5, scenic_5.update_time update_time_5,
             scenic_category_6.id id_6, scenic_category_6.name name_6, scenic_category_6.create_time create_time_6,
             route_7.id id_7, route_7.name name_7, route_7.day_count day_count_7, route_7.start_city start_city_7, route_7.traffic traffic_7, route_7.budget budget_7, route_7.intro intro_7, route_7.status status_7, route_7.create_time create_time_7, route_7.update_time update_time_7,
+            strategy_8.id id_8, strategy_8.title title_8, strategy_8.cover cover_8,
             travel_user_4.id id_4, travel_user_4.account account_4, travel_user_4.password password_4, travel_user_4.nickname nickname_4, travel_user_4.phone phone_4, travel_user_4.avatar avatar_4, travel_user_4.user_role user_role_4, travel_user_4.status status_4, travel_user_4.create_time create_time_4, travel_user_4.update_time update_time_4
         FROM collect
              LEFT JOIN scenic scenic_5 ON(collect.target_type = 2 AND collect.target_id = scenic_5.id AND scenic_5.del_mark = 1)
              LEFT JOIN scenic_category scenic_category_6 ON(scenic_5.category_id = scenic_category_6.id)
              LEFT JOIN route route_7 ON(collect.target_type = 3 AND collect.target_id = route_7.id AND route_7.del_mark = 1)
+             LEFT JOIN strategy strategy_8 ON(collect.target_type = 1 AND collect.target_id = strategy_8.id AND strategy_8.del_mark = 1)
              LEFT JOIN travel_user travel_user_4 ON(collect.user_id = travel_user_4.id)
         WHERE 1 = 1
     </sql>
@@ -82,6 +89,14 @@
         </if>
         <if test="collect.collectorId != null">
              and travel_user_4.id = #{collect.collectorId}
+        </if>
+        <if test="collect.keyword != null and collect.keyword != ''">
+            and (
+                travel_user_4.nickname LIKE concat('%', #{collect.keyword}, '%')
+                or scenic_5.name LIKE concat('%', #{collect.keyword}, '%')
+                or route_7.name LIKE concat('%', #{collect.keyword}, '%')
+                or strategy_8.title LIKE concat('%', #{collect.keyword}, '%')
+            )
         </if>
         <if test="collect.createTime != null and collect.createTime != ''">
              and collect.create_time LIKE concat('%', #{collect.createTime}, '%')

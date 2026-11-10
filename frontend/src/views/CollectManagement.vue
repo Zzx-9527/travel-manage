@@ -99,6 +99,7 @@
           :page-sizes="[5, 10, 20, 50]" :total="totalElements" :pager-count="5"
           layout="sizes, prev, pager, next, jumper" background
           @size-change="handleSizeChange"
+          @current-change="fetchData"
         />
       </div>
     </div>
@@ -124,6 +125,7 @@
               v-if="collectTarget(detailData).cover"
               :src="collectTarget(detailData).cover"
               fit="cover"
+              lazy
               style="width: 64px; height: 48px; border-radius: 6px; flex-shrink: 0;"
             >
               <template #error>
@@ -162,103 +164,55 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { collectTarget, collectTypeText, collectTypeStyle } from '@/utils/format'
 import { getCollectsByPage, deleteCollect } from '@/api/collect'
-import { getStrategyDetail } from '@/api/strategy'
+import { useAdminTable } from '@/composables/useAdminTable'
 
 const searchKeyword = ref('')
 const filterType = ref(null)
 
-// 后端不支持按收藏者昵称/内容模糊搜索，这里拉全量后前端过滤 + 本地分页
-// （与个人中心各页"拉列表前端过滤"的做法一致）
-const allRows = ref([])
-const loading = ref(false)
-const currentPage = ref(1)
-const pageSize = ref(10)
-
-async function loadAll() {
-  loading.value = true
-  try {
-    const all = []
-    let page = 1
-    for (;;) {
-      // 后端默认倒序分页；按 ID 升序取，展示顺序与其他管理表一致
-      const res = await getCollectsByPage({ page, size: 100, orderCol: 'id', orderDirect: 'ASC' })
-      if (res.code !== 1) break
-      const rows = res.content?.content || []
-      all.push(...rows)
-      const tp = res.content?.totalPages ?? 1
-      if (page >= tp || !rows.length) break
-      page++
-    }
-    allRows.value = all
-  } catch (e) { console.error(e) } finally { loading.value = false }
-}
+// 服务端分页 + 服务端关键词/类型过滤
+const { list, loading, currentPage, pageSize, totalElements, totalPages, fetchData } = useAdminTable(getCollectsByPage, {
+  size: 10,
+  extraParams: () => {
+    const params = { orderCol: 'id', orderDirect: 'ASC' }
+    const kw = searchKeyword.value.trim()
+    if (kw) params.keyword = kw
+    if (filterType.value) params.targetType = filterType.value
+    return params
+  }
+})
 
 // ---- 工具 ----
 function formatTime(dt) {
   return dt ? String(dt).replace(/\.0$/, '').replace('T', ' ') : '--'
 }
 
-// 新契约下攻略类型不内嵌对象（仅 targetType + targetId），标题需要按 targetId 拉详情补全
-const guideTitleMap = ref({})
-
 function collectName(row) {
   const t = collectTarget(row)
-  if (t.type === 1) return guideTitleMap.value[t.id] || `攻略 #${t.id ?? '--'}`
-  return t.name || '未知内容'
+  if (t.name) return t.name
+  return t.type === 1 ? `攻略 #${t.id ?? '--'}` : '未知内容'
 }
-
-// 数据到位后补拉攻略标题（去重 + 缓存，失败保持占位）
-async function resolveGuideTitles() {
-  const ids = [...new Set(
-    allRows.value
-      .filter(r => Number(r.targetType) === 1 && r.targetId != null && guideTitleMap.value[r.targetId] == null)
-      .map(r => Number(r.targetId))
-  )]
-  if (!ids.length) return
-  await Promise.all(ids.map(async id => {
-    try {
-      const res = await getStrategyDetail(id)
-      if (res.code === 1 && res.content) {
-        guideTitleMap.value[id] = res.content.title || `攻略 #${id}`
-      }
-    } catch (e) { /* 静默：标题缺失时显示占位 */ }
-  }))
-}
-
-watch(allRows, () => resolveGuideTitles())
-
-// 前端过滤：匹配收藏者昵称或收藏内容（攻略匹配已解析的标题）
-const filteredList = computed(() => {
-  const kw = searchKeyword.value.trim().toLowerCase()
-  return allRows.value.filter(r => {
-    if (filterType.value && Number(r.targetType) !== filterType.value) return false
-    if (!kw) return true
-    const t = collectTarget(r)
-    const name = (t.type === 1 ? guideTitleMap.value[t.id] : t.name) || ''
-    const nick = r.userId?.nickname || ''
-    return nick.toLowerCase().includes(kw) || name.toLowerCase().includes(kw)
-  })
-})
-
-// 本地分页
-const totalElements = computed(() => filteredList.value.length)
-const totalPages = computed(() => Math.max(1, Math.ceil(totalElements.value / pageSize.value)))
-const list = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  return filteredList.value.slice(start, start + pageSize.value)
-})
-
-// 筛选结果变少时把页码拉回有效范围
-watch(totalPages, tp => { if (currentPage.value > tp) currentPage.value = tp })
 
 // ---- 查询 ----
-function handleSearch() { currentPage.value = 1 }
-function resetSearch() { searchKeyword.value = ''; filterType.value = null; currentPage.value = 1 }
-function handleSizeChange() { currentPage.value = 1 }
+function handleSearch() {
+  currentPage.value = 1
+  fetchData()
+}
+
+function resetSearch() {
+  searchKeyword.value = ''
+  filterType.value = null
+  currentPage.value = 1
+  fetchData()
+}
+
+function handleSizeChange() {
+  currentPage.value = 1
+  fetchData()
+}
 
 // ---- 删除 ----
 async function handleDelete(row) {
@@ -271,7 +225,7 @@ async function handleDelete(row) {
     const res = await deleteCollect(row.id)
     if (res.code === 1) {
       ElMessage.success('删除成功')
-      loadAll()
+      fetchData()
     }
   } catch (err) { if (err !== 'cancel') console.error(err) }
 }
@@ -284,7 +238,7 @@ function openDetailDialog(row) {
   detailVisible.value = true
 }
 
-onMounted(() => { loadAll() })
+onMounted(fetchData)
 </script>
 
 <style scoped>

@@ -27,6 +27,9 @@ public class ScenicOrdersEntity{
     private Double unitPrice;
     private Integer ticketTypeId = 1;
     private Integer stockReserved;
+    // 管理端联合搜索：下单人昵称 / 景点名称（非数据库字段）
+    @TableField(exist = false)
+    private String keyword;
     @TableField(fill = FieldFill.INSERT)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date createTime;

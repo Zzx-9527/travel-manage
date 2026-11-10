@@ -113,10 +113,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getStats } from '@/api/dashboard'
-import { getSpotsByPage } from '@/api/scenic'
-import { getCategoriesByPage } from '@/api/category'
-import { getOrdersByPage } from '@/api/order'
+import { getStats, getCharts } from '@/api/dashboard'
 import * as echarts from 'echarts/core'
 import { PieChart } from 'echarts/charts'
 import { TooltipComponent, LegendComponent } from 'echarts/components'
@@ -221,23 +218,6 @@ async function loadStats() {
   }
 }
 
-// 分页拉全量列表（后端 queryByPage 用 page/size，res.content.content 为当前页数据）
-async function fetchAll(fetcher, params = {}) {
-  const all = []
-  const size = 100
-  let page = 1
-  for (;;) {
-    const res = await fetcher({ page, size, ...params })
-    if (res.code !== 1) break
-    const c = res.content || {}
-    const rows = c.content || []
-    all.push(...rows)
-    if (page >= (c.totalPages ?? 1) || rows.length === 0) break
-    page++
-  }
-  return all
-}
-
 // 环形图统一渲染：中间显示总数，空数据显示占位灰环
 // 配色以品牌青绿领衔，功能色作区隔
 const CHART_COLORS = ['#0D9488', '#1CB89D', '#3B82F6', '#F59E0B', '#8B5CF6', '#14B8A6', '#F97316', '#64748B']
@@ -283,37 +263,29 @@ function renderPie(elRef, key, title, data) {
   })
 }
 
-// 图表数据：全部纯前端从现有 queryByPage 拉全量聚合，不改后端
+// 图表数据：后端一次聚合返回景点分类分布 + 订单状态分布
 async function loadCharts() {
   try {
-    // ① 景点分类分布：scenic 按 categoryId 分组
-    const [catsRes, spots] = await Promise.all([
-      getCategoriesByPage({ page: 1, size: 100 }).catch(() => null),
-      fetchAll(getSpotsByPage)
-    ])
-    const catName = {}
-    ;(catsRes?.content?.content || []).forEach(c => {
-      if (c.id != null) catName[c.id] = c.name
-    })
-    const spotCount = {}
-    spots.forEach(s => {
-      const name = s.categoryId?.name || catName[s.categoryId?.id] || '未分类'
-      spotCount[name] = (spotCount[name] || 0) + 1
-    })
-    renderPie(categoryChartRef, 'category', '景点分类分布',
-      Object.entries(spotCount).filter(([, n]) => n > 0).map(([name, value]) => ({ name, value })))
+    const res = await getCharts()
+    if (res.code !== 1) return
+    const { categoryStats = [], orderStatusStats = [] } = res.content || {}
 
-    // ② 订单状态分布：scenicOrders 按订单状态 status 分组
-    const orders = await fetchAll(getOrdersByPage)
+    const categoryData = categoryStats
+      .map(item => ({ name: item.name || '未分类', value: Number(item.value) || 0 }))
+      .filter(item => item.value > 0)
+    renderPie(categoryChartRef, 'category', '景点分类分布', categoryData)
+
     const statusMap = { 0: '待支付', 1: '已支付', 2: '已取消', 3: '已完成' }
-    const orderCount = {}
-    orders.forEach(o => {
-      const s = Number(o.status)
-      const name = statusMap[s] ?? `其他(${o.status})`
-      orderCount[name] = (orderCount[name] || 0) + 1
-    })
-    renderPie(orderChartRef, 'order', '订单状态分布',
-      Object.entries(orderCount).filter(([, n]) => n > 0).map(([name, value]) => ({ name, value })))
+    const orderData = orderStatusStats
+      .map(item => {
+        const status = Number(item.status)
+        return {
+          name: statusMap[status] ?? `其他(${item.status})`,
+          value: Number(item.value) || 0
+        }
+      })
+      .filter(item => item.value > 0)
+    renderPie(orderChartRef, 'order', '订单状态分布', orderData)
   } catch (e) {
     // 后端不可用时图表保持空白，不打扰用户
   }

@@ -143,6 +143,7 @@
           :page-sizes="[5, 10, 20, 50]" :total="totalElements" :pager-count="5"
           layout="sizes, prev, pager, next, jumper" background
           @size-change="handleSizeChange"
+          @current-change="fetchData"
         />
       </div>
     </div>
@@ -229,37 +230,28 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getOrdersByPage, cancelOrder, deleteOrder } from '@/api/order'
+import { getOrdersByPage, getOrderStatusStats, cancelOrder, deleteOrder } from '@/api/order'
 import { orderStatusText, orderStatusIcon, orderStatusStyle } from '@/utils/format'
+import { useAdminTable } from '@/composables/useAdminTable'
 
 const searchKeyword = ref('')
 const filterStatus = ref('')
+const paidCount = ref(0)
+const unpaidCount = ref(0)
 
-// 后端不支持按用户昵称/景点名称模糊搜索，这里拉全量后前端过滤 + 本地分页
-const allRows = ref([])
-const loading = ref(false)
-const currentPage = ref(1)
-const pageSize = ref(10)
-
-async function loadAll() {
-  loading.value = true
-  try {
-    const all = []
-    let page = 1
-    for (;;) {
-      const res = await getOrdersByPage({ page, size: 100 })
-      if (res.code !== 1) break
-      const rows = res.content?.content || []
-      all.push(...rows)
-      const tp = res.content?.totalPages ?? 1
-      if (page >= tp || !rows.length) break
-      page++
-    }
-    allRows.value = all
-  } catch (e) { console.error(e) } finally { loading.value = false }
-}
+// 服务端分页 + 服务端关键词/状态过滤
+const { list, loading, currentPage, pageSize, totalElements, totalPages, fetchData } = useAdminTable(getOrdersByPage, {
+  size: 10,
+  extraParams: () => {
+    const params = {}
+    const kw = searchKeyword.value.trim()
+    if (kw) params.keyword = kw
+    if (filterStatus.value !== '') params.status = Number(filterStatus.value)
+    return params
+  }
+})
 
 // ---- 工具 ----
 function formatTime(dt) {
@@ -271,38 +263,39 @@ function payTypeText(v) {
   return map[v] || '未知'
 }
 
-// 前端过滤：匹配用户昵称或景点名称 + 订单状态
-const filteredList = computed(() => {
-  const kw = searchKeyword.value.trim().toLowerCase()
-  const st = filterStatus.value === '' ? '' : Number(filterStatus.value)
-  return allRows.value.filter(o => {
-    if (st !== '' && Number(o.status) !== st) return false
-    if (!kw) return true
-    const nick = o.userId?.nickname || ''
-    const scenic = o.scenicId?.name || ''
-    return nick.toLowerCase().includes(kw) || scenic.toLowerCase().includes(kw)
-  })
-})
+// 状态统计跟随关键词搜索，不跟随状态筛选，保证两张卡片始终有意义
+async function loadStatusStats() {
+  try {
+    const res = await getOrderStatusStats({ keyword: searchKeyword.value.trim() || undefined })
+    if (res.code === 1) {
+      paidCount.value = Number(res.content?.paidCount || 0)
+      unpaidCount.value = Number(res.content?.unpaidCount || 0)
+    }
+  } catch (e) { /* 统计失败保留上一次值 */ }
+}
 
-// 统计（基于当前筛选结果）
-const paidCount = computed(() => filteredList.value.filter(o => Number(o.status) === 1).length)
-const unpaidCount = computed(() => filteredList.value.filter(o => Number(o.status) === 0).length)
-
-// 本地分页
-const totalElements = computed(() => filteredList.value.length)
-const totalPages = computed(() => Math.max(1, Math.ceil(totalElements.value / pageSize.value)))
-const list = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  return filteredList.value.slice(start, start + pageSize.value)
-})
-
-// 筛选结果变少时把页码拉回有效范围
-watch(totalPages, tp => { if (currentPage.value > tp) currentPage.value = tp })
+function refresh() {
+  fetchData()
+  loadStatusStats()
+}
 
 // ---- 查询 ----
-function handleSearch() { currentPage.value = 1 }
-function resetSearch() { searchKeyword.value = ''; filterStatus.value = ''; currentPage.value = 1 }
-function handleSizeChange() { currentPage.value = 1 }
+function handleSearch() {
+  currentPage.value = 1
+  refresh()
+}
+
+function resetSearch() {
+  searchKeyword.value = ''
+  filterStatus.value = ''
+  currentPage.value = 1
+  refresh()
+}
+
+function handleSizeChange() {
+  currentPage.value = 1
+  fetchData()
+}
 
 // ---- 取消（待支付）----
 async function handleCancel(row) {
@@ -315,7 +308,7 @@ async function handleCancel(row) {
     const res = await cancelOrder(row.id)
     if (res.code === 1) {
       ElMessage.success('订单已取消，余票已回补')
-      loadAll()
+      refresh()
     }
   } catch (err) { if (err !== 'cancel') console.error(err) }
 }
@@ -335,7 +328,7 @@ async function handleDelete(row) {
     const res = await deleteOrder(row.id)
     if (res.code === 1) {
       ElMessage.success('删除成功')
-      loadAll()
+      refresh()
     }
   } catch (err) { if (err !== 'cancel') console.error(err) }
 }
@@ -348,7 +341,7 @@ function openDetailDialog(row) {
   detailVisible.value = true
 }
 
-onMounted(() => { loadAll() })
+onMounted(refresh)
 </script>
 
 <style scoped>

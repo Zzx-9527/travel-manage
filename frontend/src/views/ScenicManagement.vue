@@ -61,6 +61,7 @@
               :src="row.cover"
               style="width: 60px; height: 40px; border-radius: 6px; cursor: pointer;"
               fit="cover"
+              lazy
               :preview-src-list="[row.cover]"
               preview-teleported
               @click.stop

@@ -1,5 +1,6 @@
 package com.zjx.travel.mapper;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -12,4 +13,14 @@ public interface DashboardMapper {
      * @return Map 包含 userCount、scenicCount、strategyCount、orderCount
      */
     Map<String, Object> stats();
+
+    /**
+     * 景点分类分布：name + value
+     */
+    List<Map<String, Object>> categoryStats();
+
+    /**
+     * 订单状态分布：status + value
+     */
+    List<Map<String, Object>> orderStatusStats();
 }

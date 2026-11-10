@@ -80,6 +80,12 @@
         <if test="scenicOrders.userId != null and scenicOrders.userId.id != null">
              and scenic_orders.user_id = #{scenicOrders.userId.id}
         </if>
+        <if test="scenicOrders.keyword != null and scenicOrders.keyword != ''">
+            and (
+                travel_user_2.nickname LIKE concat('%', #{scenicOrders.keyword}, '%')
+                or scenic_2.name LIKE concat('%', #{scenicOrders.keyword}, '%')
+            )
+        </if>
         <if test="scenicOrders.scenicId != null">
             <if test="scenicOrders.scenicId.id != null">
                  and scenic_2.id = #{scenicOrders.scenicId.id}
@@ -184,6 +190,16 @@
 
     <select id="count" resultType="java.lang.Long">
         select count(1)
+        from (
+        <include refid="baseSql"></include>
+        <include refid="condition"></include> ) t
+    </select>
+
+    <select id="statusStats" resultType="java.util.HashMap">
+        select
+            count(1) as total,
+            sum(case when status = 1 then 1 else 0 end) as paidCount,
+            sum(case when status = 0 then 1 else 0 end) as unpaidCount
         from (
         <include refid="baseSql"></include>
         <include refid="condition"></include> ) t

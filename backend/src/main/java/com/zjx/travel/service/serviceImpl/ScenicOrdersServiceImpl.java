@@ -26,6 +26,7 @@ public class ScenicOrdersServiceImpl implements ScenicOrdersService {
     public ScenicOrdersEntity queryById(Integer id){ return mapper.queryById(id); }
     public Page<ScenicOrdersEntity> queryByPage(ScenicOrdersEntity q,Integer p,Integer s,String c,String d){
         p=p==null||p<1?1:p; s=s==null||s<1?10:s; Pageable page=PageRequest.of(p-1,s); return new PageImpl<>(mapper.queryAllByLimit(q,page),page,mapper.count(q)); }
+    public Map<String, Object> statusStats(ScenicOrdersEntity q){ return mapper.statusStats(q); }
     public boolean deleteById(Integer id){ ScenicOrdersEntity o=mapper.queryById(id); if(o!=null&&Integer.valueOf(0).equals(o.getStatus())) throw new OrderBusinessException("待支付订单请先取消"); return mapper.deleteById(id)>0; }
 
     @Transactional(rollbackFor=Exception.class)

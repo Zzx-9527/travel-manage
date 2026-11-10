@@ -10,4 +10,28 @@
             (SELECT COUNT(1) FROM strategy WHERE del_mark = 1) AS strategyCount,
             (SELECT COUNT(1) FROM scenic_orders WHERE del_mark = 1) AS orderCount
     </select>
+
+    <!-- 景点分类分布 -->
+    <select id="categoryStats" resultType="java.util.HashMap">
+        SELECT
+            c.name AS name,
+            COUNT(1) AS value
+        FROM scenic s
+        JOIN scenic_category c ON s.category_id = c.id
+        WHERE s.del_mark = 1
+          AND c.del_mark = 1
+        GROUP BY c.id, c.name
+        ORDER BY value DESC
+    </select>
+
+    <!-- 订单状态分布 -->
+    <select id="orderStatusStats" resultType="java.util.HashMap">
+        SELECT
+            status AS status,
+            COUNT(1) AS value
+        FROM scenic_orders
+        WHERE del_mark = 1
+        GROUP BY status
+        ORDER BY status ASC
+    </select>
 </mapper>
