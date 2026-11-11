@@ -195,6 +195,7 @@ import { getRouteDetailsByPage, addRouteDetail, editRouteDetail, deleteRouteDeta
 import { getRoutesByPage } from '@/api/route'
 import { getSpotsByPage } from '@/api/scenic'
 import { useAdminTable } from '@/composables/useAdminTable'
+import { formatTime } from '@/utils/format'
 
 const submitting = ref(false)
 const searchKeyword = ref('')
@@ -252,10 +253,6 @@ const formRules = {
 // 详情
 const detailVisible = ref(false)
 const detailData = ref({})
-
-function formatTime(dt) {
-  return dt ? String(dt).replace(/\.0$/, '').replace('T', ' ') : '--'
-}
 
 // ---- 查询 ----
 function handleSearch() { currentPage.value = 1; fetchData() }

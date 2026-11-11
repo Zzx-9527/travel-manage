@@ -24,8 +24,8 @@
         </div>
         <div class="hero-search">
           <i class="fa fa-search search-icon"></i>
-          <input v-model="searchText" class="search-input" placeholder="输入关键词，按回车搜索" @keyup.enter="doSearch" />
-          <button class="search-btn" @click="doSearch"><i class="fa fa-arrow-right"></i></button>
+          <input v-model="searchText" class="search-input" placeholder="输入关键词，按回车搜索" aria-label="搜索关键词" @keyup.enter="doSearch" />
+          <button class="search-btn" aria-label="搜索" @click="doSearch"><i class="fa fa-arrow-right"></i></button>
         </div>
         <div class="hero-stats">
           <div class="stat-item">
@@ -70,10 +70,17 @@
         </div>
       </div>
       <div class="categories-grid">
-        <div v-for="cat in categoryList" :key="cat.id" class="category-card" :style="getCategoryStyle(cat.name)" @click="viewCategory(cat)">
+        <button
+          v-for="cat in categoryList"
+          :key="cat.id"
+          type="button"
+          class="category-card"
+          :style="getCategoryStyle(cat.name)"
+          @click="viewCategory(cat)"
+        >
           <div class="cat-icon"><i :class="getCategoryIcon(cat.name)"></i></div>
           <span class="cat-name">{{ cat.name }}</span>
-        </div>
+        </button>
       </div>
     </section>
 
@@ -474,6 +481,9 @@ onMounted(() => {
   border: 1px solid;
   cursor: pointer;
   transition: all 0.3s ease;
+  font: inherit;
+  text-align: center;
+  appearance: none;
 }
 
 .category-card:hover {

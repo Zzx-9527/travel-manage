@@ -21,7 +21,7 @@
         <div class="top-bar-right">
           <div class="header-search">
             <i class="fa fa-search"></i>
-            <select v-model="searchType" class="header-search-type" title="搜索类型">
+            <select v-model="searchType" class="header-search-type" title="搜索类型" aria-label="搜索类型">
               <option value="spot">景点</option>
               <option value="guide">攻略</option>
               <option value="route">路线</option>
@@ -30,11 +30,12 @@
               v-model="keyword"
               class="header-search-input"
               placeholder="输入关键词..."
+              aria-label="搜索关键词"
               @keyup.enter="doSearch"
             />
           </div>
           <router-link to="/travel/home/publish" class="publish-btn"><i class="fa fa-pencil mr-1"></i>发布</router-link>
-          <button class="icon-btn" title="消息通知" @click="router.push('/travel/home/messages')">
+          <button class="icon-btn" title="消息通知" aria-label="消息通知" @click="router.push('/travel/home/messages')">
             <i class="fa fa-bell-o"></i>
             <span v-if="unreadCount > 0" class="msg-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
           </button>
@@ -66,6 +67,7 @@
           <button
             class="menu-toggle"
             title="菜单"
+            aria-label="打开菜单"
             :aria-expanded="mobileOpen"
             aria-controls="mobile-drawer"
             @click="openMobileDrawer"
@@ -135,13 +137,13 @@
         </div>
 
         <div class="drawer-search">
-          <select v-model="searchType" class="drawer-search-type">
+          <select v-model="searchType" class="drawer-search-type" aria-label="搜索类型">
             <option value="spot">景点</option>
             <option value="guide">攻略</option>
             <option value="route">路线</option>
           </select>
-          <input v-model="keyword" class="drawer-search-input" placeholder="输入关键词..." @keyup.enter="doSearch" />
-          <button class="drawer-search-btn" @click="doSearch"><i class="fa fa-search"></i></button>
+          <input v-model="keyword" class="drawer-search-input" placeholder="输入关键词..." aria-label="搜索关键词" @keyup.enter="doSearch" />
+          <button class="drawer-search-btn" aria-label="搜索" @click="doSearch"><i class="fa fa-search"></i></button>
         </div>
 
         <nav class="drawer-nav">

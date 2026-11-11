@@ -31,7 +31,18 @@
     <el-empty v-else-if="!list.length" description="暂无消息" :image-size="110" />
 
     <div v-else class="msg-list">
-      <div v-for="m in list" :key="m.id" class="msg-item" :class="{ unread: m.isRead === 0 }" @click="openMessage(m)">
+      <div
+        v-for="m in list"
+        :key="m.id"
+        class="msg-item"
+        :class="{ unread: m.isRead === 0 }"
+        role="button"
+        tabindex="0"
+        :aria-label="`查看消息：${m.title || '未命名消息'}`"
+        @click="openMessage(m)"
+        @keydown.enter.prevent="openMessage(m)"
+        @keydown.space.prevent="openMessage(m)"
+      >
         <div class="msg-icon" :style="typeStyle(m)"><i :class="typeIcon(m)"></i></div>
         <div class="msg-body">
           <div class="msg-head">
@@ -41,7 +52,7 @@
           </div>
           <p class="msg-content">{{ m.content }}</p>
         </div>
-        <button class="msg-del" title="删除" @click.stop="removeMessage(m)">
+        <button class="msg-del" title="删除" aria-label="删除消息" @click.stop="removeMessage(m)">
           <i class="fa fa-trash-o"></i>
         </button>
       </div>

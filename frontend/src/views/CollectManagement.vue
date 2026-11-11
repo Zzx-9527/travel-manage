@@ -166,7 +166,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { collectTarget, collectTypeText, collectTypeStyle } from '@/utils/format'
+import { collectTarget, collectTypeText, collectTypeStyle, formatTime } from '@/utils/format'
 import { getCollectsByPage, deleteCollect } from '@/api/collect'
 import { useAdminTable } from '@/composables/useAdminTable'
 
@@ -186,10 +186,6 @@ const { list, loading, currentPage, pageSize, totalElements, totalPages, fetchDa
 })
 
 // ---- 工具 ----
-function formatTime(dt) {
-  return dt ? String(dt).replace(/\.0$/, '').replace('T', ' ') : '--'
-}
-
 function collectName(row) {
   const t = collectTarget(row)
   if (t.name) return t.name

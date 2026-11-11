@@ -233,7 +233,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getOrdersByPage, getOrderStatusStats, cancelOrder, deleteOrder } from '@/api/order'
-import { orderStatusText, orderStatusIcon, orderStatusStyle } from '@/utils/format'
+import { orderStatusText, orderStatusIcon, orderStatusStyle, formatTime } from '@/utils/format'
 import { useAdminTable } from '@/composables/useAdminTable'
 
 const searchKeyword = ref('')
@@ -254,10 +254,6 @@ const { list, loading, currentPage, pageSize, totalElements, totalPages, fetchDa
 })
 
 // ---- 工具 ----
-function formatTime(dt) {
-  return dt ? String(dt).replace(/\.0$/, '').replace('T', ' ') : '--'
-}
-
 function payTypeText(v) {
   const map = { 1: '微信', 2: '支付宝', 3: '现金' }
   return map[v] || '未知'

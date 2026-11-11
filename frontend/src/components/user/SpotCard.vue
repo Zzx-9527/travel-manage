@@ -1,5 +1,13 @@
 <template>
-  <div class="spot-card" @click="$emit('click', spot)">
+  <div
+    class="spot-card"
+    role="link"
+    tabindex="0"
+    :aria-label="`查看景点：${spot.name || '未命名景点'}`"
+    @click="$emit('click', spot)"
+    @keydown.enter.prevent="$emit('click', spot)"
+    @keydown.space.prevent="$emit('click', spot)"
+  >
     <div class="spot-cover">
       <el-image :src="spot.cover" fit="cover" lazy style="width: 100%; height: 100%;">
         <template #error><div class="placeholder-img"><i class="fa fa-image"></i></div></template>

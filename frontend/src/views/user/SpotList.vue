@@ -9,9 +9,9 @@
     <div class="search-card">
       <div class="search-item">
         <i class="fa fa-search"></i>
-        <el-input v-model="keyword" placeholder="输入景点名称" clearable style="width: 240px;" @keyup.enter="handleSearch" />
+        <el-input v-model="keyword" placeholder="输入景点名称" aria-label="搜索景点名称" clearable style="width: 240px;" @keyup.enter="handleSearch" />
       </div>
-      <el-select v-model="categoryId" placeholder="全部分类" clearable style="width: 180px;">
+      <el-select v-model="categoryId" placeholder="全部分类" aria-label="筛选景点分类" clearable style="width: 180px;">
         <el-option v-for="cat in categoryList" :key="cat.id" :label="cat.name" :value="cat.id" />
       </el-select>
       <el-button type="primary" @click="handleSearch">

@@ -139,7 +139,7 @@
         <!-- 景点选择器 -->
         <div class="side-search">
           <i class="fa fa-search"></i>
-          <input v-model="keyword" class="side-search-input" placeholder="搜索景点名称…" @input="handleSpotSearch" />
+          <input v-model="keyword" class="side-search-input" placeholder="搜索景点名称…" aria-label="搜索景点名称" @input="handleSpotSearch" />
         </div>
 
         <div v-loading="loading" class="side-list">

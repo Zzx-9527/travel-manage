@@ -9,7 +9,7 @@
     <div class="search-card">
       <div class="search-item">
         <i class="fa fa-search"></i>
-        <el-input v-model="keyword" placeholder="输入攻略标题" clearable style="width: 300px;" @keyup.enter="handleSearch" />
+        <el-input v-model="keyword" placeholder="输入攻略标题" aria-label="搜索攻略标题" clearable style="width: 300px;" @keyup.enter="handleSearch" />
       </div>
       <el-button type="primary" @click="handleSearch">
         <i class="fa fa-search mr-1"></i>查询

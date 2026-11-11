@@ -1,5 +1,13 @@
 <template>
-  <div class="guide-card" @click="$emit('click', guide)">
+  <div
+    class="guide-card"
+    role="link"
+    tabindex="0"
+    :aria-label="`查看攻略：${guide.title || '未命名攻略'}`"
+    @click="$emit('click', guide)"
+    @keydown.enter.prevent="$emit('click', guide)"
+    @keydown.space.prevent="$emit('click', guide)"
+  >
     <div class="guide-cover">
       <el-image :src="guide.cover" fit="cover" lazy style="width: 100%; height: 100%;">
         <template #error><div class="placeholder-img"><i class="fa fa-image"></i></div></template>

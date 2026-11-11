@@ -200,6 +200,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getCommentsByPage, editComment, deleteComment } from '@/api/comment'
 import { useAdminTable } from '@/composables/useAdminTable'
+import { formatTime } from '@/utils/format'
 
 const searchKeyword = ref('')
 const filterStatus = ref(null)
@@ -214,9 +215,6 @@ const { list, loading, currentPage, pageSize, totalElements, totalPages, fetchDa
 })
 
 // ---- 工具 ----
-function formatTime(dt) {
-  return dt ? String(dt).replace(/\.0$/, '').replace('T', ' ') : '--'
-}
 function auditText(s) {
   return s === 0 ? '待审核' : s === 1 ? '通过' : s === 2 ? '驳回' : '未知'
 }

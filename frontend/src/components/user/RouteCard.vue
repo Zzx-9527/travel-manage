@@ -1,5 +1,13 @@
 <template>
-  <div class="route-card" @click="$emit('click', route)">
+  <div
+    class="route-card"
+    role="link"
+    tabindex="0"
+    :aria-label="`查看路线：${route.name || '精彩路线'}`"
+    @click="$emit('click', route)"
+    @keydown.enter.prevent="$emit('click', route)"
+    @keydown.space.prevent="$emit('click', route)"
+  >
     <!-- 渐变头图区：品牌青，配交通方式图标 -->
     <div class="route-banner">
       <div class="banner-icon"><i class="fa" :class="trafficIcon(route.traffic)"></i></div>

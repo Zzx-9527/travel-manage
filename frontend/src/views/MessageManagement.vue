@@ -157,6 +157,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { addMessage, getMessagesByPage, deleteMessage, BANNER_MESSAGE_TYPE } from '@/api/message'
 import { getUsersByPage } from '@/api/user'
+import { formatTime } from '@/utils/format'
 
 // ---- 发布表单 ----
 const form = ref({ type: 0, userId: null, title: '', content: '' })
@@ -294,9 +295,6 @@ function handleHistorySizeChange() {
 }
 
 // ---- 工具 ----
-function formatTime(dt) {
-  return dt ? String(dt).replace(/\.0$/, '').replace('T', ' ') : '--'
-}
 function truncate(text, max) {
   if (!text) return ''
   return text.length > max ? text.substring(0, max) + '...' : text
