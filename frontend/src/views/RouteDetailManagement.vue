@@ -114,12 +114,28 @@
     >
       <el-form ref="formRef" :model="formData" :rules="formRules" label-width="95px" label-position="left" status-icon>
         <el-form-item label="路线" prop="routeId">
-          <el-select v-model="formData.routeId" placeholder="请选择路线" filterable style="width: 100%;">
+          <el-select
+            v-model="formData.routeId"
+            placeholder="输入路线名称搜索"
+            filterable
+            remote
+            :remote-method="searchRoutes"
+            :loading="routeLoading"
+            style="width: 100%;"
+          >
             <el-option v-for="r in routeOptions" :key="r.id" :label="r.name" :value="r.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="景点" prop="scenicId">
-          <el-select v-model="formData.scenicId" placeholder="请选择景点" filterable style="width: 100%;">
+          <el-select
+            v-model="formData.scenicId"
+            placeholder="输入景点名称搜索"
+            filterable
+            remote
+            :remote-method="searchScenicOptions"
+            :loading="scenicLoading"
+            style="width: 100%;"
+          >
             <el-option v-for="s in scenicOptions" :key="s.id" :label="s.name" :value="s.id" />
           </el-select>
         </el-form-item>
@@ -208,22 +224,54 @@ const { list, loading, currentPage, pageSize, totalElements, totalPages, fetchDa
   }
 })
 
-// 下拉选项
+// 下拉选项：远程搜索，每次 20 条
 const routeOptions = ref([])
 const scenicOptions = ref([])
+const routeLoading = ref(false)
+const scenicLoading = ref(false)
 
-async function loadRouteOptions() {
+async function searchRoutes(query = '') {
+  routeLoading.value = true
   try {
-    const res = await getRoutesByPage({ page: 1, size: 200 })
-    if (res.code === 1) routeOptions.value = res.content.content || []
-  } catch (err) { console.error('加载路线列表失败:', err) }
+    const params = { page: 1, size: 20 }
+    const kw = String(query || '').trim()
+    if (kw) params.name = kw
+    const res = await getRoutesByPage(params)
+    if (res.code === 1) routeOptions.value = res.content?.content || res.content || []
+  } catch (err) {
+    routeOptions.value = []
+  } finally {
+    routeLoading.value = false
+  }
 }
 
-async function loadScenicOptions() {
+async function searchScenicOptions(query = '') {
+  scenicLoading.value = true
   try {
-    const res = await getSpotsByPage({ page: 1, size: 200 })
-    if (res.code === 1) scenicOptions.value = res.content.content || []
-  } catch (err) { console.error('加载景点列表失败:', err) }
+    const params = { page: 1, size: 20 }
+    const kw = String(query || '').trim()
+    if (kw) params.name = kw
+    const res = await getSpotsByPage(params)
+    if (res.code === 1) scenicOptions.value = res.content?.content || res.content || []
+  } catch (err) {
+    scenicOptions.value = []
+  } finally {
+    scenicLoading.value = false
+  }
+}
+
+function ensureRouteOption(route) {
+  if (!route?.id) return
+  if (!routeOptions.value.some(r => r.id === route.id)) {
+    routeOptions.value.unshift({ id: route.id, name: route.name || `路线 #${route.id}` })
+  }
+}
+
+function ensureScenicOption(spot) {
+  if (!spot?.id) return
+  if (!scenicOptions.value.some(s => s.id === spot.id)) {
+    scenicOptions.value.unshift({ id: spot.id, name: spot.name || `景点 #${spot.id}` })
+  }
 }
 
 // 对话框
@@ -272,6 +320,8 @@ function openAddDialog() {
 function openEditDialog(row) {
   isEdit.value = true
   editingId.value = row.id
+  ensureRouteOption(row.routeId)
+  ensureScenicOption(row.scenicId)
   formData.routeId = row.routeId?.id || null
   formData.scenicId = row.scenicId?.id || null
   formData.dayNo = row.dayNo ?? 1
@@ -343,8 +393,8 @@ function openDetailDialog(row) {
 }
 
 onMounted(() => {
-  loadRouteOptions()
-  loadScenicOptions()
+  searchRoutes('')
+  searchScenicOptions('')
   fetchData()
 })
 </script>

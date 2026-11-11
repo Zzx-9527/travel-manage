@@ -38,6 +38,13 @@
         <if test="travelUser.phone != null and travelUser.phone != ''">
              and travel_user.phone LIKE concat('%', #{travelUser.phone}, '%')
         </if>
+        <if test="travelUser.keyword != null and travelUser.keyword != ''">
+            and (
+                travel_user.account LIKE concat('%', #{travelUser.keyword}, '%')
+                or travel_user.nickname LIKE concat('%', #{travelUser.keyword}, '%')
+                or travel_user.phone LIKE concat('%', #{travelUser.keyword}, '%')
+            )
+        </if>
         <if test="travelUser.avatar != null and travelUser.avatar != ''">
              and travel_user.avatar LIKE concat('%', #{travelUser.avatar}, '%')
         </if>

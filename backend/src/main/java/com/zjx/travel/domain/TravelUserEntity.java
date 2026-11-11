@@ -19,6 +19,9 @@ public class TravelUserEntity{
     private String avatar;
     private Integer userRole;
     private Integer status;
+    // 管理端联合搜索：账号 / 昵称 / 手机号（非数据库字段）
+    @TableField(exist = false)
+    private String keyword;
     
     @TableField(fill = FieldFill.INSERT)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")

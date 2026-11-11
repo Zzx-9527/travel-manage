@@ -23,7 +23,7 @@
             </el-select>
           </el-form-item>
           <el-form-item label="接收范围">
-            <el-radio-group v-model="scope" @change="scope === 'single' && loadUsers()">
+            <el-radio-group v-model="scope" @change="scope === 'single' && searchUsers('')">
               <el-radio value="banner">全站横幅（所有用户可见）</el-radio>
               <el-radio value="single">指定用户（写入其消息中心）</el-radio>
             </el-radio-group>
@@ -33,7 +33,15 @@
             全站横幅不写入任何用户的消息中心，而是在用户端页面顶部以横幅形式展示（用户可关闭），发布新横幅会自动替换旧的。
           </div>
           <el-form-item v-if="scope === 'single'" label="选择用户">
-            <el-select v-model="form.userId" filterable placeholder="搜索昵称或账号..." style="width: 100%;">
+            <el-select
+              v-model="form.userId"
+              filterable
+              remote
+              :remote-method="searchUsers"
+              :loading="userLoading"
+              placeholder="输入昵称、账号或手机号搜索"
+              style="width: 100%;"
+            >
               <el-option
                 v-for="u in userOptions"
                 :key="u.id"
@@ -164,23 +172,22 @@ const form = ref({ type: 0, userId: null, title: '', content: '' })
 const scope = ref('banner')
 const publishing = ref(false)
 
-// 用户选项（指定用户时才加载，分页拉全量）
+// 用户选项：远程搜索，每次取前 20 条，避免循环拉全量
 const userOptions = ref([])
-async function loadUsers() {
-  if (userOptions.value.length) return
+const userLoading = ref(false)
+async function searchUsers(query = '') {
+  userLoading.value = true
   try {
-    const all = []
-    let page = 1
-    for (;;) {
-      const res = await getUsersByPage({ page, size: 100 })
-      if (res.code !== 1) break
-      const rows = res.content?.content || []
-      all.push(...rows)
-      if (page >= (res.content?.totalPages ?? 1) || !rows.length) break
-      page++
-    }
-    userOptions.value = all
-  } catch (e) { console.error(e) }
+    const params = { page: 1, size: 20 }
+    const kw = String(query || '').trim()
+    if (kw) params.keyword = kw
+    const res = await getUsersByPage(params)
+    if (res.code === 1) userOptions.value = res.content?.content || res.content || []
+  } catch (e) {
+    userOptions.value = []
+  } finally {
+    userLoading.value = false
+  }
 }
 
 const publishBtnText = computed(() =>
@@ -326,7 +333,6 @@ async function handleDelete(row) {
 
 onMounted(() => {
   loadHistory()
-  loadUsers()
 })
 </script>
 
