@@ -71,6 +71,7 @@ public class AiPlanService {
     private final ObjectMapper objectMapper;
     private final String model;
     private final AiQuotaService quotaService;
+    private final AiPlanRecordService recordService;
     private final ExecutorService streamExecutor;
 
     public AiPlanService(ChatClient.Builder chatClientBuilder,
@@ -79,6 +80,7 @@ public class AiPlanService {
                          AiProperties properties,
                          ObjectMapper objectMapper,
                          AiQuotaService quotaService,
+                         AiPlanRecordService recordService,
                          @Qualifier("aiStreamExecutor") ExecutorService streamExecutor,
                          @Value("${spring.ai.openai.chat.options.model:unknown}") String model) {
         this.chatClient = chatClientBuilder.build();
@@ -87,6 +89,7 @@ public class AiPlanService {
         this.properties = properties;
         this.objectMapper = objectMapper;
         this.quotaService = quotaService;
+        this.recordService = recordService;
         this.streamExecutor = streamExecutor;
         this.model = model;
     }
@@ -95,8 +98,10 @@ public class AiPlanService {
         if (!quotaService.tryAcquireGeneration(userId)) {
             throw new AiPlanException("上一条行程还在生成中，请稍候再试");
         }
+        long totalStart = System.currentTimeMillis();
+        AiPlanRequest req = null;
         try {
-            AiPlanRequest req = normalize(request);
+            req = normalize(request);
             // 先确认目的地有景点可排，再扣配额：目的地写错不该消耗今天的次数
             List<ScenicEntity> candidates = loadCandidates(req.getDestination());
             quotaService.checkAndConsume(userId);
@@ -127,9 +132,11 @@ public class AiPlanService {
 
                 log.info("AI 行程生成完成：目的地={}，天数={}，有效景点={}，丢弃={}，耗时={}ms",
                         req.getDestination(), req.getDays(), countSpots(result), dropped, latency);
+                recordService.success(userId, req, result, System.currentTimeMillis() - totalStart);
                 return result;
             } catch (RuntimeException e) {
                 quotaService.refund(userId);
+                recordService.failure(userId, req, e.getMessage(), System.currentTimeMillis() - totalStart);
                 throw e;
             }
         } finally {
@@ -207,8 +214,9 @@ public class AiPlanService {
                 return;
             }
             boolean quotaCounted = false;
+            AiPlanRequest req = null;
             try {
-                AiPlanRequest req = normalize(request);
+                req = normalize(request);
                 // 先确认目的地有景点可排，再扣配额：目的地写错不该消耗今天的次数
                 List<ScenicEntity> candidates = loadCandidates(req.getDestination());
                 quotaService.checkAndConsume(userId);
@@ -242,10 +250,12 @@ public class AiPlanService {
 
                 log.info("AI 行程流式生成完成：目的地={}，天数={}，景点={}，丢弃={}，耗时={}ms",
                         req.getDestination(), req.getDays(), countSpots(result), dropped, latency);
+                recordService.success(userId, req, result, latency);
             } catch (AiPlanException e) {
                 if (quotaCounted) {
                     quotaService.refund(userId);
                 }
+                recordService.failure(userId, req, e.getMessage(), System.currentTimeMillis() - start);
                 sendEvent(emitter, "error", Map.of("msg", e.getMessage()));
                 safeComplete(emitter);
             } catch (Exception e) {
@@ -253,7 +263,9 @@ public class AiPlanService {
                 if (quotaCounted) {
                     quotaService.refund(userId);
                 }
-                sendEvent(emitter, "error", Map.of("msg", friendlyLlmError(e)));
+                String message = friendlyLlmError(e);
+                recordService.failure(userId, req, message, System.currentTimeMillis() - start);
+                sendEvent(emitter, "error", Map.of("msg", message));
                 safeComplete(emitter);
             } finally {
                 quotaService.releaseGeneration(userId);

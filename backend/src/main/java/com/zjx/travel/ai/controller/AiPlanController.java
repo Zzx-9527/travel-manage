@@ -3,11 +3,14 @@ package com.zjx.travel.ai.controller;
 import com.zjx.travel.ai.dto.AiPlanRequest;
 import com.zjx.travel.ai.dto.AiPlanSaveRequest;
 import com.zjx.travel.ai.exception.AiPlanException;
+import com.zjx.travel.ai.service.AiPlanRecordService;
 import com.zjx.travel.ai.service.AiPlanSaveService;
 import com.zjx.travel.ai.service.AiPlanService;
 import com.zjx.travel.util.ReturnVO;
 import com.zjx.travel.util.SecurityUtil;
+import cn.dev33.satoken.annotation.SaCheckRole;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -39,10 +42,14 @@ public class AiPlanController {
 
     private final AiPlanService aiPlanService;
     private final AiPlanSaveService aiPlanSaveService;
+    private final AiPlanRecordService aiPlanRecordService;
 
-    public AiPlanController(AiPlanService aiPlanService, AiPlanSaveService aiPlanSaveService) {
+    public AiPlanController(AiPlanService aiPlanService,
+                            AiPlanSaveService aiPlanSaveService,
+                            AiPlanRecordService aiPlanRecordService) {
         this.aiPlanService = aiPlanService;
         this.aiPlanSaveService = aiPlanSaveService;
+        this.aiPlanRecordService = aiPlanRecordService;
     }
 
     /**
@@ -85,5 +92,17 @@ public class AiPlanController {
         } catch (AiPlanException e) {
             return new ReturnVO(0, e.getMessage());
         }
+    }
+
+    /**
+     * 管理端 AI 用量看板数据。
+     *
+     * <p>加了角色校验：这些是运营数据，普通用户不该看到。
+     * 表未创建时返回 {@code tableReady=false}，前端据此提示建表，而不是报 500。
+     */
+    @SaCheckRole("admin")
+    @GetMapping("stats")
+    public ReturnVO stats() {
+        return ReturnVO.getSuccessDataReturnVO(aiPlanRecordService.dashboard());
     }
 }

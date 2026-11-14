@@ -24,6 +24,11 @@ export function savePlan(data) {
   return request.post('ai/plan/save', data)
 }
 
+/** 管理端：AI 用量看板（仅 admin 可访问） */
+export function fetchAiStats() {
+  return request.get('ai/stats')
+}
+
 /**
  * 流式生成。
  *

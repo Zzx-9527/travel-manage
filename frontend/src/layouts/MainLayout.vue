@@ -223,6 +223,7 @@ watch(() => route.path, (p) => {
 
 const menuItems = ref([
   { path: '/travel/dashboard', icon: 'fa-tachometer', label: '系统概览' },
+  { path: '/travel/ai-usage', icon: 'fa-line-chart', label: 'AI 用量看板' },
   { path: '/travel/users', icon: 'fa-users', label: '用户管理' },
   { path: '/travel/categories', icon: 'fa-tags', label: '景点分类管理' },
   { path: '/travel/spots', icon: 'fa-map-marker', label: '景点管理' },

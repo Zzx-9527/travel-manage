@@ -154,6 +154,12 @@ const routes = [
         meta: { title: '系统概览' }
       },
       {
+        path: 'ai-usage',
+        name: 'AiUsage',
+        component: () => import('@/views/AiUsage.vue'),
+        meta: { title: 'AI 用量看板' }
+      },
+      {
         path: 'users',
         name: 'UserManagement',
         component: () => import('@/views/UserManagement.vue'),

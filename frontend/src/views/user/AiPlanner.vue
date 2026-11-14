@@ -23,7 +23,7 @@
       :description="disabledReason"
     />
 
-    <section class="ai-card">
+    <section ref="formRef" class="ai-card">
       <div class="form-grid">
         <label class="field">
           <span class="field-label">目的地 <b>*</b></span>
@@ -84,7 +84,10 @@
           <h2>{{ plan.title }}</h2>
           <p>{{ plan.intro }}</p>
         </div>
-        <el-button type="primary" plain :loading="saving" @click="save">保存为我的路线</el-button>
+        <div class="result-actions">
+          <el-button :loading="loading" @click="generate">再生成一次</el-button>
+          <el-button type="primary" plain :loading="saving" @click="save">保存为我的路线</el-button>
+        </div>
       </div>
 
       <div class="day-list">
@@ -134,6 +137,7 @@
       <p class="meta-line">
         模型 {{ plan.model }} · 耗时 {{ plan.latencyMs }}ms
         <span v-if="plan.droppedSpots"> · 已过滤 {{ plan.droppedSpots }} 条无效景点</span>
+        <button class="link-btn" @click="backToForm">调整条件</button>
       </p>
     </section>
   </div>
@@ -161,6 +165,7 @@ const loading = ref(false)
 const saving = ref(false)
 const streamText = ref('')
 const streamBox = ref(null)
+const formRef = ref(null)
 const plan = ref(null)
 const error = ref('')
 const remaining = ref(0)
@@ -262,6 +267,12 @@ function goSpot(id) {
 /** 封面加载失败时隐藏图片，避免出现破图图标；文字信息仍然完整 */
 function hideBrokenImage(event) {
   event.target.style.display = 'none'
+}
+
+/** 滚动回表单，方便改一两个条件后重新生成 */
+function backToForm() {
+  formRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  setTimeout(() => formRef.value?.querySelector('input')?.focus(), 350)
 }
 </script>
 
@@ -601,6 +612,26 @@ function hideBrokenImage(event) {
   margin: 16px 0 0;
   font-size: 12px;
   color: var(--ink-400, #9ca3af);
+}
+
+.result-actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.link-btn {
+  margin-left: 8px;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 12px;
+  color: var(--brand-600, #0f9481);
+  cursor: pointer;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
 }
 
 @media (max-width: 860px) {

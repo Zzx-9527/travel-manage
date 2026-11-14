@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjx.travel.mapper.AiPlanRecordMapper">
+
+    <resultMap id="recordMap" type="com.zjx.travel.domain.AiPlanRecordEntity">
+        <id column="id" property="id" />
+        <result column="user_id" property="userId" />
+        <result column="destination" property="destination" />
+        <result column="days" property="days" />
+        <result column="budget" property="budget" />
+        <result column="preference" property="preference" />
+        <result column="extra" property="extra" />
+        <result column="status" property="status" />
+        <result column="error_msg" property="errorMsg" />
+        <result column="scenic_count" property="scenicCount" />
+        <result column="dropped_spots" property="droppedSpots" />
+        <result column="latency_ms" property="latencyMs" />
+        <result column="model" property="model" />
+        <result column="create_time" property="createTime" />
+    </resultMap>
+
+    <insert id="insert">
+        insert into ai_plan_record
+            (user_id, destination, days, budget, preference, extra,
+             status, error_msg, scenic_count, dropped_spots, latency_ms, model, result_json, create_time)
+        values
+            (#{userId}, #{destination}, #{days}, #{budget}, #{preference}, #{extra},
+             #{status}, #{errorMsg}, #{scenicCount}, #{droppedSpots}, #{latencyMs}, #{model}, #{resultJson}, now())
+    </insert>
+
+    <!-- 今日汇总；sum(status=1) 利用 MySQL 布尔转 1/0 的特性 -->
+    <select id="todaySummary" resultType="java.util.Map">
+        select count(*)                                        as total,
+               coalesce(sum(case when status = 1 then 1 else 0 end), 0) as success,
+               coalesce(sum(case when status = 0 then 1 else 0 end), 0) as failure,
+               coalesce(round(avg(case when status = 1 then latency_ms end)), 0) as avgLatency,
+               coalesce(sum(dropped_spots), 0)                 as dropped
+        from ai_plan_record
+        where create_time >= curdate()
+    </select>
+
+    <select id="dailyTrend" resultType="java.util.Map">
+        <!-- 分组表达式必须与 select 一致，否则 only_full_group_by 下直接报错 -->
+        select date_format(create_time, '%m-%d')                       as day,
+               count(*)                                                as total,
+               coalesce(sum(case when status = 1 then 1 else 0 end), 0) as success
+        from ai_plan_record
+        where create_time >= date_sub(curdate(), interval #{days} day)
+        group by date_format(create_time, '%m-%d')
+        order by min(create_time)
+    </select>
+
+    <select id="topDestinations" resultType="java.util.Map">
+        select destination, count(*) as total
+        from ai_plan_record
+        group by destination
+        order by total desc
+        limit #{limit}
+    </select>
+
+    <select id="recent" resultMap="recordMap">
+        select id, user_id, destination, days, budget, preference, extra,
+               status, error_msg, scenic_count, dropped_spots, latency_ms, model, create_time
+        from ai_plan_record
+        order by id desc
+        limit #{limit}
+    </select>
+
+</mapper>
