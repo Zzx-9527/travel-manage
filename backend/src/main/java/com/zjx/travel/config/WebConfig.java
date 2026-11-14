@@ -73,16 +73,25 @@ public class WebConfig implements WebMvcConfigurer {
                     .check(r -> StpUtil.checkLogin());
         }) {
             /**
-             * ERROR 转发（如 404 找不到接口）会再次进入拦截器，但此时 Sa-Token 的
-             * 线程上下文已在首次请求结束时清理，继续执行会抛
-             * {@code SaTokenContextException: SaTokenContext 上下文尚未初始化}，
-             * 把本该是 404 的响应变成 500，并在日志里刷一屏堆栈。
-             * 错误页本身不需要鉴权，直接放行。
+             * 拦截器只应在首次 REQUEST 派发时执行。Tomcat 对同一个请求还会做两类二次派发，
+             * 这两次派发里 Sa-Token 的线程上下文（ThreadLocal）已经被清理，
+             * 继续执行 {@code SaRouter.match(...)} 会抛
+             * {@code SaTokenContextException: SaTokenContext 上下文尚未初始化}：
+             *
+             * <ul>
+             *   <li><b>ERROR</b>：404 等错误页转发，会把本该 404 的响应变成 500；</li>
+             *   <li><b>ASYNC</b>：SSE（SseEmitter）结束时 Tomcat 的异步派发，
+             *       每个流式请求收尾都会刷一屏堆栈。</li>
+             * </ul>
+             *
+             * 鉴权在首次 REQUEST 派发时已经完成，这两类派发直接放行是安全的；
+             * Spring Security 的过滤器同样默认跳过 ERROR / ASYNC 派发。
              */
             @Override
             public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
                     throws Exception {
-                if (DispatcherType.ERROR.equals(request.getDispatcherType())) {
+                DispatcherType dispatcherType = request.getDispatcherType();
+                if (dispatcherType == DispatcherType.ERROR || dispatcherType == DispatcherType.ASYNC) {
                     return true;
                 }
                 return super.preHandle(request, response, handler);
