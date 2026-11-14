@@ -1,6 +1,7 @@
 /.idea/
 /.mvn/
 /target/
+/.env
 /HELP.md
 /mvnw.cmd
 /src/main/webapp/

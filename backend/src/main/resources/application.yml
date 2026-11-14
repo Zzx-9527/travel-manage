@@ -4,6 +4,13 @@ server:
         context-path: /travel
 
 spring:
+    # 把项目根目录的 .env 当作 properties 文件导入（前端同款手感）。
+    # optional: 前缀表示文件不存在也不报错；[.properties] 是告诉 Boot 用 properties 解析器，
+    # 否则它会因为文件没有扩展名而拒绝加载。
+    # .env 已在 .gitignore 中忽略，仓库里只提交 .env.example。
+    config:
+        import: optional:file:./.env[.properties]
+
     datasource:
         driver-class-name: com.mysql.cj.jdbc.Driver
         url: "jdbc:mysql://localhost:3306/travel_management?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true"
