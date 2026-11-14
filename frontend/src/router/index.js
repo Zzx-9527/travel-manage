@@ -69,14 +69,6 @@ const routes = [
         meta: { title: '路线规划' }
       },
       {
-        // AI 行程规划：与上面的"手动选点 + 贪心排序"是两条独立链路，
-        // 页面上互相引导，出问题时可降级到本地算法
-        path: 'ai',
-        name: 'AiPlanner',
-        component: () => import('@/views/user/AiPlanner.vue'),
-        meta: { title: 'AI 规划师' }
-      },
-      {
         path: 'about',
         name: 'About',
         component: () => import('@/views/user/About.vue'),

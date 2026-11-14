@@ -2,7 +2,6 @@
   <div class="ai-page">
     <header class="ai-hero">
       <div>
-        <h1>AI 规划师</h1>
         <p>
           说清目的地、天数、预算和偏好，帮你排一份按天行程。
           只会从平台在售景点里选，价格、坐标、评分都取自真实数据。
@@ -382,9 +381,9 @@ async function restore(item) {
 
 <style scoped>
 .ai-page {
-  max-width: 1100px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 28px 20px 60px;
+  padding: 20px 22px 40px;
 }
 
 .ai-hero {
@@ -393,13 +392,6 @@ async function restore(item) {
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 20px;
-}
-
-.ai-hero h1 {
-  font-size: 26px;
-  font-weight: 700;
-  color: var(--ink-900, #1f2937);
-  margin: 0 0 8px;
 }
 
 .ai-hero p {

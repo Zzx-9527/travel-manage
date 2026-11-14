@@ -2,7 +2,7 @@
 
 > 适用：面试讲解、后续维护、以及"这块为什么要这么写"的追溯。
 > 代码位置：`backend/src/main/java/com/zjx/travel/ai/`
-> 前端页面：`frontend/src/views/user/AiPlanner.vue`（路由 `/travel/home/ai`）
+> 前端入口：用户端右下角「AI 规划」悬浮球 → 右侧抽屉（`components/user/AiPlannerPanel.vue`）
 
 ---
 
@@ -128,7 +128,7 @@ ai-stream 线程池（4 线程）
 - 记录是**旁路**：写库失败只告警一次，不影响用户拿到行程；表未创建时看板返回
   `tableReady=false` 并提示执行建表 SQL，而不是报 500。
 - 建表 SQL：`backend/sql/ai_plan_record.sql`。
-- 用户侧：`/travel/home/ai` 顶部「最近生成」列出最近 6 条，点一条读快照恢复，
+- 用户侧：悬浮球抽屉顶部「最近生成」列出最近 6 条，点一条读快照恢复，
   **不调模型、不扣配额**；`findByIdAndUser` 保证只能读自己的记录。
 - 为什么不合到 `route` 表：记录是"每次尝试"，路线是"用户决定采用"，粒度和生命周期都不同。
 - `route_detail` 没有存"推荐理由"的字段，理由只在生成结果里展示，落库时丢失——

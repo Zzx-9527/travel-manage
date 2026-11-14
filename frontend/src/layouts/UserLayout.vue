@@ -188,6 +188,22 @@
         </div>
       </aside>
     </transition>
+
+    <!-- AI 规划悬浮球：所有用户端页面右下角常驻 -->
+    <button v-show="!aiOpen" class="ai-fab" title="AI 规划师" aria-label="打开 AI 规划师" @click="openAi">
+      <i class="fa fa-magic"></i>
+      <span class="ai-fab-label">AI 规划</span>
+    </button>
+
+    <el-drawer
+      v-model="aiOpen"
+      :size="aiDrawerSize"
+      direction="rtl"
+      title="AI 规划师"
+      class="ai-drawer"
+    >
+      <AiPlannerPanel v-if="aiMounted" />
+    </el-drawer>
   </div>
 </template>
 
@@ -198,6 +214,23 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 import { getMessageUnreadCount } from '@/api/message'
 import AnnouncementBanner from '@/components/user/AnnouncementBanner.vue'
+import AiPlannerPanel from '@/components/user/AiPlannerPanel.vue'
+
+// AI 规划抽屉：首次打开才挂载，之后保持挂载以保留已生成的结果
+const aiOpen = ref(false)
+const aiMounted = ref(false)
+const aiDrawerSize = ref('920px')
+
+function openAi() {
+  aiMounted.value = true
+  aiDrawerSize.value = window.innerWidth < 960 ? '100%' : '920px'
+  aiOpen.value = true
+}
+
+// 抽屉里点景点/保存会触发跳转，跳转后自动收起，避免挡住新页面
+watch(() => route.fullPath, () => {
+  aiOpen.value = false
+})
 
 const route = useRoute()
 const router = useRouter()
@@ -237,8 +270,7 @@ const navItems = [
   { path: '/travel/home/spots', label: '景点' },
   { path: '/travel/home/guides', label: '攻略' },
   { path: '/travel/home/routes', label: '路线' },
-  { path: '/travel/home/planner', label: '路线规划' },
-  { path: '/travel/home/ai', label: 'AI 规划' }
+  { path: '/travel/home/planner', label: '路线规划' }
 ]
 
 async function loadUnread() {
@@ -861,5 +893,58 @@ function handleCommand(cmd) {
   .top-bar-right { gap: 8px; }
   .user-name { display: none; }
   .user-avatar-wrap { padding: 4px; }
+}
+
+/* AI 规划悬浮球 */
+.ai-fab {
+  position: fixed;
+  right: 26px;
+  bottom: 30px;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 52px;
+  padding: 0 18px 0 16px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1cb89d, #0f9481);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 10px 26px rgba(28, 184, 157, 0.36);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ai-fab i {
+  font-size: 18px;
+}
+
+.ai-fab:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(28, 184, 157, 0.46);
+}
+
+.ai-fab:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 560px) {
+  .ai-fab {
+    right: 14px;
+    bottom: 18px;
+    height: 46px;
+    padding: 0 14px;
+    font-size: 13px;
+  }
+}
+</style>
+
+<style>
+/* 抽屉内容被 teleport 到 body，scoped 样式够不到，这里用全局样式 */
+.ai-drawer .el-drawer__body {
+  padding: 0;
+  overflow-y: auto;
 }
 </style>
