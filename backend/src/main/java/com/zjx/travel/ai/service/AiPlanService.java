@@ -231,7 +231,11 @@ public class AiPlanService {
 
             day.setDayNo(dayNo);
             day.setSpots(spots);
-            if (day.getTheme() == null || day.getTheme().isBlank()) {
+            if (spots.isEmpty()) {
+                // 当天没有可安排的景点（候选不足或被校验清空）：统一显示"自由活动"，
+                // 避免出现"主题是园林休闲、但一个景点都没有"的误导性展示
+                day.setTheme("自由活动");
+            } else if (day.getTheme() == null || day.getTheme().isBlank()) {
                 day.setTheme("第 " + dayNo + " 天");
             }
             byDayNo.put(dayNo, day);
