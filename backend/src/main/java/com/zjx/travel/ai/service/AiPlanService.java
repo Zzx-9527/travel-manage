@@ -305,8 +305,10 @@ public class AiPlanService {
         if (all == null || all.isEmpty()) {
             throw new AiPlanException("景点库暂无可上架景点，无法生成行程");
         }
+        List<String> keywords = matchKeywords(destination);
         List<ScenicEntity> matched = all.stream()
-                .filter(s -> contains(s.getName(), destination) || contains(s.getAddress(), destination))
+                .filter(s -> keywords.stream()
+                        .anyMatch(k -> contains(s.getName(), k) || contains(s.getAddress(), k)))
                 .sorted(Comparator.<ScenicEntity, Double>comparing(
                         ScenicEntity::getScore, Comparator.nullsLast(Comparator.reverseOrder())))
                 .limit(MAX_CANDIDATES)
@@ -315,6 +317,25 @@ public class AiPlanService {
             throw new AiPlanException(notCoveredMessage(destination, all));
         }
         return matched;
+    }
+
+    /**
+     * 生成用于匹配的候选关键词。
+     *
+     * <p>用户输入的是"目的地"，未必和库里的写法一致：库里地址是"浙江省杭州市西湖区"，
+     * 用户填"杭州西湖"时整串匹配不上，但它确实存在。所以整串匹配失败后再退化到前两个字
+     * （"杭州"）试一次——这类"城市 + 具体景点"的输入很常见。
+     *
+     * <p>不用模糊包含或编辑距离：那会让"南京"命中"北京"之类的误匹配，
+     * 宁可拒绝也不能给错行程。
+     */
+    private List<String> matchKeywords(String destination) {
+        List<String> keywords = new ArrayList<>(2);
+        keywords.add(destination);
+        if (destination.length() > 2) {
+            keywords.add(destination.substring(0, 2));
+        }
+        return keywords;
     }
 
     /** 目的地未收录时的提示：告诉用户现在能规划哪些地方，而不是只说"没有" */

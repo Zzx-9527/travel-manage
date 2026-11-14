@@ -42,7 +42,8 @@ ai-stream 线程池（4 线程）
   ├─ 2. 并发闸          Redis SETNX ai:running:{userId}，防同一用户连点
   ├─ 3. 配额闸          Redis INCR ai:quota:{userId}:{yyyyMMdd}，超限直接错误事件
   ├─ 4. 取候选景点      scenic WHERE del_mark=1 AND status=1，只保留名称/地址命中目的地的
-  │                     没有命中就直接报"未收录"，**不回退全量候选**
+  │                     整串匹配不到时退化到前两个字（"杭州西湖" → "杭州"）
+  │                     仍然没有命中就直接报"未收录"，**不回退全量候选**
   ├─ 5. 组装 Prompt     system 固定规则 + user 需求与候选清单
   ├─ 6. 调模型          ChatClient.stream()，逐块推 SSE delta
   ├─ 7. 解析           剥 ``` 围栏 → Jackson → AiPlanResult
