@@ -190,7 +190,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import ScenicMap from '@/components/user/ScenicMap.vue'
 import EmptyState from '@/components/user/EmptyState.vue'
@@ -200,6 +200,7 @@ import { loadAMap } from '@/utils/amap'
 import { planRouteOrder, planRouteOrderFrom } from '@/utils/routePlanner'
 
 const router = useRouter()
+const route = useRoute()
 
 const list = ref([])          // 当前页已上架景点
 const selected = ref([])      // 已选景点（顺序即访问顺序）
@@ -519,8 +520,45 @@ function updateHeight() {
 onMounted(() => {
   loadSpots()
   updateHeight()
+  importAiPlan()
   window.addEventListener('resize', updateHeight)
 })
+
+/**
+ * 接收 AI 规划页带过来的行程。
+ *
+ * <p>关掉自动排序：规划页默认按最近邻重排，会把 AI"按天"的顺序打乱，
+ * 带过来就失去意义了。用户想优化可以自己重新打开自动排序或拖拽。
+ */
+function importAiPlan() {
+  if (route.query.from !== 'ai') {
+    return
+  }
+  const raw = sessionStorage.getItem('travel:ai:planner')
+  // 清掉 query，避免刷新页面时重复导入；同时让抽屉里的路由监听自然关闭
+  router.replace({ path: route.path, query: {} })
+  if (!raw) {
+    return
+  }
+  sessionStorage.removeItem('travel:ai:planner')
+  try {
+    const payload = JSON.parse(raw)
+    const spots = (payload.spots || []).filter(
+      (spot) => spot && spot.id && spot.longitude != null && spot.latitude != null
+    )
+    if (!spots.length) {
+      ElMessage.warning('AI 行程里的景点缺少坐标，无法在地图上规划')
+      return
+    }
+    autoSort.value = false
+    selected.value = spots
+    ElMessage.success(`已带入 AI 行程的 ${spots.length} 个景点`)
+  } catch {
+    ElMessage.warning('AI 行程解析失败，请回到 AI 规划重新生成')
+  }
+}
+
+watch(() => route.query.from, importAiPlan)
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', updateHeight)

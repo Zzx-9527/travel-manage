@@ -108,6 +108,7 @@
         </div>
         <div class="result-actions">
           <el-button :loading="loading" @click="generate">再生成一次</el-button>
+          <el-button @click="goPlanner">在地图上规划</el-button>
           <el-button type="primary" plain :loading="saving" @click="save">保存为我的路线</el-button>
         </div>
       </div>
@@ -314,6 +315,41 @@ async function save() {
 
 function goSpot(id) {
   router.push(`/travel/home/spots/${id}`)
+}
+
+/**
+ * 把 AI 行程带进路线规划页。
+ *
+ * <p>用 sessionStorage 传整份景点对象（含经纬度），而不是只用 id 让规划页再查一遍：
+ * 规划页需要坐标才能算路线，重新查 N 次既慢又可能因为景点下架而对不上。
+ * 键只在跳转时写、读取时删，不会长期驻留。
+ */
+function goPlanner() {
+  const spots = []
+  const seen = new Set()
+  for (const day of plan.value?.days || []) {
+    for (const spot of day.spots || []) {
+      if (!spot.scenicId || seen.has(spot.scenicId)) continue
+      seen.add(spot.scenicId)
+      spots.push({
+        id: spot.scenicId,
+        name: spot.name,
+        address: spot.address,
+        longitude: spot.longitude,
+        latitude: spot.latitude,
+        price: spot.price,
+        score: spot.score,
+        cover: spot.cover,
+        openTime: spot.openTime
+      })
+    }
+  }
+  if (!spots.length) {
+    ElMessage.warning('这份行程里没有可用的景点')
+    return
+  }
+  sessionStorage.setItem('travel:ai:planner', JSON.stringify({ spots }))
+  router.push({ path: '/travel/home/planner', query: { from: 'ai' } })
 }
 
 function slotClass(slot) {
