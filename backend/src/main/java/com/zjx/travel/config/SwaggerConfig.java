@@ -7,17 +7,19 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * 接口文档配置（Knife4j 4.5 + SpringDoc）。
+ * 接口文档配置（SpringDoc + OpenAPI 3）。
  *
- * <p>原来的 springfox 3.0.0 自 2020 年起停止维护，与 Spring Boot 2.6+ 的
- * {@code PathPatternParser} 冲突，只能通过 {@code spring.mvc.pathmatch.matching-strategy=ANT_PATH_MATCHER}
- * 降级兼容。SpringDoc 直接基于 Spring 的 {@code HandlerMethod} 做扫描，是当前的标准实现；
- * Knife4j 在 SpringDoc 之上提供中文界面、接口分组与调试能力。
+ * <p>演进路径：springfox 3.0.0（2020 年停更，与 Boot 2.6+ 的 {@code PathPatternParser} 冲突）
+ * → Knife4j 4.5（Boot 2 时代的中文 UI）→ <b>SpringDoc 官方 starter</b>。
+ * 换掉 Knife4j 的原因很具体：它内置的 springdoc 2.3.0 调用了 Spring 6.2 已删除的
+ * {@code ControllerAdviceBean(Object)} 构造器，在 Boot 3.4+ 上文档页必崩；
+ * 强行升 springdoc 又会撞 {@code SpringDocConfigProperties.getGroupConfigs()} 改名。
+ * 与其打补丁，不如回到官方实现：功能完整、升级路径可控。
  *
- * <p>项目里没有历史 swagger 注解，因此迁移只需换依赖 + 这个 {@link OpenAPI} Bean：
- * 文档地址由 {@code /swagger-ui/index.html} 变为 {@code /doc.html}。
+ * <p>文档地址：{@code /swagger-ui/index.html}（{@code /swagger-ui.html} 会重定向过去），
+ * 原始 OpenAPI JSON 在 {@code /v3/api-docs}。
  *
- * <p>后续给接口加说明时，使用 OpenAPI 3 注解：
+ * <p>给接口加说明时使用 OpenAPI 3 注解：
  * {@code @Tag}（类上）、{@code @Operation}（方法上）、{@code @Parameter}、{@code @Schema}（实体上）。
  */
 @Configuration

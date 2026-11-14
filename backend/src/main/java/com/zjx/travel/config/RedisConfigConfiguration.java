@@ -41,7 +41,7 @@ public class RedisConfigConfiguration {
      * {@code @ConditionalOnMissingBean(name = "redisTemplate")} 检测到同名 Bean 后会退让，
      * 从而保证全项目只有一个 RedisTemplate，注入时不会出现两个候选。
      *
-     * @param connectionFactory 由 Boot 根据 spring.redis.* 自动创建的 Lettuce 连接工厂
+     * @param connectionFactory 由 Boot 根据 spring.data.redis.* 自动创建的 Lettuce 连接工厂
      */
     @Bean
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {

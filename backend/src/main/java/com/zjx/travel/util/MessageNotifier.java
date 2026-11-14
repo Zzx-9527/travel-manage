@@ -5,7 +5,7 @@ import com.zjx.travel.domain.TravelUserEntity;
 import com.zjx.travel.service.MessageService;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 @Component
 public class MessageNotifier {

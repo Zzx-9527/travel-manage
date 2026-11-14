@@ -4,7 +4,7 @@ import com.zjx.travel.domain.StrategyCommentEntity;
 import com.zjx.travel.mapper.StrategyCommentMapper;
 import com.zjx.travel.service.StrategyCommentService;
 import org.springframework.stereotype.Service;
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.PageImpl;

@@ -4,7 +4,7 @@ import com.zjx.travel.domain.CollectEntity;
 import com.zjx.travel.service.CollectService;
 import com.zjx.travel.util.*;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.data.domain.Page;

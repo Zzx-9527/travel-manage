@@ -22,7 +22,7 @@ import java.time.Duration;
  * 绑定 spring-data 版本，Boot 2.7 / 3.x 适配不同，升级容易踩坑。手写 10 行，边界清晰：
  * <b>Lettuce 管缓存与会话，Redisson 管锁与限流</b>。
  *
- * <p>配置复用 {@code spring.redis.*}（host / port / password / database / timeout），
+ * <p>配置复用 {@code spring.data.redis.*}（host / port / password / database / timeout），
  * 不新增一套连接参数，避免两边不一致。
  */
 @Configuration

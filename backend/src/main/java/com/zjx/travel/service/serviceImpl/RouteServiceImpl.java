@@ -4,7 +4,7 @@ import com.zjx.travel.domain.RouteEntity;
 import com.zjx.travel.mapper.RouteMapper;
 import com.zjx.travel.service.RouteService;
 import org.springframework.stereotype.Service;
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.PageImpl;

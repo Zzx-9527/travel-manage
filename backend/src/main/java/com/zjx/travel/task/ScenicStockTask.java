@@ -3,7 +3,7 @@ package com.zjx.travel.task;
 import com.zjx.travel.service.ScenicStockService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 @Component
 public class ScenicStockTask {

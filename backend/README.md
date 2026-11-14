@@ -1,6 +1,6 @@
 # 🏕️ 旅游管理平台 — 后端
 
-基于 **Spring Boot 2.7.5** + **MyBatis-Plus** 构建的旅游业务管理 RESTful 后端服务，为前端（管理后台 / 用户端）提供统一的 API 接口支撑。
+基于 **Spring Boot 3.5.13** + **MyBatis-Plus** 构建的旅游业务管理 RESTful 后端服务，为前端（管理后台 / 用户端）提供统一的 API 接口支撑。
 
 ---
 
@@ -8,18 +8,18 @@
 
 | 技术 | 版本 / 说明 |
 |------|------------|
-| Java | 8 |
-| Spring Boot | 2.7.5 |
+| Java | 17 |
+| Spring Boot | 3.5.13 |
 | MyBatis-Plus | 3.5.9（ORM + 自动填充 + 分页） |
 | MySQL | 库存迁移脚本按 8.0 编写，数据库 `travel_management` |
 | Sa-Token | 1.44.0，会话存 Redis（24h 绝对过期 + 30min 无操作过期） |
 | Spring Security Crypto | BCrypt 密码加密 |
-| 接口文档 | Knife4j 4.5.0 + SpringDoc 1.7.0（OpenAPI 3） |
+| 接口文档 | SpringDoc 2.8.17（OpenAPI 3，`/swagger-ui/index.html`） |
 | 连接池 | HikariCP |
-| Lombok | 1.18.24 |
+| Lombok | 由 Spring Boot BOM 管理 |
 | 部署 | 可执行 JAR，内嵌 Tomcat |
 
-> 技术栈治理（springfox → Knife4j + SpringDoc、DBCP2 → HikariCP、WAR → jar、JWT → Sa-Token）已完成，Redis 缓存已接入；Redisson 防重与登录限流见 [接入规划](docs/redis-integration-plan.md) Phase 5。
+> 技术栈治理（springfox → SpringDoc、DBCP2 → HikariCP、WAR → jar、JWT → Sa-Token）已完成，Redis 缓存已接入；Redisson 防重与登录限流见 [接入规划](docs/redis-integration-plan.md) Phase 5。2026-11 已完成 Spring Boot 2.7 → 3.5 / Java 8 → 17 升级。
 
 ---
 
@@ -68,7 +68,7 @@ mvn spring-boot:run
 
 ### 5. 访问接口文档
 
-启动后访问：`http://localhost:8081/travel/doc.html`（Knife4j 界面；旧的 `/swagger-ui/index.html` 已随 springfox 一起移除）
+启动后访问：`http://localhost:8081/travel/swagger-ui/index.html`（SpringDoc 官方 Swagger UI；`/swagger-ui.html` 会自动重定向过去。原 Knife4j 的 `/doc.html` 已随 Boot 3 升级移除）
 
 ---
 

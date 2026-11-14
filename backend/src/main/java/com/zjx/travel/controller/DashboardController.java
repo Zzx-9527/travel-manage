@@ -4,7 +4,7 @@ import cn.dev33.satoken.annotation.SaCheckRole;
 import com.zjx.travel.service.DashboardService;
 import com.zjx.travel.util.ReturnVO;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;

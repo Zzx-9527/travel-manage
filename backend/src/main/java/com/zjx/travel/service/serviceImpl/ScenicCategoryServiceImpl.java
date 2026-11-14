@@ -4,7 +4,7 @@ import com.zjx.travel.domain.ScenicCategoryEntity;
 import com.zjx.travel.mapper.ScenicCategoryMapper;
 import com.zjx.travel.service.ScenicCategoryService;
 import org.springframework.stereotype.Service;
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.PageImpl;

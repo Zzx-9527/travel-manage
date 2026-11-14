@@ -5,7 +5,7 @@ import com.zjx.travel.domain.RouteDetailEntity;
 import com.zjx.travel.service.RouteDetailService;
 import com.zjx.travel.util.*;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;

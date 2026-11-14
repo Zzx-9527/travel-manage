@@ -5,7 +5,7 @@ import com.zjx.travel.mapper.*;
 import com.zjx.travel.service.ScenicStockService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.time.*;
 import java.util.*;
 

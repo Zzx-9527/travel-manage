@@ -4,6 +4,9 @@ import cn.dev33.satoken.interceptor.SaInterceptor;
 import cn.dev33.satoken.router.SaHttpMethod;
 import cn.dev33.satoken.router.SaRouter;
 import cn.dev33.satoken.stp.StpUtil;
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -39,7 +42,7 @@ public class WebConfig implements WebMvcConfigurer {
      * 免登录白名单：
      * <ul>
      *   <li>登录、注册（{@code /travelUser/add} 是注册接口）；</li>
-     *   <li>接口文档相关（Knife4j 的 doc.html、SpringDoc 的 api-docs、静态资源）；</li>
+     *   <li>接口文档相关（SpringDoc 的 swagger-ui、api-docs、静态资源）；</li>
      *   <li>上传后的图片（{@code /uploads/**}）：浏览器 {@code <img>} 无法携带 token，
      *       必须匿名可读，否则图片全部裂开；</li>
      *   <li>错误页，避免未登录时二次错误处理再次触发拦截。</li>
@@ -48,10 +51,10 @@ public class WebConfig implements WebMvcConfigurer {
     private static final String[] WHITE_LIST = {
             "/travelUser/login",
             "/travelUser/add",
-            "/doc.html",
+            "/swagger-ui.html",
+            "/swagger-ui/**",
             "/webjars/**",
             "/v3/api-docs/**",
-            "/swagger-ui/**",
             "/swagger-resources/**",
             "/uploads/**",
             "/favicon.ico",
@@ -68,7 +71,23 @@ public class WebConfig implements WebMvcConfigurer {
             SaRouter.match("/**")
                     .notMatch(WHITE_LIST)
                     .check(r -> StpUtil.checkLogin());
-        })).addPathPatterns("/**");
+        }) {
+            /**
+             * ERROR 转发（如 404 找不到接口）会再次进入拦截器，但此时 Sa-Token 的
+             * 线程上下文已在首次请求结束时清理，继续执行会抛
+             * {@code SaTokenContextException: SaTokenContext 上下文尚未初始化}，
+             * 把本该是 404 的响应变成 500，并在日志里刷一屏堆栈。
+             * 错误页本身不需要鉴权，直接放行。
+             */
+            @Override
+            public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
+                    throws Exception {
+                if (DispatcherType.ERROR.equals(request.getDispatcherType())) {
+                    return true;
+                }
+                return super.preHandle(request, response, handler);
+            }
+        }).addPathPatterns("/**");
     }
 
     /**

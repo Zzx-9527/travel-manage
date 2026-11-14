@@ -3,7 +3,7 @@ package com.zjx.travel.service.serviceImpl;
 import com.zjx.travel.mapper.DashboardMapper;
 import com.zjx.travel.service.DashboardService;
 import org.springframework.stereotype.Service;
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.HashMap;
 import java.util.Map;
 

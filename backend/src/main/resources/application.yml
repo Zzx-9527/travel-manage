@@ -20,18 +20,21 @@ spring:
             max-lifetime: 1800000
 
     # ===== Redis =====
-    redis:
-        host: localhost
-        port: 6379
-        # 本地 Redis 未启用 requirepass（redis-cli 执行 acl list 可见 user default on nopass）。
-        # 若你的 Redis 配了密码，取消下面一行注释并改成实际密码；否则 Redisson 发 AUTH 会直接连不上。
-        # password: 123456
-        database: 0
-        timeout: 3000ms
-        connect-timeout: 3000ms
-        client-name: travel-app
-        lettuce:
-            shutdown-timeout: 200ms
+    # Boot 3 起配置前缀由 spring.redis.* 改为 spring.data.redis.*，
+    # 旧前缀不会报错、会静默失效（连到默认的 localhost:6379/db0），排查时极易误判。
+    data:
+        redis:
+            host: localhost
+            port: 6379
+            # 本地 Redis 未启用 requirepass（redis-cli 执行 acl list 可见 user default on nopass）。
+            # 若你的 Redis 配了密码，取消下面一行注释并改成实际密码；否则 Redisson 发 AUTH 会直接连不上。
+            # password: 123456
+            database: 0
+            timeout: 3000ms
+            connect-timeout: 3000ms
+            client-name: travel-app
+            lettuce:
+                shutdown-timeout: 200ms
 
     # ===== 文件上传 =====
     servlet:
@@ -84,8 +87,12 @@ logging:
     level:
         com.zjx.travel: INFO
 
-# ===== 接口文档（Knife4j + SpringDoc） =====
-knife4j:
-    enable: true
-    setting:
-        language: zh_cn
+# ===== 接口文档（SpringDoc / OpenAPI 3） =====
+# 原 Knife4j 已移除（其内置 springdoc 2.3.0 与 Spring 6.2 不兼容）。
+# 文档地址：http://localhost:8081/travel/swagger-ui/index.html
+# OpenAPI JSON：http://localhost:8081/travel/v3/api-docs
+springdoc:
+    api-docs:
+        path: /v3/api-docs
+    swagger-ui:
+        path: /swagger-ui.html

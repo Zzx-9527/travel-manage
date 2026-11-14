@@ -13,7 +13,7 @@ import com.zjx.travel.util.MessageNotifier;
 import com.zjx.travel.util.RedisKeys;
 import com.zjx.travel.util.ReturnVO;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Page;
 

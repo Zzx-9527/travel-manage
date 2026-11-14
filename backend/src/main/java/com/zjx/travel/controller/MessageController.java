@@ -5,7 +5,7 @@ import com.zjx.travel.domain.MessageEntity;
 import com.zjx.travel.service.MessageService;
 import com.zjx.travel.util.*;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Page;
 

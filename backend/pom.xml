@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.7.5</version>
+        <version>3.5.13</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.yq</groupId>
@@ -15,13 +15,8 @@
     <name>spbYq</name>
     <description>Demo project for Spring Boot</description>
     <properties>
-        <java.version>1.8</java.version>
-        <!--
-          Redisson 3.27.2 依赖 Netty 4.1.107，而 Spring Boot 2.7.5 默认管理的是 4.1.84。
-          这里显式抬到 4.1.107，让 Lettuce 与 Redisson 共用同一套 Netty，
-          否则 Redisson 调用新 API 时会抛 NoSuchMethodError。
-        -->
-        <netty.version>4.1.107.Final</netty.version>
+        <java.version>17</java.version>
+        <springdoc.version>2.8.17</springdoc.version>
     </properties>
     <dependencies>
         <dependency>
@@ -34,7 +29,7 @@
         </dependency>
         <dependency>
             <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-boot-starter</artifactId>
+            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
             <version>3.5.9</version>
         </dependency>
 
@@ -63,6 +58,8 @@
           starter 会注册 RedissonConnectionFactory 去争抢 RedisConnectionFactory，
           把已验证的 Lettuce 缓存链路顶掉；核心包只提供 RedissonClient，
           由 config/RedissonConfig 显式构建，职责边界清晰。
+          注意：原先为 Boot 2.7 显式抬高的 netty.version 已删除，
+          Boot 3.5 管理的 Netty 版本本身就高于 Redisson 3.27.2 的要求。
         -->
         <dependency>
             <groupId>org.redisson</groupId>
@@ -79,12 +76,6 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.24</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.data</groupId>
-            <artifactId>spring-data-commons</artifactId>
-            <version>2.7.2</version>
         </dependency>
 
         <dependency>
@@ -92,10 +83,10 @@
             <artifactId>spring-security-crypto</artifactId>
         </dependency>
 
-        <!-- 鉴权：Sa-Token（Boot 2 专用 starter）+ 会话存 Redis -->
+        <!-- 鉴权：Sa-Token（Boot 3 专用 starter）+ 会话存 Redis -->
         <dependency>
             <groupId>cn.dev33</groupId>
-            <artifactId>sa-token-spring-boot-starter</artifactId>
+            <artifactId>sa-token-spring-boot3-starter</artifactId>
             <version>1.44.0</version>
         </dependency>
         <dependency>
@@ -104,11 +95,17 @@
             <version>1.44.0</version>
         </dependency>
 
-        <!-- 接口文档：Knife4j 4.5 + SpringDoc（Boot 2 版本，替换已停更的 springfox） -->
+        <!--
+          接口文档：SpringDoc（OpenAPI 3）。
+          原 Knife4j 4.5.0 内置 springdoc 2.3.0，调用了 Spring 6.2 已删除的
+          ControllerAdviceBean(Object) 构造器，在 Boot 3.4+ 上必崩且无干净解
+          （强升 springdoc 会再撞 SpringDocConfigProperties.getGroupConfigs 改名）。
+          这里直接换官方 starter，文档地址由 /doc.html 变为 /swagger-ui/index.html。
+        -->
         <dependency>
-            <groupId>com.github.xiaoymin</groupId>
-            <artifactId>knife4j-openapi3-spring-boot-starter</artifactId>
-            <version>4.5.0</version>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${springdoc.version}</version>
         </dependency>
 
         <dependency>
