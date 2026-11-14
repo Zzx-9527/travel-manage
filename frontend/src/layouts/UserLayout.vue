@@ -237,7 +237,8 @@ const navItems = [
   { path: '/travel/home/spots', label: '景点' },
   { path: '/travel/home/guides', label: '攻略' },
   { path: '/travel/home/routes', label: '路线' },
-  { path: '/travel/home/planner', label: '路线规划' }
+  { path: '/travel/home/planner', label: '路线规划' },
+  { path: '/travel/home/ai', label: 'AI 规划' }
 ]
 
 async function loadUnread() {

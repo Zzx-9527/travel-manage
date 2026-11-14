@@ -1,7 +1,9 @@
 package com.zjx.travel.ai.controller;
 
 import com.zjx.travel.ai.dto.AiPlanRequest;
+import com.zjx.travel.ai.dto.AiPlanSaveRequest;
 import com.zjx.travel.ai.exception.AiPlanException;
+import com.zjx.travel.ai.service.AiPlanSaveService;
 import com.zjx.travel.ai.service.AiPlanService;
 import com.zjx.travel.util.ReturnVO;
 import com.zjx.travel.util.SecurityUtil;
@@ -11,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import java.util.Map;
 
 /**
  * AI 行程规划接口。
@@ -34,9 +38,11 @@ public class AiPlanController {
     private static final long SSE_TIMEOUT_MILLIS = 120_000L;
 
     private final AiPlanService aiPlanService;
+    private final AiPlanSaveService aiPlanSaveService;
 
-    public AiPlanController(AiPlanService aiPlanService) {
+    public AiPlanController(AiPlanService aiPlanService, AiPlanSaveService aiPlanSaveService) {
         this.aiPlanService = aiPlanService;
+        this.aiPlanSaveService = aiPlanSaveService;
     }
 
     /**
@@ -66,5 +72,18 @@ public class AiPlanController {
         emitter.onTimeout(emitter::complete);
         aiPlanService.planStream(request, SecurityUtil.currentUserId(), emitter);
         return emitter;
+    }
+
+    /**
+     * 把生成结果保存为"我的路线"（route + route_detail，状态待审核）。
+     */
+    @PostMapping("plan/save")
+    public ReturnVO save(@RequestBody AiPlanSaveRequest request) {
+        try {
+            Integer routeId = aiPlanSaveService.save(request, SecurityUtil.currentUserId());
+            return ReturnVO.getSuccessDataReturnVO(Map.of("routeId", routeId));
+        } catch (AiPlanException e) {
+            return new ReturnVO(0, e.getMessage());
+        }
     }
 }
