@@ -135,6 +135,9 @@
   box-sizing: border-box;
 }
 .el-message-box {
+  /* 组件默认是 width:100% + max-width:420px，
+     只覆盖 max-width 会让它失去上限、拉满整屏，所以这里把宽度也一起定住 */
+  width: var(--el-messagebox-width, 420px);
   max-width: calc(100vw - 32px);
   box-sizing: border-box;
 }

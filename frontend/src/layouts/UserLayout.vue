@@ -883,7 +883,8 @@ function handleCommand(cmd) {
   position: fixed;
   right: 26px;
   bottom: 30px;
-  z-index: 2000;
+  /* 低于 Element 弹层（2000 起），避免遮住对话框/下拉 */
+  z-index: 1980;
   display: flex;
   align-items: center;
   gap: 8px;

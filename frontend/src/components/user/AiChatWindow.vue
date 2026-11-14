@@ -84,6 +84,17 @@
           </div>
         </footer>
 
+        <!-- 清空确认：贴在窗口内部，不用全局弹窗，避免被窗口盖住 / 撑满整屏 -->
+        <transition name="confirm-fade">
+          <div v-if="confirmingClear" class="confirm-bar">
+            <span class="confirm-text">清空后这段对话找不回来了</span>
+            <div class="confirm-actions">
+              <button class="confirm-ghost" @click="confirmingClear = false">取消</button>
+              <button class="confirm-danger" @click="doClear">清空</button>
+            </div>
+          </div>
+        </transition>
+
         <!-- 八个方向的缩放热区；窗口本身 overflow:hidden，所以贴边放在内侧 -->
         <span
           v-for="dir in handles"
@@ -100,7 +111,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 import {
   appendChatPlan,
@@ -124,6 +135,7 @@ const suggestions = ['北京三天怎么玩', '带老人去杭州要注意什么
 const messages = ref([])
 const draft = ref('')
 const sending = ref(false)
+const confirmingClear = ref(false)
 const loadingHistory = ref(false)
 const loaded = ref(false)
 
@@ -170,6 +182,9 @@ watch(open, (value) => {
   if (value) {
     loadHistory()
     scrollToBottom()
+  } else {
+    // 关窗时收起确认条，下次打开是干净状态
+    confirmingClear.value = false
   }
 })
 
@@ -372,15 +387,15 @@ function goSpot(id) {
 }
 
 async function clearAll() {
-  try {
-    await ElMessageBox.confirm('清空后这段对话就找不回来了，确定吗？', '清空对话', {
-      confirmButtonText: '清空',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-  } catch {
+  if (!messages.value.length) {
+    ElMessage.info('还没有对话内容')
     return
   }
+  confirmingClear.value = true
+}
+
+async function doClear() {
+  confirmingClear.value = false
   try {
     await clearChatHistory()
     messages.value = []
@@ -568,7 +583,8 @@ function resetPos() {
   position: fixed;
   right: 26px;
   bottom: 96px;
-  z-index: 2100;
+  /* 低于 Element 弹层（2000 起）：对话框、下拉、消息提示要能盖住助手窗口 */
+  z-index: 1990;
   width: 400px;
   height: 620px;
   max-height: calc(100vh - 120px);
@@ -836,6 +852,76 @@ function resetPos() {
   padding: 10px 12px 12px;
   border-top: 1px solid #f1f5f9;
   background: #fff;
+}
+
+/* ===== 清空确认条 ===== */
+.confirm-bar {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 94px;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid #f1f5f9;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
+}
+
+.confirm-text {
+  font-size: 12px;
+  color: #4b5563;
+  line-height: 1.5;
+}
+
+.confirm-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.confirm-ghost,
+.confirm-danger {
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.confirm-ghost {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #4b5563;
+}
+
+.confirm-ghost:hover {
+  border-color: #d1d5db;
+}
+
+.confirm-danger {
+  border: 1px solid #ef4444;
+  background: #ef4444;
+  color: #fff;
+}
+
+.confirm-danger:hover {
+  background: #dc2626;
+}
+
+.confirm-fade-enter-active,
+.confirm-fade-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.confirm-fade-enter-from,
+.confirm-fade-leave-to {
+  opacity: 0;
+  transform: translateY(6px);
 }
 
 .plan-entry {
