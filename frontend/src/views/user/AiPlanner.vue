@@ -97,6 +97,14 @@
           <div v-if="!day.spots || !day.spots.length" class="day-empty">自由活动 / 机动安排</div>
           <ul v-else class="spot-list">
             <li v-for="(spot, index) in day.spots" :key="spot.scenicId" class="spot-row">
+              <img
+                v-if="spot.cover"
+                :src="spot.cover"
+                :alt="spot.name"
+                class="spot-cover"
+                loading="lazy"
+                @error="hideBrokenImage"
+              />
               <span class="spot-index">{{ index + 1 }}</span>
               <div class="spot-main">
                 <div class="spot-title">
@@ -248,6 +256,11 @@ async function save() {
 
 function goSpot(id) {
   router.push(`/travel/home/spots/${id}`)
+}
+
+/** 封面加载失败时隐藏图片，避免出现破图图标；文字信息仍然完整 */
+function hideBrokenImage(event) {
+  event.target.style.display = 'none'
 }
 </script>
 
@@ -481,6 +494,15 @@ function goSpot(id) {
 .spot-row {
   display: flex;
   gap: 12px;
+}
+
+.spot-cover {
+  flex-shrink: 0;
+  width: 76px;
+  height: 56px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--ink-50, #f3f4f6);
 }
 
 .spot-index {

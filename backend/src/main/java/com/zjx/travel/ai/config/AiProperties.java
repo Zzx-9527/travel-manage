@@ -24,7 +24,4 @@ public class AiProperties {
 
     /** 每天最多安排几个景点，服务端会截断模型给的多余项 */
     private int maxSpotsPerDay = 5;
-
-    /** 调用大模型的读超时（秒） */
-    private int timeoutSeconds = 60;
 }

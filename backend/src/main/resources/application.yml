@@ -44,8 +44,9 @@ spring:
                 shutdown-timeout: 200ms
 
     # ===== Spring AI（DeepSeek 走 OpenAI 兼容协议） =====
-    # Key 不要写进本文件：本地通过环境变量 DEEPSEEK_API_KEY 注入（IDEA 运行配置里填），
-    # 或复制 application-local.yml.example 为 application-local.yml 填好后用 local profile 启动。
+    # Key 不要写进本文件：复制 backend/.env.example 为 backend/.env 填好即可
+    # （application.yml 通过 spring.config.import 把 .env 当 properties 读入）。
+    # 也支持环境变量 DEEPSEEK_API_KEY，且优先级高于 .env。
     ai:
         openai:
             base-url: https://api.deepseek.com
@@ -57,6 +58,21 @@ spring:
                     # 结构化输出优先稳定，温度压低
                     temperature: 0.5
                     max-tokens: 2000
+        # 上游不可达时不要长时间重试：默认策略会退避重试多次，
+        # 用户端表现为"点了生成一直转圈"。这里限制成 2 次、总退避不到 2 秒，
+        # 失败就立刻给可读提示，让用户自己决定要不要重试。
+        retry:
+            max-attempts: 2
+            backoff:
+                initial-interval: 300ms
+                multiplier: 2
+                max-interval: 2s
+
+    # 出站 HTTP 超时（Spring AI 的 RestClient 走这套默认值）
+    http:
+        client:
+            connect-timeout: 5s
+            read-timeout: 60s
 
     # ===== 文件上传 =====
     servlet:
@@ -85,8 +101,6 @@ travel:
         daily-limit: 10
         # 每天最多安排几个景点，超出部分由服务端截断
         max-spots-per-day: 5
-        # 调用大模型的读超时（秒）
-        timeout-seconds: 60
 
 # ===== Sa-Token 登录鉴权 =====
 # 会话由 sa-token-redis-jackson 写入同一个 Redis（key 前缀 satoken:），因此重启不掉线

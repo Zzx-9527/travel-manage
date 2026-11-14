@@ -160,6 +160,26 @@ public class RedisUtil {
     }
 
     /**
+     * SET NX EX：key 不存在时才写入，并带过期时间。
+     *
+     * <p>用于"同一用户只允许一个任务在跑"的并发闸。返回值刻意用 {@link Boolean} 而不是
+     * {@code boolean}，因为要区分三种情况：
+     * <ul>
+     *   <li>{@code TRUE}：抢到；</li>
+     *   <li>{@code FALSE}：已被别人占用；</li>
+     *   <li>{@code null}：Redis 异常，调用方应当按"放行"处理，不能因为缓存故障把功能锁死。</li>
+     * </ul>
+     */
+    public Boolean setIfAbsent(String key, Object value, Duration ttl) {
+        try {
+            return redisTemplate.opsForValue().setIfAbsent(key, value, ttl);
+        } catch (Exception e) {
+            log.warn("SETNX 失败，key={}, cause={}", key, e.toString());
+            return null;
+        }
+    }
+
+    /**
      * 设置 key 的过期时间（秒级）。
      *
      * <p>用于"先 INCR 再补 TTL"的计数场景：自增和设置过期无法用单条命令完成，

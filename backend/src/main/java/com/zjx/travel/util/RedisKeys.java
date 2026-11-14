@@ -59,6 +59,15 @@ public final class RedisKeys {
     }
 
     /**
+     * AI 生成中的并发标记：travel:v1:ai:running:{userId}
+     *
+     * <p>同一用户同时只允许一条生成任务在跑，TTL 兜底防止进程崩溃后永久占用。
+     */
+    public static String aiRunning(Integer userId) {
+        return PREFIX + "ai:running:" + userId;
+    }
+
+    /**
      * 由业务 key 推导锁 key：{@code travel:v1:scenic:detail:12} → {@code travel:v1:lock:scenic:detail:12}。
      * 非本前缀的 key 会整体挂到 lock: 段下，保证锁 key 仍在统一命名空间内。
      */

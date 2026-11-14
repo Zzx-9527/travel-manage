@@ -29,9 +29,38 @@ public class AiQuotaService {
     private final RedisUtil redisUtil;
     private final AiProperties properties;
 
+    /** 生成中标记的存活时间，需大于 SSE 连接上限（120s），防止长任务被误判为结束 */
+    private static final Duration GENERATION_LOCK_TTL = Duration.ofSeconds(150);
+
     public AiQuotaService(RedisUtil redisUtil, AiProperties properties) {
         this.redisUtil = redisUtil;
         this.properties = properties;
+    }
+
+    /**
+     * 并发闸：同一用户同时只允许一条生成任务。
+     *
+     * <p>为什么需要它：每日配额只限制"总量"，拦不住用户连点五次导致的并发调用——
+     * 那五次会同时打到模型，既浪费钱，返回顺序也会乱。
+     *
+     * <p>Redis 异常时放行（{@code setIfAbsent} 返回 null），不让缓存故障把功能锁死。
+     *
+     * @return true 表示可以继续；false 表示已有任务在跑
+     */
+    public boolean tryAcquireGeneration(Integer userId) {
+        if (userId == null) {
+            return true;
+        }
+        Boolean locked = redisUtil.setIfAbsent(RedisKeys.aiRunning(userId), "1", GENERATION_LOCK_TTL);
+        return !Boolean.FALSE.equals(locked);
+    }
+
+    /** 释放并发标记，放在 finally 里调用 */
+    public void releaseGeneration(Integer userId) {
+        if (userId == null) {
+            return;
+        }
+        redisUtil.delete(RedisKeys.aiRunning(userId));
     }
 
     /**

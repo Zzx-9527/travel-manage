@@ -15,10 +15,13 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.publisher.Flux;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -28,6 +31,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -59,6 +64,9 @@ public class AiPlanService {
     /** 目的地命中的候选少于这个数，就退回全量候选（避免"西安"只匹配到 1 个景点） */
     private static final int MIN_MATCHED_CANDIDATES = 5;
 
+    /** 从 Spring AI 的异常消息里抠状态码，形如 "HTTP 401 - {...}" */
+    private static final Pattern HTTP_STATUS_PATTERN = Pattern.compile("HTTP (\\d{3})");
+
     private final ChatClient chatClient;
     private final ScenicMapper scenicMapper;
     private final PlanPromptBuilder promptBuilder;
@@ -87,38 +95,96 @@ public class AiPlanService {
     }
 
     public AiPlanResult plan(AiPlanRequest request, Integer userId) {
-        AiPlanRequest req = normalize(request);
-        quotaService.checkAndConsume(userId);
-        List<ScenicEntity> candidates = loadCandidates(req.getDestination());
-        if (candidates.isEmpty()) {
-            throw new AiPlanException("景点库暂无可上架景点，无法生成行程");
+        if (!quotaService.tryAcquireGeneration(userId)) {
+            throw new AiPlanException("上一条行程还在生成中，请稍候再试");
         }
-
-        long start = System.currentTimeMillis();
-        String raw;
         try {
-            raw = chatClient.prompt()
-                    .system(promptBuilder.systemPrompt())
-                    .user(promptBuilder.userPrompt(req, candidates))
-                    .call()
-                    .content();
-        } catch (Exception e) {
-            // 上游错误（超时、401、限流）只记日志，不把原始报文返回给前端
-            log.error("调用大模型失败：目的地={}，天数={}", req.getDestination(), req.getDays(), e);
-            throw new AiPlanException("AI 服务暂时不可用，请稍后重试");
+            AiPlanRequest req = normalize(request);
+            quotaService.checkAndConsume(userId);
+            List<ScenicEntity> candidates = loadCandidates(req.getDestination());
+            if (candidates.isEmpty()) {
+                throw new AiPlanException("景点库暂无可上架景点，无法生成行程");
+            }
+
+            long start = System.currentTimeMillis();
+            String raw;
+            try {
+                raw = chatClient.prompt()
+                        .system(promptBuilder.systemPrompt())
+                        .user(promptBuilder.userPrompt(req, candidates))
+                        .call()
+                        .content();
+            } catch (Exception e) {
+                // 上游错误（超时、401、限流）只记日志，不把原始报文返回给前端
+                log.error("调用大模型失败：目的地={}，天数={}", req.getDestination(), req.getDays(), e);
+                throw new AiPlanException(friendlyLlmError(e));
+            }
+            long latency = System.currentTimeMillis() - start;
+
+            AiPlanResult result = parse(raw);
+            int dropped = validateAndEnrich(result, req, candidates);
+
+            result.setModel(model);
+            result.setLatencyMs(latency);
+            result.setDroppedSpots(dropped);
+
+            log.info("AI 行程生成完成：目的地={}，天数={}，有效景点={}，丢弃={}，耗时={}ms",
+                    req.getDestination(), req.getDays(), countSpots(result), dropped, latency);
+            return result;
+        } finally {
+            quotaService.releaseGeneration(userId);
         }
-        long latency = System.currentTimeMillis() - start;
+    }
 
-        AiPlanResult result = parse(raw);
-        int dropped = validateAndEnrich(result, req, candidates);
+    /**
+     * 把上游异常翻译成用户看得懂的话。
+     *
+     * <p>Spring AI 的 OpenAI 客户端在收到 4xx/5xx 时抛的是
+     * {@code NonTransientAiException}，<b>消息形如 {@code "HTTP 401 - {...}"}，而且没有 cause</b>，
+     * 所以不能只沿着 cause 链找 {@code RestClientResponseException}——那样会全部落到兜底文案。
+     * 这里两条路都走：先看异常类型，再从消息里抠状态码。
+     *
+     * <p>分流的目的是让用户分清"该等等"（429/5xx/超时）和"该找人"（401/403）。
+     */
+    private String friendlyLlmError(Throwable error) {
+        Throwable cause = error;
+        int depth = 0;
+        while (cause != null && depth++ < 8) {
+            if (cause instanceof RestClientResponseException httpError) {
+                return messageByStatus(httpError.getStatusCode().value());
+            }
+            if (cause instanceof ResourceAccessException || cause instanceof SocketTimeoutException) {
+                return "AI 服务连接失败或响应超时，请稍后重试";
+            }
+            Integer status = extractHttpStatus(cause.getMessage());
+            if (status != null) {
+                return messageByStatus(status);
+            }
+            cause = cause.getCause();
+        }
+        return "AI 服务暂时不可用，请稍后重试";
+    }
 
-        result.setModel(model);
-        result.setLatencyMs(latency);
-        result.setDroppedSpots(dropped);
+    private String messageByStatus(int status) {
+        if (status == 401 || status == 403) {
+            return "AI Key 无效或无权限，请联系管理员";
+        }
+        if (status == 429) {
+            return "AI 服务当前请求过多（限流），请稍后再试";
+        }
+        if (status >= 500) {
+            return "AI 服务暂时不可用，请稍后重试";
+        }
+        return "AI 调用失败（HTTP " + status + "），请稍后重试";
+    }
 
-        log.info("AI 行程生成完成：目的地={}，天数={}，有效景点={}，丢弃={}，耗时={}ms",
-                req.getDestination(), req.getDays(), countSpots(result), dropped, latency);
-        return result;
+    /** 从 "HTTP 401 - {...}" 这类消息里抠出状态码 */
+    private Integer extractHttpStatus(String message) {
+        if (message == null) {
+            return null;
+        }
+        Matcher matcher = HTTP_STATUS_PATTERN.matcher(message);
+        return matcher.find() ? Integer.valueOf(matcher.group(1)) : null;
     }
 
     /**
@@ -134,6 +200,11 @@ public class AiPlanService {
     public void planStream(AiPlanRequest request, Integer userId, SseEmitter emitter) {
         streamExecutor.execute(() -> {
             long start = System.currentTimeMillis();
+            if (!quotaService.tryAcquireGeneration(userId)) {
+                sendEvent(emitter, "error", Map.of("msg", "上一条行程还在生成中，请稍候再试"));
+                safeComplete(emitter);
+                return;
+            }
             try {
                 AiPlanRequest req = normalize(request);
                 quotaService.checkAndConsume(userId);
@@ -176,8 +247,10 @@ public class AiPlanService {
                 safeComplete(emitter);
             } catch (Exception e) {
                 log.error("AI 流式生成失败", e);
-                sendEvent(emitter, "error", Map.of("msg", "AI 服务暂时不可用，请稍后重试"));
+                sendEvent(emitter, "error", Map.of("msg", friendlyLlmError(e)));
                 safeComplete(emitter);
+            } finally {
+                quotaService.releaseGeneration(userId);
             }
         });
     }
