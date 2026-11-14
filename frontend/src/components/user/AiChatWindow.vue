@@ -84,13 +84,17 @@
           </div>
         </footer>
 
-        <!-- 清空确认：贴在窗口内部，不用全局弹窗，避免被窗口盖住 / 撑满整屏 -->
+        <!-- 清空确认：窗口内居中模态，不用全局弹窗，避免被窗口盖住 / 撑满整屏 -->
         <transition name="confirm-fade">
-          <div v-if="confirmingClear" class="confirm-bar">
-            <span class="confirm-text">清空后这段对话找不回来了</span>
-            <div class="confirm-actions">
-              <button class="confirm-ghost" @click="confirmingClear = false">取消</button>
-              <button class="confirm-danger" @click="doClear">清空</button>
+          <div v-if="confirmingClear" class="confirm-mask" @click.self="confirmingClear = false">
+            <div class="confirm-card">
+              <div class="confirm-icon"><i class="fa fa-trash-o"></i></div>
+              <p class="confirm-title">清空对话</p>
+              <p class="confirm-text">清空后这段对话就找不回来了</p>
+              <div class="confirm-actions">
+                <button class="confirm-ghost" @click="confirmingClear = false">取消</button>
+                <button class="confirm-danger" @click="doClear">清空</button>
+              </div>
             </div>
           </div>
         </transition>
@@ -854,42 +858,67 @@ function resetPos() {
   background: #fff;
 }
 
-/* ===== 清空确认条 ===== */
-.confirm-bar {
+/* ===== 清空确认（窗口内居中模态） ===== */
+.confirm-mask {
   position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: 94px;
-  z-index: 8;
+  inset: 0;
+  z-index: 9;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 12px;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.28);
+  backdrop-filter: blur(2px);
+}
+
+.confirm-card {
+  width: 268px;
+  max-width: 100%;
+  padding: 18px 18px 14px;
+  border-radius: 14px;
   background: #fff;
-  border: 1px solid #f1f5f9;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.22);
+  text-align: center;
+}
+
+.confirm-icon {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 10px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fef2f2;
+  color: #ef4444;
+  font-size: 17px;
+}
+
+.confirm-title {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
 }
 
 .confirm-text {
+  margin: 0 0 14px;
   font-size: 12px;
-  color: #4b5563;
-  line-height: 1.5;
+  line-height: 1.6;
+  color: #6b7280;
 }
 
 .confirm-actions {
   display: flex;
-  flex-shrink: 0;
-  gap: 8px;
+  gap: 10px;
 }
 
 .confirm-ghost,
 .confirm-danger {
-  height: 28px;
-  padding: 0 12px;
-  border-radius: 8px;
-  font-size: 12px;
+  flex: 1;
+  height: 32px;
+  border-radius: 9px;
+  font-size: 13px;
   cursor: pointer;
 }
 
@@ -901,6 +930,7 @@ function resetPos() {
 
 .confirm-ghost:hover {
   border-color: #d1d5db;
+  background: #f9fafb;
 }
 
 .confirm-danger {
@@ -911,6 +941,7 @@ function resetPos() {
 
 .confirm-danger:hover {
   background: #dc2626;
+  border-color: #dc2626;
 }
 
 .confirm-fade-enter-active,
@@ -921,7 +952,11 @@ function resetPos() {
 .confirm-fade-enter-from,
 .confirm-fade-leave-to {
   opacity: 0;
-  transform: translateY(6px);
+}
+
+.confirm-fade-enter-from .confirm-card,
+.confirm-fade-leave-to .confirm-card {
+  transform: scale(0.96);
 }
 
 .plan-entry {
