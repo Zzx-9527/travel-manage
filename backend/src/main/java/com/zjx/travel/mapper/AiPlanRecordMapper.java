@@ -26,4 +26,15 @@ public interface AiPlanRecordMapper {
 
     /** 最近若干条记录 */
     List<AiPlanRecordEntity> recent(@Param("limit") int limit);
+
+    /** 某个用户的生成记录，按时间倒序 */
+    List<AiPlanRecordEntity> pageByUser(@Param("userId") Integer userId,
+                                        @Param("offset") int offset,
+                                        @Param("size") int size);
+
+    /** 某个用户的记录总数 */
+    long countByUser(@Param("userId") Integer userId);
+
+    /** 按 id + 归属人查询，防止越权读别人的记录 */
+    AiPlanRecordEntity findByIdAndUser(@Param("id") Long id, @Param("userId") Integer userId);
 }

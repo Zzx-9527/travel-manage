@@ -11,9 +11,11 @@ import com.zjx.travel.util.SecurityUtil;
 import cn.dev33.satoken.annotation.SaCheckRole;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -89,6 +91,33 @@ public class AiPlanController {
         try {
             Integer routeId = aiPlanSaveService.save(request, SecurityUtil.currentUserId());
             return ReturnVO.getSuccessDataReturnVO(Map.of("routeId", routeId));
+        } catch (AiPlanException e) {
+            return new ReturnVO(0, e.getMessage());
+        }
+    }
+
+    /**
+     * 当前用户的生成历史（分页）。
+     */
+    @GetMapping("plan/history")
+    public ReturnVO history(@RequestParam(defaultValue = "1") int page,
+                            @RequestParam(defaultValue = "10") int size) {
+        try {
+            return ReturnVO.getSuccessDataReturnVO(
+                    aiPlanRecordService.history(SecurityUtil.currentUserId(), page, size));
+        } catch (AiPlanException e) {
+            return new ReturnVO(0, e.getMessage());
+        }
+    }
+
+    /**
+     * 按 id 恢复某次生成结果。只读快照，不重新调模型、不扣配额。
+     */
+    @GetMapping("plan/history/{id}")
+    public ReturnVO historyDetail(@PathVariable Long id) {
+        try {
+            return ReturnVO.getSuccessDataReturnVO(
+                    aiPlanRecordService.detail(id, SecurityUtil.currentUserId()));
         } catch (AiPlanException e) {
             return new ReturnVO(0, e.getMessage());
         }

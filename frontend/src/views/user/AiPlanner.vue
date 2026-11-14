@@ -67,6 +67,29 @@
       </div>
     </section>
 
+    <section v-if="historyItems.length" class="history">
+      <div class="history-head">
+        <span class="history-head-title">最近生成</span>
+        <span class="history-head-sub">点一条可直接恢复，不重新生成、不消耗次数</span>
+      </div>
+      <div class="history-list">
+        <button
+          v-for="item in historyItems"
+          :key="item.id"
+          class="history-item"
+          :class="{ 'history-item-failed': item.status !== 1 }"
+          :disabled="restoring === item.id"
+          @click="restore(item)"
+        >
+          <span class="history-title">{{ item.title || `${item.destination} 行程` }}</span>
+          <span class="history-meta">
+            {{ item.destination }} · {{ item.days }} 天 · {{ shortTime(item.createTime) }}
+            <em v-if="item.status !== 1" class="history-failed">失败</em>
+          </span>
+        </button>
+      </div>
+    </section>
+
     <el-alert v-if="error" class="ai-warn" type="error" :closable="false" show-icon :title="error" />
 
     <section v-if="loading || streamText" class="ai-stream">
@@ -78,7 +101,7 @@
       <pre ref="streamBox" class="stream-body">{{ streamText }}</pre>
     </section>
 
-    <section v-if="plan" class="ai-result">
+    <section v-if="plan" ref="resultRef" class="ai-result">
       <div class="result-head">
         <div>
           <h2>{{ plan.title }}</h2>
@@ -147,7 +170,7 @@
 import { onBeforeUnmount, onMounted, reactive, ref, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { fetchAiHealth, planTripStream, savePlan } from '@/api/ai'
+import { fetchAiHealth, fetchPlanHistory, fetchPlanHistoryDetail, planTripStream, savePlan } from '@/api/ai'
 
 const router = useRouter()
 
@@ -172,10 +195,16 @@ const remaining = ref(0)
 const dailyLimit = ref(0)
 const aiEnabled = ref(true)
 const disabledReason = ref('')
+const historyItems = ref([])
+const restoring = ref(null)
+const resultRef = ref(null)
 
 let controller = null
 
-onMounted(loadHealth)
+onMounted(() => {
+  loadHealth()
+  loadHistory()
+})
 onBeforeUnmount(() => controller?.abort())
 
 async function loadHealth() {
@@ -218,6 +247,7 @@ function generate() {
       onDone: () => {
         loading.value = false
         loadHealth()
+        loadHistory()
       },
       onError: (msg) => {
         error.value = msg
@@ -274,6 +304,50 @@ function backToForm() {
   formRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   setTimeout(() => formRef.value?.querySelector('input')?.focus(), 350)
 }
+
+async function loadHistory() {
+  try {
+    const res = await fetchPlanHistory({ page: 1, size: 6 })
+    historyItems.value = res.content?.items || []
+  } catch {
+    // 历史加载失败不影响主流程
+  }
+}
+
+function shortTime(value) {
+  return value ? String(value).slice(5, 16) : ''
+}
+
+/**
+ * 恢复历史行程：只读快照，不调模型、不扣配额。
+ * 同时把当时的条件回填到表单，方便在此基础上"再生成一次"。
+ */
+async function restore(item) {
+  if (item.status !== 1) {
+    ElMessage.warning('这次生成失败了，没有可恢复的行程')
+    return
+  }
+  restoring.value = item.id
+  try {
+    const res = await fetchPlanHistoryDetail(item.id)
+    plan.value = res.content
+    form.destination = item.destination || form.destination
+    form.days = item.days || form.days
+    if (item.budget != null) {
+      form.budget = Number(item.budget)
+    }
+    form.preference = item.preference || ''
+    form.extra = item.extra || ''
+    streamText.value = ''
+    error.value = ''
+    await nextTick()
+    resultRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  } catch (e) {
+    ElMessage.error(e.message || '恢复失败')
+  } finally {
+    restoring.value = null
+  }
+}
 </script>
 
 <style scoped>
@@ -326,6 +400,80 @@ function backToForm() {
 
 .ai-warn {
   margin-bottom: 16px;
+}
+
+.history {
+  margin-bottom: 20px;
+}
+
+.history-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.history-head-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-800, #374151);
+}
+
+.history-head-sub {
+  font-size: 12px;
+  color: var(--ink-400, #9ca3af);
+}
+
+.history-list {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.history-item {
+  flex: 0 0 auto;
+  min-width: 180px;
+  max-width: 240px;
+  text-align: left;
+  background: #fff;
+  border: 1px solid var(--ink-100, #f0f0f0);
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.history-item:hover {
+  border-color: var(--brand-300, #7ae2cc);
+  box-shadow: 0 4px 12px rgba(28, 184, 157, 0.12);
+}
+
+.history-item-failed {
+  opacity: 0.7;
+}
+
+.history-title {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-900, #1f2937);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-meta {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--ink-400, #9ca3af);
+}
+
+.history-failed {
+  color: #e24b4a;
+  font-style: normal;
+  margin-left: 6px;
 }
 
 .ai-card {

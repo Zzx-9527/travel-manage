@@ -29,6 +29,16 @@ export function fetchAiStats() {
   return request.get('ai/stats')
 }
 
+/** 当前用户的生成历史 */
+export function fetchPlanHistory(params = { page: 1, size: 6 }) {
+  return request.get('ai/plan/history', { params })
+}
+
+/** 恢复某次生成结果（只读快照） */
+export function fetchPlanHistoryDetail(id) {
+  return request.get(`ai/plan/history/${id}`)
+}
+
 /**
  * 流式生成。
  *

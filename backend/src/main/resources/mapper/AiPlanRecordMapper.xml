@@ -16,6 +16,7 @@
         <result column="dropped_spots" property="droppedSpots" />
         <result column="latency_ms" property="latencyMs" />
         <result column="model" property="model" />
+        <result column="result_json" property="resultJson" />
         <result column="create_time" property="createTime" />
     </resultMap>
 
@@ -64,6 +65,26 @@
         from ai_plan_record
         order by id desc
         limit #{limit}
+    </select>
+
+    <select id="pageByUser" resultMap="recordMap">
+        select id, user_id, destination, days, budget, preference, extra,
+               status, error_msg, scenic_count, dropped_spots, latency_ms, model, result_json, create_time
+        from ai_plan_record
+        where user_id = #{userId}
+        order by id desc
+        limit #{offset}, #{size}
+    </select>
+
+    <select id="countByUser" resultType="java.lang.Long">
+        select count(*) from ai_plan_record where user_id = #{userId}
+    </select>
+
+    <select id="findByIdAndUser" resultMap="recordMap">
+        select id, user_id, destination, days, budget, preference, extra,
+               status, error_msg, scenic_count, dropped_spots, latency_ms, model, result_json, create_time
+        from ai_plan_record
+        where id = #{id} and user_id = #{userId}
     </select>
 
 </mapper>
