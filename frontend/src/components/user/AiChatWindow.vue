@@ -5,10 +5,14 @@
         v-if="open"
         ref="winRef"
         class="chat-win"
-        :class="{ 'is-mobile': isMobile, 'is-dragging': dragging }"
+        :class="{
+          'is-mobile': isMobile,
+          'is-landscape': isLandscape,
+          'is-dragging': dragging || resizing
+        }"
         :style="winStyle"
       >
-        <header class="chat-head" @mousedown="startDrag" @touchstart.prevent="startDrag">
+        <header class="chat-head" @pointerdown="startDrag">
           <div class="chat-brand">
             <span class="chat-avatar"><i class="fa fa-magic"></i></span>
             <div class="chat-brand-text">
@@ -79,6 +83,15 @@
             </button>
           </div>
         </footer>
+
+        <!-- 八个方向的缩放热区；窗口本身 overflow:hidden，所以贴边放在内侧 -->
+        <span
+          v-for="dir in handles"
+          :key="dir"
+          class="resize-handle"
+          :class="`h-${dir}`"
+          @pointerdown="startResize(dir, $event)"
+        ></span>
       </section>
     </transition>
   </teleport>
@@ -117,19 +130,37 @@ const loaded = ref(false)
 const bodyRef = ref(null)
 const winRef = ref(null)
 const dragging = ref(false)
-const pos = ref({ x: null, y: null })
+const resizing = ref(false)
+const rect = ref(null)
 const isMobile = ref(false)
 
 let keySeq = 0
 let dragOffset = { x: 0, y: 0 }
 
+const MIN_W = 340
+const MIN_H = 420
+const MAX_W = 920
+const MAX_H = 780
+const MARGIN = 8
+const HANDLES = ['n', 's', 'e', 'w', 'nw', 'ne', 'sw', 'se']
+const handles = HANDLES
+
+/** 宽明显大于高时按横屏排布（行程卡片两天并排） */
+const isLandscape = computed(() => {
+  const r = rect.value
+  return !!r && r.w > r.h * 1.05
+})
+
 const winStyle = computed(() => {
-  if (isMobile.value || pos.value.x == null) {
+  const r = rect.value
+  if (isMobile.value || !r) {
     return {}
   }
   return {
-    left: `${pos.value.x}px`,
-    top: `${pos.value.y}px`,
+    left: `${r.x}px`,
+    top: `${r.y}px`,
+    width: `${r.w}px`,
+    height: `${r.h}px`,
     right: 'auto',
     bottom: 'auto'
   }
@@ -144,20 +175,16 @@ watch(open, (value) => {
 
 onMounted(() => {
   syncMobile()
-  restorePos()
+  restoreRect()
   window.addEventListener('resize', syncMobile)
-  document.addEventListener('mousemove', onDrag)
-  document.addEventListener('mouseup', endDrag)
-  document.addEventListener('touchmove', onDrag, { passive: false })
-  document.addEventListener('touchend', endDrag)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', syncMobile)
-  document.removeEventListener('mousemove', onDrag)
-  document.removeEventListener('mouseup', endDrag)
-  document.removeEventListener('touchmove', onDrag)
-  document.removeEventListener('touchend', endDrag)
+  window.removeEventListener('pointermove', onDrag)
+  window.removeEventListener('pointerup', endDrag)
+  window.removeEventListener('pointermove', onResize)
+  window.removeEventListener('pointerup', endResize)
 })
 
 // ==================== 会话 ====================
@@ -376,49 +403,87 @@ function scrollToBottom() {
   })
 }
 
-// ==================== 拖动 ====================
+// ==================== 位置与尺寸 ====================
 
 function syncMobile() {
   isMobile.value = window.innerWidth < 768
-  if (isMobile.value) {
-    pos.value = { x: null, y: null }
+  if (!isMobile.value && rect.value) {
+    // 从全屏切回来时，窗口可能超出了缩小后的视口
+    rect.value = clampRect(rect.value)
   }
 }
 
-function restorePos() {
+function defaultRect() {
+  const w = 400
+  const h = Math.min(620, window.innerHeight - 120)
+  return {
+    w,
+    h,
+    x: window.innerWidth - w - 26,
+    y: window.innerHeight - h - 96
+  }
+}
+
+function restoreRect() {
+  let saved = null
   try {
-    const raw = localStorage.getItem('travel:ai:chat:pos')
-    if (raw) {
-      const saved = JSON.parse(raw)
-      if (typeof saved.x === 'number' && typeof saved.y === 'number') {
-        pos.value = clampPos(saved.x, saved.y)
-      }
-    }
+    saved = JSON.parse(localStorage.getItem('travel:ai:chat:rect') || 'null')
   } catch {
-    // 位置信息损坏就回默认位置
+    saved = null
   }
+  const base = saved && typeof saved.w === 'number' && typeof saved.h === 'number'
+    ? saved
+    : defaultRect()
+  rect.value = clampRect(base)
 }
 
-function startDrag(event) {
-  if (isMobile.value || !winRef.value) {
+/** 尺寸夹到上下限内，位置夹到视口内 */
+function clampRect(input) {
+  const maxW = Math.min(MAX_W, window.innerWidth - 2 * MARGIN)
+  const maxH = Math.min(MAX_H, window.innerHeight - 2 * MARGIN)
+  const w = clamp(input.w, MIN_W, Math.max(MIN_W, maxW))
+  const h = clamp(input.h, MIN_H, Math.max(MIN_H, maxH))
+  const x = clamp(input.x, MARGIN, Math.max(MARGIN, window.innerWidth - w - MARGIN))
+  const y = clamp(input.y, MARGIN, Math.max(MARGIN, window.innerHeight - h - MARGIN))
+  return { x, y, w, h }
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max)
+}
+
+function persistRect() {
+  if (isMobile.value || !rect.value) {
     return
   }
-  const rect = winRef.value.getBoundingClientRect()
-  const point = event.touches ? event.touches[0] : event
-  dragOffset = { x: point.clientX - rect.left, y: point.clientY - rect.top }
+  localStorage.setItem('travel:ai:chat:rect', JSON.stringify(rect.value))
+}
+
+// ---- 拖动 ----
+
+function startDrag(event) {
+  if (isMobile.value || !rect.value) {
+    return
+  }
+  // 点击头部按钮时不要触发拖动
+  if (event.target.closest('button')) {
+    return
+  }
+  dragOffset = { x: event.clientX - rect.value.x, y: event.clientY - rect.value.y }
   dragging.value = true
+  window.addEventListener('pointermove', onDrag)
+  window.addEventListener('pointerup', endDrag)
 }
 
 function onDrag(event) {
-  if (!dragging.value || !winRef.value) {
+  if (!dragging.value || !rect.value) {
     return
   }
-  const point = event.touches ? event.touches[0] : event
-  const next = clampPos(point.clientX - dragOffset.x, point.clientY - dragOffset.y)
-  pos.value = next
-  if (event.cancelable) {
-    event.preventDefault()
-  }
+  rect.value = clampRect({
+    ...rect.value,
+    x: event.clientX - dragOffset.x,
+    y: event.clientY - dragOffset.y
+  })
 }
 
 function endDrag() {
@@ -426,25 +491,75 @@ function endDrag() {
     return
   }
   dragging.value = false
-  if (!isMobile.value && pos.value.x != null) {
-    localStorage.setItem('travel:ai:chat:pos', JSON.stringify(pos.value))
-  }
+  window.removeEventListener('pointermove', onDrag)
+  window.removeEventListener('pointerup', endDrag)
+  persistRect()
 }
 
-function clampPos(x, y) {
-  const width = winRef.value?.offsetWidth || 400
-  const height = winRef.value?.offsetHeight || 620
-  const maxX = Math.max(8, window.innerWidth - width - 8)
-  const maxY = Math.max(8, window.innerHeight - height - 8)
-  return {
-    x: Math.min(Math.max(8, x), maxX),
-    y: Math.min(Math.max(8, y), maxY)
+// ---- 缩放 ----
+
+let resizeStart = null
+
+function startResize(dir, event) {
+  if (isMobile.value || !rect.value) {
+    return
   }
+  event.preventDefault()
+  event.stopPropagation()
+  resizing.value = true
+  resizeStart = {
+    dir,
+    x: event.clientX,
+    y: event.clientY,
+    rect: { ...rect.value }
+  }
+  window.addEventListener('pointermove', onResize)
+  window.addEventListener('pointerup', endResize)
+}
+
+/**
+ * 八个方向统一处理：先算新宽高，再按"锚定边"反推左上角坐标。
+ * 从北/西侧拖拽时窗口的右下角要保持不动，否则会跟着鼠标整体平移。
+ */
+function onResize(event) {
+  if (!resizing.value || !resizeStart) {
+    return
+  }
+  const { dir, x: startX, y: startY, rect: start } = resizeStart
+  const dx = event.clientX - startX
+  const dy = event.clientY - startY
+
+  let { x, y, w, h } = start
+  if (dir.includes('e')) w = start.w + dx
+  if (dir.includes('s')) h = start.h + dy
+  if (dir.includes('w')) w = start.w - dx
+  if (dir.includes('n')) h = start.h - dy
+
+  const maxW = Math.min(MAX_W, window.innerWidth - 2 * MARGIN)
+  const maxH = Math.min(MAX_H, window.innerHeight - 2 * MARGIN)
+  w = clamp(w, MIN_W, Math.max(MIN_W, maxW))
+  h = clamp(h, MIN_H, Math.max(MIN_H, maxH))
+
+  if (dir.includes('w')) x = start.x + start.w - w
+  if (dir.includes('n')) y = start.y + start.h - h
+
+  rect.value = clampRect({ x, y, w, h })
+}
+
+function endResize() {
+  if (!resizing.value) {
+    return
+  }
+  resizing.value = false
+  resizeStart = null
+  window.removeEventListener('pointermove', onResize)
+  window.removeEventListener('pointerup', endResize)
+  persistRect()
 }
 
 function resetPos() {
-  pos.value = { x: null, y: null }
-  localStorage.removeItem('travel:ai:chat:pos')
+  localStorage.removeItem('travel:ai:chat:rect')
+  rect.value = clampRect(defaultRect())
 }
 </script>
 
@@ -471,6 +586,87 @@ function resetPos() {
   height: 100%;
   max-height: none;
   border-radius: 0;
+}
+
+/* ===== 缩放手柄 ===== */
+.resize-handle {
+  position: absolute;
+  z-index: 6;
+}
+
+.h-n,
+.h-s {
+  left: 14px;
+  right: 14px;
+  height: 6px;
+  cursor: ns-resize;
+}
+
+.h-n { top: 0; }
+.h-s { bottom: 0; }
+
+.h-e,
+.h-w {
+  top: 14px;
+  bottom: 14px;
+  width: 6px;
+  cursor: ew-resize;
+}
+
+.h-e { right: 0; }
+.h-w { left: 0; }
+
+.h-nw,
+.h-ne,
+.h-sw,
+.h-se {
+  width: 14px;
+  height: 14px;
+}
+
+.h-nw { top: 0; left: 0; cursor: nwse-resize; }
+.h-ne { top: 0; right: 0; cursor: nesw-resize; }
+.h-sw { bottom: 0; left: 0; cursor: nesw-resize; }
+.h-se { bottom: 0; right: 0; cursor: nwse-resize; }
+
+/* ===== 横屏：行程卡片两天并排 ===== */
+.chat-win.is-landscape :deep(.days) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 18px;
+}
+
+.chat-win.is-landscape :deep(.day) {
+  border-top: none;
+}
+
+.chat-win.is-landscape .bubble {
+  max-width: 72%;
+}
+
+/* 宽屏下建议列表不要拉满整行，读起来太散 */
+.chat-win.is-landscape .chat-hello {
+  max-width: 560px;
+}
+
+/* 右下角缩放提示（纯视觉，不挡点击） */
+.chat-win::after {
+  content: '';
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 14px;
+  height: 14px;
+  z-index: 7;
+  pointer-events: none;
+  opacity: 0.7;
+  background:
+    linear-gradient(135deg, transparent 42%, #cbd5e1 42%, #cbd5e1 52%, transparent 52%),
+    linear-gradient(135deg, transparent 66%, #cbd5e1 66%, #cbd5e1 76%, transparent 76%);
+}
+
+.chat-win.is-mobile::after {
+  display: none;
 }
 
 .chat-head {

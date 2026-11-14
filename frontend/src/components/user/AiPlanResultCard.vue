@@ -5,26 +5,28 @@
       <p v-if="plan.intro">{{ plan.intro }}</p>
     </div>
 
-    <div class="day" v-for="day in plan.days" :key="day.dayNo">
-      <div class="day-head">
-        <span class="day-no">D{{ day.dayNo }}</span>
-        <span class="day-theme">{{ day.theme }}</span>
-      </div>
-
-      <div v-if="!day.spots || !day.spots.length" class="day-empty">自由活动 / 机动安排</div>
-
-      <div v-for="spot in day.spots" :key="spot.scenicId" class="spot">
-        <div class="spot-line">
-          <span v-if="spot.timeSlot" class="slot" :class="slotClass(spot.timeSlot)">{{ spot.timeSlot }}</span>
-          <a class="spot-name" @click="$emit('spot', spot.scenicId)">{{ spot.name }}</a>
-          <span class="spot-meta">
-            <span v-if="spot.price != null">¥{{ spot.price }}</span>
-            <span v-if="spot.stayTime">{{ spot.stayTime }}</span>
-          </span>
+    <div class="days">
+      <div class="day" v-for="day in plan.days" :key="day.dayNo">
+        <div class="day-head">
+          <span class="day-no">D{{ day.dayNo }}</span>
+          <span class="day-theme">{{ day.theme }}</span>
         </div>
-        <p v-if="spot.intro" class="spot-intro">{{ spot.intro }}</p>
-        <p v-if="spot.traffic" class="spot-note"><i>交通</i>{{ spot.traffic }}</p>
-        <p v-if="spot.notice" class="spot-note"><i>提示</i>{{ spot.notice }}</p>
+
+        <div v-if="!day.spots || !day.spots.length" class="day-empty">自由活动 / 机动安排</div>
+
+        <div v-for="spot in day.spots" :key="spot.scenicId" class="spot">
+          <div class="spot-line">
+            <span v-if="spot.timeSlot" class="slot" :class="slotClass(spot.timeSlot)">{{ spot.timeSlot }}</span>
+            <a class="spot-name" @click="$emit('spot', spot.scenicId)">{{ spot.name }}</a>
+            <span class="spot-meta">
+              <span v-if="spot.price != null">¥{{ spot.price }}</span>
+              <span v-if="spot.stayTime">{{ spot.stayTime }}</span>
+            </span>
+          </div>
+          <p v-if="spot.intro" class="spot-intro">{{ spot.intro }}</p>
+          <p v-if="spot.traffic" class="spot-note"><i>交通</i>{{ spot.traffic }}</p>
+          <p v-if="spot.notice" class="spot-note"><i>提示</i>{{ spot.notice }}</p>
+        </div>
       </div>
     </div>
 
