@@ -31,4 +31,15 @@ public interface ScenicMapper  extends BaseMapper<ScenicEntity> {
     int increaseViewCount(@Param("id") Integer id, @Param("delta") long delta);
     List<ScenicEntity> queryActiveForStock();
 
+    /**
+     * 已上架、未删除的景点列表。
+     *
+     * <p>SQL 与 {@link #queryActiveForStock()} 完全一致（{@code WHERE del_mark=1 AND status=1}），
+     * 这里给一个语义中性的别名，避免 AI 候选池、行程规划这类场景去调用名字里带 stock 的方法。
+     * 只做委托，不额外维护一份 SQL。
+     */
+    default List<ScenicEntity> queryActiveList() {
+        return queryActiveForStock();
+    }
+
 }
