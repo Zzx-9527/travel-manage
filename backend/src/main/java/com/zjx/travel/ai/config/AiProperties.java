@@ -22,6 +22,14 @@ public class AiProperties {
     /** 每人每天最多生成次数，Redis 按自然日计数 */
     private int dailyLimit = 10;
 
+    /**
+     * 每人每天最多对话条数。
+     *
+     * <p>比排行程宽松得多：对话没有结构化输出、Prompt 也短，
+     * 单条成本约为一次行程生成的 1/10，因此单独计数、不占规划名额。
+     */
+    private int chatDailyLimit = 60;
+
     /** 每天最多安排几个景点，服务端会截断模型给的多余项 */
     private int maxSpotsPerDay = 5;
 }

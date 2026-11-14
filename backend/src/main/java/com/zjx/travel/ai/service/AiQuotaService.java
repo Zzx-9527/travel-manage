@@ -109,6 +109,33 @@ public class AiQuotaService {
         return Math.max(0, limit - used);
     }
 
+    /**
+     * 对话配额：与"排行程"分开计数。
+     *
+     * <p>为什么分开：一次行程生成的成本大约是单条对话的十倍，
+     * 放一起会让"多聊两句"挤掉"生成行程"的名额，用户会觉得额度莫名其妙就没了。
+     */
+    public void checkAndConsumeChat(Integer userId) {
+        if (userId == null) {
+            throw new AiPlanException("请先登录后再使用 AI 助手");
+        }
+        int limit = properties.getChatDailyLimit();
+        if (limit <= 0) {
+            return;
+        }
+        String key = RedisKeys.aiChatQuota(userId, LocalDate.now());
+        Long used = redisUtil.increment(key, 1);
+        if (used == null) {
+            return;
+        }
+        if (used == 1L) {
+            redisUtil.expire(key, ttlUntilTomorrow());
+        }
+        if (used > limit) {
+            throw new AiPlanException("今天的 AI 对话次数已用完（每天 " + limit + " 条），明天再来吧");
+        }
+    }
+
     /** 到明天零点再多留一分钟，避免边界时刻 key 提前消失导致配额重置 */
     private Duration ttlUntilTomorrow() {
         LocalDateTime now = LocalDateTime.now();
@@ -128,10 +155,18 @@ public class AiQuotaService {
      * </ul>
      */
     public void refund(Integer userId) {
-        if (userId == null) {
+        refundKey(userId == null ? null : RedisKeys.aiQuota(userId, LocalDate.now()));
+    }
+
+    /** 对话失败时返还，逻辑同上 */
+    public void refundChat(Integer userId) {
+        refundKey(userId == null ? null : RedisKeys.aiChatQuota(userId, LocalDate.now()));
+    }
+
+    private void refundKey(String key) {
+        if (key == null) {
             return;
         }
-        String key = RedisKeys.aiQuota(userId, LocalDate.now());
         if (!redisUtil.hasKey(key)) {
             return;
         }

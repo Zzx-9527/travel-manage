@@ -195,15 +195,7 @@
       <span class="ai-fab-label">AI 规划</span>
     </button>
 
-    <el-drawer
-      v-model="aiOpen"
-      :size="aiDrawerSize"
-      direction="rtl"
-      title="AI 规划师"
-      class="ai-drawer"
-    >
-      <AiPlannerPanel v-if="aiMounted" />
-    </el-drawer>
+    <AiChatWindow v-model:open="aiOpen" />
   </div>
 </template>
 
@@ -214,27 +206,18 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 import { getMessageUnreadCount } from '@/api/message'
 import AnnouncementBanner from '@/components/user/AnnouncementBanner.vue'
-import AiPlannerPanel from '@/components/user/AiPlannerPanel.vue'
+import AiChatWindow from '@/components/user/AiChatWindow.vue'
 
-// AI 规划抽屉：首次打开才挂载，之后保持挂载以保留已生成的结果
-const aiOpen = ref(false)
-const aiMounted = ref(false)
-const aiDrawerSize = ref('920px')
-
-function openAi() {
-  aiMounted.value = true
-  aiDrawerSize.value = window.innerWidth < 960 ? '100%' : '920px'
-  aiOpen.value = true
-}
-
-// 抽屉里点景点/保存会触发跳转，跳转后自动收起，避免挡住新页面
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
-watch(() => route.fullPath, () => {
-  aiOpen.value = false
-})
+// AI 助手悬浮窗
+const aiOpen = ref(false)
+
+function openAi() {
+  aiOpen.value = true
+}
 
 // 消息未读数（铃铛徽标）
 const unreadCount = ref(0)
@@ -938,13 +921,5 @@ function handleCommand(cmd) {
     padding: 0 14px;
     font-size: 13px;
   }
-}
-</style>
-
-<style>
-/* 抽屉内容被 teleport 到 body，scoped 样式够不到，这里用全局样式 */
-.ai-drawer .el-drawer__body {
-  padding: 0;
-  overflow-y: auto;
 }
 </style>

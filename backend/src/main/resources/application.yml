@@ -100,6 +100,8 @@ travel:
         enabled: true
         # 每人每天最多生成的次数（Redis 计数，按自然日归零）
         daily-limit: 10
+        # 每人每天最多跟助手聊几句（对话便宜，额度更宽，单独计数不占规划名额）
+        chat-daily-limit: 60
         # 每天最多安排几个景点，超出部分由服务端截断
         max-spots-per-day: 5
 

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjx.travel.mapper.AiChatMessageMapper">
+
+    <resultMap id="messageMap" type="com.zjx.travel.domain.AiChatMessageEntity">
+        <id column="id" property="id" />
+        <result column="user_id" property="userId" />
+        <result column="role" property="role" />
+        <result column="msg_type" property="msgType" />
+        <result column="content" property="content" />
+        <result column="payload" property="payload" />
+        <result column="create_time" property="createTime" />
+    </resultMap>
+
+    <insert id="insert">
+        insert into ai_chat_message (user_id, role, msg_type, content, payload, create_time)
+        values (#{userId}, #{role}, #{msgType}, #{content}, #{payload}, now())
+    </insert>
+
+    <select id="recentByUser" resultMap="messageMap">
+        select id, user_id, role, msg_type, content, payload, create_time
+        from ai_chat_message
+        where user_id = #{userId}
+        order by id desc
+        limit #{limit}
+    </select>
+
+    <delete id="deleteByUser">
+        delete from ai_chat_message where user_id = #{userId}
+    </delete>
+
+</mapper>

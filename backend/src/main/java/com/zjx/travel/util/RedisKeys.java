@@ -68,6 +68,17 @@ public final class RedisKeys {
     }
 
     /**
+     * AI 对话每日配额：travel:v1:ai:chat:quota:{userId}:{yyyyMMdd}
+     *
+     * <p>对话比"排行程"便宜得多（没有结构化输出、Prompt 也短），
+     * 所以单独计一份、上限更高，不占规划的次数。
+     */
+    public static String aiChatQuota(Integer userId, java.time.LocalDate day) {
+        return PREFIX + "ai:chat:quota:" + userId + ":"
+                + day.format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+    }
+
+    /**
      * 由业务 key 推导锁 key：{@code travel:v1:scenic:detail:12} → {@code travel:v1:lock:scenic:detail:12}。
      * 非本前缀的 key 会整体挂到 lock: 段下，保证锁 key 仍在统一命名空间内。
      */
