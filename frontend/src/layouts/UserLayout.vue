@@ -228,13 +228,13 @@ function openAi() {
 }
 
 // 抽屉里点景点/保存会触发跳转，跳转后自动收起，避免挡住新页面
-watch(() => route.fullPath, () => {
-  aiOpen.value = false
-})
-
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+
+watch(() => route.fullPath, () => {
+  aiOpen.value = false
+})
 
 // 消息未读数（铃铛徽标）
 const unreadCount = ref(0)
