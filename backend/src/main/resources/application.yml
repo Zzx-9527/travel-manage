@@ -36,6 +36,21 @@ spring:
             lettuce:
                 shutdown-timeout: 200ms
 
+    # ===== Spring AI（DeepSeek 走 OpenAI 兼容协议） =====
+    # Key 不要写进本文件：本地通过环境变量 DEEPSEEK_API_KEY 注入（IDEA 运行配置里填），
+    # 或复制 application-local.yml.example 为 application-local.yml 填好后用 local profile 启动。
+    ai:
+        openai:
+            base-url: https://api.deepseek.com
+            api-key: ${DEEPSEEK_API_KEY:sk-not-configured}
+            chat:
+                options:
+                    # deepseek-chat 比 deepseek-reasoner 快且便宜，行程规划这类结构化任务够用
+                    model: deepseek-chat
+                    # 结构化输出优先稳定，温度压低
+                    temperature: 0.5
+                    max-tokens: 2000
+
     # ===== 文件上传 =====
     servlet:
         multipart:
@@ -55,6 +70,16 @@ travel:
     # 上传根目录（相对项目根目录），通过 /uploads/** 静态访问
     upload:
         dir: "./uploads"
+    # ===== AI 行程规划 =====
+    ai:
+        # 总开关：false 时 /ai/** 直接返回"AI 未启用"，不影响其他功能
+        enabled: true
+        # 每人每天最多生成的次数（Redis 计数，按自然日归零）
+        daily-limit: 10
+        # 每天最多安排几个景点，超出部分由服务端截断
+        max-spots-per-day: 5
+        # 调用大模型的读超时（秒）
+        timeout-seconds: 60
 
 # ===== Sa-Token 登录鉴权 =====
 # 会话由 sa-token-redis-jackson 写入同一个 Redis（key 前缀 satoken:），因此重启不掉线
