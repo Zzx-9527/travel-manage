@@ -48,6 +48,17 @@ public final class RedisKeys {
     }
 
     /**
+     * AI 每日配额计数：travel:v1:ai:quota:{userId}:{yyyyMMdd}
+     *
+     * <p>按自然日分桶，key 自带日期，TTL 只需撑到当天结束，
+     * 不用在处理请求时判断"是不是跨天了"。
+     */
+    public static String aiQuota(Integer userId, java.time.LocalDate day) {
+        return PREFIX + "ai:quota:" + userId + ":"
+                + day.format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+    }
+
+    /**
      * 由业务 key 推导锁 key：{@code travel:v1:scenic:detail:12} → {@code travel:v1:lock:scenic:detail:12}。
      * 非本前缀的 key 会整体挂到 lock: 段下，保证锁 key 仍在统一命名空间内。
      */

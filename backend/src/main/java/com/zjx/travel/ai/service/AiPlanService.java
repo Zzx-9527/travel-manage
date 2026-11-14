@@ -11,9 +11,14 @@ import com.zjx.travel.mapper.ScenicMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import reactor.core.publisher.Flux;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -22,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 /**
@@ -59,23 +65,30 @@ public class AiPlanService {
     private final AiProperties properties;
     private final ObjectMapper objectMapper;
     private final String model;
+    private final AiQuotaService quotaService;
+    private final ExecutorService streamExecutor;
 
     public AiPlanService(ChatClient.Builder chatClientBuilder,
                          ScenicMapper scenicMapper,
                          PlanPromptBuilder promptBuilder,
                          AiProperties properties,
                          ObjectMapper objectMapper,
+                         AiQuotaService quotaService,
+                         @Qualifier("aiStreamExecutor") ExecutorService streamExecutor,
                          @Value("${spring.ai.openai.chat.options.model:unknown}") String model) {
         this.chatClient = chatClientBuilder.build();
         this.scenicMapper = scenicMapper;
         this.promptBuilder = promptBuilder;
         this.properties = properties;
         this.objectMapper = objectMapper;
+        this.quotaService = quotaService;
+        this.streamExecutor = streamExecutor;
         this.model = model;
     }
 
-    public AiPlanResult plan(AiPlanRequest request) {
+    public AiPlanResult plan(AiPlanRequest request, Integer userId) {
         AiPlanRequest req = normalize(request);
+        quotaService.checkAndConsume(userId);
         List<ScenicEntity> candidates = loadCandidates(req.getDestination());
         if (candidates.isEmpty()) {
             throw new AiPlanException("景点库暂无可上架景点，无法生成行程");
@@ -106,6 +119,86 @@ public class AiPlanService {
         log.info("AI 行程生成完成：目的地={}，天数={}，有效景点={}，丢弃={}，耗时={}ms",
                 req.getDestination(), req.getDays(), countSpots(result), dropped, latency);
         return result;
+    }
+
+    /**
+     * 流式生成：边收边推 {@code delta}（前端做打字机），收完再做校验并推最终结构。
+     *
+     * <p>为什么 delta 推的是原始 JSON 文本，而不是漂亮的人话：模型的职责就是产出结构化数据，
+     * 额外让它先叙旧会让 Prompt 更复杂、更容易跑偏。前端把 delta 渲染成"生成中"的过程内容，
+     * 收到 plan 事件后再整体替换成行程卡片。
+     *
+     * <p>注意：userId 必须在调用线程取好再传进来——Sa-Token 的登录态存在 ThreadLocal 里，
+     * 换到线程池里再取是拿不到的。
+     */
+    public void planStream(AiPlanRequest request, Integer userId, SseEmitter emitter) {
+        streamExecutor.execute(() -> {
+            long start = System.currentTimeMillis();
+            try {
+                AiPlanRequest req = normalize(request);
+                quotaService.checkAndConsume(userId);
+
+                List<ScenicEntity> candidates = loadCandidates(req.getDestination());
+                if (candidates.isEmpty()) {
+                    throw new AiPlanException("景点库暂无可上架景点，无法生成行程");
+                }
+
+                Flux<String> flux = chatClient.prompt()
+                        .system(promptBuilder.systemPrompt())
+                        .user(promptBuilder.userPrompt(req, candidates))
+                        .stream()
+                        .content();
+
+                StringBuilder buffer = new StringBuilder();
+                for (String chunk : flux.toIterable()) {
+                    buffer.append(chunk);
+                    if (!sendEvent(emitter, "delta", Map.of("text", chunk))) {
+                        // 前端已断开：停止读取上游流，避免继续烧 token
+                        return;
+                    }
+                }
+
+                long latency = System.currentTimeMillis() - start;
+                AiPlanResult result = parse(buffer.toString());
+                int dropped = validateAndEnrich(result, req, candidates);
+                result.setModel(model);
+                result.setLatencyMs(latency);
+                result.setDroppedSpots(dropped);
+
+                sendEvent(emitter, "plan", result);
+                sendEvent(emitter, "done", Map.of("latencyMs", latency, "droppedSpots", dropped));
+                emitter.complete();
+
+                log.info("AI 行程流式生成完成：目的地={}，天数={}，景点={}，丢弃={}，耗时={}ms",
+                        req.getDestination(), req.getDays(), countSpots(result), dropped, latency);
+            } catch (AiPlanException e) {
+                sendEvent(emitter, "error", Map.of("msg", e.getMessage()));
+                safeComplete(emitter);
+            } catch (Exception e) {
+                log.error("AI 流式生成失败", e);
+                sendEvent(emitter, "error", Map.of("msg", "AI 服务暂时不可用，请稍后重试"));
+                safeComplete(emitter);
+            }
+        });
+    }
+
+    /** 推送一个 SSE 事件；连接已断开时返回 false，调用方据此停止后续处理 */
+    private boolean sendEvent(SseEmitter emitter, String event, Object data) {
+        try {
+            emitter.send(SseEmitter.event().name(event).data(data, MediaType.APPLICATION_JSON));
+            return true;
+        } catch (IOException | IllegalStateException e) {
+            log.debug("SSE 推送失败（客户端可能已断开）：event={}, cause={}", event, e.toString());
+            return false;
+        }
+    }
+
+    private void safeComplete(SseEmitter emitter) {
+        try {
+            emitter.complete();
+        } catch (Exception ignored) {
+            // 客户端已断开时 complete 会抛 IllegalStateException，忽略即可
+        }
     }
 
     // ==================== 参数归一化 ====================

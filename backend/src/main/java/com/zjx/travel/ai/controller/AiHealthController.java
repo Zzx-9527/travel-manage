@@ -1,7 +1,9 @@
 package com.zjx.travel.ai.controller;
 
 import com.zjx.travel.ai.config.AiProperties;
+import com.zjx.travel.ai.service.AiQuotaService;
 import com.zjx.travel.util.ReturnVO;
+import com.zjx.travel.util.SecurityUtil;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,17 +32,20 @@ public class AiHealthController {
     private static final String PLACEHOLDER_KEY = "sk-not-configured";
 
     private final AiProperties properties;
+    private final AiQuotaService quotaService;
     private final ObjectProvider<ChatModel> chatModelProvider;
     private final String apiKey;
     private final String baseUrl;
     private final String model;
 
     public AiHealthController(AiProperties properties,
+                              AiQuotaService quotaService,
                               ObjectProvider<ChatModel> chatModelProvider,
                               @Value("${spring.ai.openai.api-key:}") String apiKey,
                               @Value("${spring.ai.openai.base-url:}") String baseUrl,
                               @Value("${spring.ai.openai.chat.options.model:}") String model) {
         this.properties = properties;
+        this.quotaService = quotaService;
         this.chatModelProvider = chatModelProvider;
         this.apiKey = apiKey;
         this.baseUrl = baseUrl;
@@ -64,6 +69,7 @@ public class AiHealthController {
         data.put("baseUrl", baseUrl);
         data.put("dailyLimit", properties.getDailyLimit());
         data.put("maxSpotsPerDay", properties.getMaxSpotsPerDay());
+        data.put("remainingToday", quotaService.remaining(SecurityUtil.currentUserId()));
         data.put("message", available
                 ? "AI 已就绪"
                 : (properties.isEnabled()

@@ -160,6 +160,23 @@ public class RedisUtil {
     }
 
     /**
+     * 设置 key 的过期时间（秒级）。
+     *
+     * <p>用于"先 INCR 再补 TTL"的计数场景：自增和设置过期无法用单条命令完成，
+     * 这里把过期失败降级为"本次不过期"，由调用方决定是否容忍。
+     *
+     * @return true 表示设置成功；false 表示 key 不存在或 Redis 异常
+     */
+    public boolean expire(String key, Duration ttl) {
+        try {
+            return Boolean.TRUE.equals(redisTemplate.expire(key, ttl));
+        } catch (Exception e) {
+            log.warn("设置过期时间失败，key={}, cause={}", key, e.toString());
+            return false;
+        }
+    }
+
+    /**
      * 扣减计数器：数据库累加成功之后再调用（顺序不能反）。
      *
      * @param delta 本次已经写入数据库的增量
