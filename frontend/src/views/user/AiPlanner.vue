@@ -97,14 +97,15 @@
           <div v-if="!day.spots || !day.spots.length" class="day-empty">自由活动 / 机动安排</div>
           <ul v-else class="spot-list">
             <li v-for="(spot, index) in day.spots" :key="spot.scenicId" class="spot-row">
-              <img
-                v-if="spot.cover"
-                :src="spot.cover"
-                :alt="spot.name"
-                class="spot-cover"
-                loading="lazy"
-                @error="hideBrokenImage"
-              />
+              <div class="spot-cover">
+                <img
+                  v-if="spot.cover"
+                  :src="spot.cover"
+                  :alt="spot.name"
+                  loading="lazy"
+                  @error="hideBrokenImage"
+                />
+              </div>
               <span class="spot-index">{{ index + 1 }}</span>
               <div class="spot-main">
                 <div class="spot-title">
@@ -498,11 +499,30 @@ function hideBrokenImage(event) {
 
 .spot-cover {
   flex-shrink: 0;
+  position: relative;
   width: 76px;
   height: 56px;
   border-radius: 8px;
+  overflow: hidden;
+  /* 外链图片加载失败或还在加载时露出的占位底：渐变 + 山水图标 */
+  background: linear-gradient(135deg, #eef7f4, #e3f0ec);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spot-cover::before {
+  content: '🏞';
+  font-size: 20px;
+  opacity: 0.45;
+}
+
+.spot-cover img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  background: var(--ink-50, #f3f4f6);
 }
 
 .spot-index {

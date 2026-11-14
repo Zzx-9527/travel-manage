@@ -61,9 +61,6 @@ public class AiPlanService {
     /** 候选景点上限：控制 Prompt 体积，40 个约 1.2k tokens */
     private static final int MAX_CANDIDATES = 40;
 
-    /** 目的地命中的候选少于这个数，就退回全量候选（避免"西安"只匹配到 1 个景点） */
-    private static final int MIN_MATCHED_CANDIDATES = 5;
-
     /** 从 Spring AI 的异常消息里抠状态码，形如 "HTTP 401 - {...}" */
     private static final Pattern HTTP_STATUS_PATTERN = Pattern.compile("HTTP (\\d{3})");
 
@@ -100,11 +97,9 @@ public class AiPlanService {
         }
         try {
             AiPlanRequest req = normalize(request);
-            quotaService.checkAndConsume(userId);
+            // 先确认目的地有景点可排，再扣配额：目的地写错不该消耗今天的次数
             List<ScenicEntity> candidates = loadCandidates(req.getDestination());
-            if (candidates.isEmpty()) {
-                throw new AiPlanException("景点库暂无可上架景点，无法生成行程");
-            }
+            quotaService.checkAndConsume(userId);
 
             long start = System.currentTimeMillis();
             String raw;
@@ -207,12 +202,9 @@ public class AiPlanService {
             }
             try {
                 AiPlanRequest req = normalize(request);
-                quotaService.checkAndConsume(userId);
-
+                // 先确认目的地有景点可排，再扣配额：目的地写错不该消耗今天的次数
                 List<ScenicEntity> candidates = loadCandidates(req.getDestination());
-                if (candidates.isEmpty()) {
-                    throw new AiPlanException("景点库暂无可上架景点，无法生成行程");
-                }
+                quotaService.checkAndConsume(userId);
 
                 Flux<String> flux = chatClient.prompt()
                         .system(promptBuilder.systemPrompt())
@@ -299,20 +291,42 @@ public class AiPlanService {
 
     // ==================== 候选景点 ====================
 
+    /**
+     * 取候选景点：只保留名称或地址命中目的地的景点。
+     *
+     * <p><b>不做"没匹配上就退回全量"的兜底。</b>曾经这么做过，结果是
+     * 用户输入"丽江"（库里没有），模型从全量候选里挑了乌镇、西湖、张家界、黄山，
+     * 生成了一份看起来像模像样、实际完全错误的行程——这比直接说"没有"更糟。
+     *
+     * <p>宁可返回一个明确的"未收录"，也不产出一份误导性结果。
+     */
     private List<ScenicEntity> loadCandidates(String destination) {
         List<ScenicEntity> all = scenicMapper.queryActiveList();
         if (all == null || all.isEmpty()) {
-            return List.of();
+            throw new AiPlanException("景点库暂无可上架景点，无法生成行程");
         }
         List<ScenicEntity> matched = all.stream()
                 .filter(s -> contains(s.getName(), destination) || contains(s.getAddress(), destination))
-                .collect(Collectors.toList());
-        List<ScenicEntity> pool = matched.size() >= MIN_MATCHED_CANDIDATES ? matched : all;
-        return pool.stream()
                 .sorted(Comparator.<ScenicEntity, Double>comparing(
                         ScenicEntity::getScore, Comparator.nullsLast(Comparator.reverseOrder())))
                 .limit(MAX_CANDIDATES)
                 .collect(Collectors.toList());
+        if (matched.isEmpty()) {
+            throw new AiPlanException(notCoveredMessage(destination, all));
+        }
+        return matched;
+    }
+
+    /** 目的地未收录时的提示：告诉用户现在能规划哪些地方，而不是只说"没有" */
+    private String notCoveredMessage(String destination, List<ScenicEntity> all) {
+        String samples = all.stream()
+                .sorted(Comparator.<ScenicEntity, Double>comparing(
+                        ScenicEntity::getScore, Comparator.nullsLast(Comparator.reverseOrder())))
+                .limit(5)
+                .map(ScenicEntity::getName)
+                .collect(Collectors.joining("、"));
+        return "平台暂未收录「" + destination + "」的景点，无法规划该目的地。"
+                + "当前收录的景点有：" + samples + " 等，换个目的地试试。";
     }
 
     // ==================== 解析 ====================

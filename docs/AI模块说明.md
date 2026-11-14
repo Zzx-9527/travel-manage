@@ -41,7 +41,8 @@ ai-stream 线程池（4 线程）
   ├─ 1. 参数归一化      天数夹到 1-7，目的地必填，文本截断
   ├─ 2. 并发闸          Redis SETNX ai:running:{userId}，防同一用户连点
   ├─ 3. 配额闸          Redis INCR ai:quota:{userId}:{yyyyMMdd}，超限直接错误事件
-  ├─ 4. 取候选景点      scenic WHERE del_mark=1 AND status=1，按评分取前 40
+  ├─ 4. 取候选景点      scenic WHERE del_mark=1 AND status=1，只保留名称/地址命中目的地的
+  │                     没有命中就直接报"未收录"，**不回退全量候选**
   ├─ 5. 组装 Prompt     system 固定规则 + user 需求与候选清单
   ├─ 6. 调模型          ChatClient.stream()，逐块推 SSE delta
   ├─ 7. 解析           剥 ``` 围栏 → Jackson → AiPlanResult
@@ -157,6 +158,7 @@ ai-stream 线程池（4 线程）
 |---|---|---|
 | 未配 Key | `AI 未配置 API Key…`（`/ai/health` 的 message） | 应用照常启动，`enabled=false` |
 | 目的地为空 | 请先填写目的地 | 归一化阶段拦截 |
+| 目的地未收录 | 平台暂未收录「丽江」的景点…当前收录：… | `loadCandidates` 直接抛业务异常；不扣配额、不调模型 |
 | 每日配额超限 | 今天的 AI 规划次数已用完（每天 N 次） | 同步返回 `code=0`，流式回 `error` 事件 |
 | 同一用户并发 | 上一条行程还在生成中，请稍候 | `SETNX` 抢锁失败 |
 | Key 无效 / 403 | AI Key 无效或无权限，请联系管理员 | 解析 401/403 |
@@ -241,7 +243,7 @@ ThreadLocal 上下文已清理，抛 `SaTokenContextException`，把 404 变成 
 
 | 限制 | 影响 | 下一步 |
 |---|---|---|
-| 景点数据只有 11 条 | 小城市容易出现"某天自由活动" | 补数据；或按城市预筛后放宽候选 |
+| 景点数据只有 11 条 | 用户输入的大部分城市会直接提示"未收录"；库里有的城市若景点少，某天会自由活动 | 补数据——这是唯一根治办法，不要靠"回退全量"糊弄 |
 | 没有 token 用量落库 | 成本只能估算 | 加 `ai_call_log`（表结构已设计，未落） |
 | 生成质量无评估 | 无法量化好坏 | 抽样人工打分，或引入 LLM-as-judge |
 | 推荐理由不落库 | 保存后详情页看不到理由 | 给 `route_detail` 加列（需改现有表） |
