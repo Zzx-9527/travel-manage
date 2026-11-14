@@ -64,6 +64,14 @@ public class AiPlanService {
     /** 从 Spring AI 的异常消息里抠状态码，形如 "HTTP 401 - {...}" */
     private static final Pattern HTTP_STATUS_PATTERN = Pattern.compile("HTTP (\\d{3})");
 
+    /** 时段顺序，用于把模型给的景点按 上午→下午→晚上 排好 */
+    private static final List<String> SLOT_ORDER = List.of("上午", "下午", "晚上");
+
+    /** 单个景点的文本上限，防止模型写超长把卡片撑爆 */
+    private static final int MAX_TRAFFIC_LENGTH = 120;
+    private static final int MAX_INTRO_LENGTH = 220;
+    private static final int MAX_NOTICE_LENGTH = 160;
+
     private final ChatClient chatClient;
     private final ScenicMapper scenicMapper;
     private final PlanPromptBuilder promptBuilder;
@@ -456,6 +464,8 @@ public class AiPlanService {
                 spots.add(spot);
             }
 
+            // 模型偶尔会把"晚上"排在"上午"前面，这里按固定时段顺序稳定排序
+            spots.sort(Comparator.comparingInt(spot -> slotRank(spot.getTimeSlot())));
             day.setDayNo(dayNo);
             day.setSpots(spots);
             if (spots.isEmpty()) {
@@ -496,6 +506,7 @@ public class AiPlanService {
         spot.setPrice(scenic.getPrice());
         spot.setScore(scenic.getScore());
         spot.setAddress(scenic.getAddress());
+        spot.setOpenTime(scenic.getOpenTime());
         spot.setLongitude(scenic.getLongitude());
         spot.setLatitude(scenic.getLatitude());
         spot.setCover(scenic.getCover());
@@ -505,12 +516,24 @@ public class AiPlanService {
         if (spot.getReason() == null) {
             spot.setReason("");
         }
+        // 模型偶尔会写长，截断防止卡片被撑爆
+        spot.setTraffic(truncate(spot.getTraffic(), MAX_TRAFFIC_LENGTH));
+        spot.setIntro(truncate(spot.getIntro(), MAX_INTRO_LENGTH));
+        spot.setNotice(truncate(spot.getNotice(), MAX_NOTICE_LENGTH));
     }
 
     // ==================== 小工具 ====================
 
-    private int countSpots(AiPlanResult result) {
-        return result.getDays() == null ? 0 : result.getDays().stream()
+    /** 时段排序权重；未知时段的排在最后，保持原顺序 */
+    private int slotRank(String timeSlot) {
+        if (timeSlot == null) {
+            return SLOT_ORDER.size();
+        }
+        int index = SLOT_ORDER.indexOf(timeSlot.trim());
+        return index < 0 ? SLOT_ORDER.size() : index;
+    }
+
+    private int countSpots(AiPlanResult result) {        return result.getDays() == null ? 0 : result.getDays().stream()
                 .mapToInt(day -> day.getSpots() == null ? 0 : day.getSpots().size())
                 .sum();
     }

@@ -57,8 +57,20 @@ public class AiPlanResult {
         /** 景点 id，必须命中候选清单，否则整条被丢弃 */
         private Integer scenicId;
 
+        /** 时段：上午 / 下午 / 晚上 */
+        private String timeSlot;
+
         /** 建议停留时长，如"2小时" */
         private String stayTime;
+
+        /** 从上一站到这里的交通方式与耗时（第一站从住处出发） */
+        private String traffic;
+
+        /** 景点介绍：看点与背景，60-100 字 */
+        private String intro;
+
+        /** 注意事项：预约、闭馆、排队、穿着等 */
+        private String notice;
 
         /** 推荐理由，模型生成 */
         private String reason;
@@ -68,6 +80,7 @@ public class AiPlanResult {
         private Double price;
         private Double score;
         private String address;
+        private String openTime;
         private Double longitude;
         private Double latitude;
         private String cover;

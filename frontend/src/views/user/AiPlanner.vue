@@ -122,7 +122,7 @@
 
           <div v-if="!day.spots || !day.spots.length" class="day-empty">自由活动 / 机动安排</div>
           <ul v-else class="spot-list">
-            <li v-for="(spot, index) in day.spots" :key="spot.scenicId" class="spot-row">
+            <li v-for="spot in day.spots" :key="spot.scenicId" class="spot-row">
               <div class="spot-cover">
                 <img
                   v-if="spot.cover"
@@ -132,18 +132,41 @@
                   @error="hideBrokenImage"
                 />
               </div>
-              <span class="spot-index">{{ index + 1 }}</span>
+
               <div class="spot-main">
                 <div class="spot-title">
+                  <span v-if="spot.timeSlot" class="slot-badge" :class="slotClass(spot.timeSlot)">
+                    {{ spot.timeSlot }}
+                  </span>
                   <a class="spot-name" @click="goSpot(spot.scenicId)">{{ spot.name }}</a>
                   <span class="spot-meta">
                     <span v-if="spot.price != null">¥{{ spot.price }}</span>
                     <span v-if="spot.score">★ {{ spot.score }}</span>
-                    <span>{{ spot.stayTime }}</span>
+                    <span v-if="spot.stayTime">建议 {{ spot.stayTime }}</span>
                   </span>
                 </div>
-                <p class="spot-reason">{{ spot.reason }}</p>
-                <p class="spot-addr">{{ spot.address }}</p>
+
+                <p v-if="spot.intro" class="spot-intro">{{ spot.intro }}</p>
+
+                <div class="spot-notes">
+                  <p v-if="spot.reason" class="note">
+                    <i class="note-label">推荐</i><span>{{ spot.reason }}</span>
+                  </p>
+                  <p v-if="spot.traffic" class="note">
+                    <i class="note-label">交通</i><span>{{ spot.traffic }}</span>
+                  </p>
+                  <p v-if="spot.notice" class="note">
+                    <i class="note-label">提示</i><span>{{ spot.notice }}</span>
+                  </p>
+                  <p class="note note-muted">
+                    <i class="note-label">信息</i>
+                    <span>
+                      <template v-if="spot.openTime">开放 {{ spot.openTime }}</template>
+                      <template v-if="spot.openTime && spot.address"> · </template>
+                      <template v-if="spot.address">{{ spot.address }}</template>
+                    </span>
+                  </p>
+                </div>
               </div>
             </li>
           </ul>
@@ -292,6 +315,13 @@ async function save() {
 
 function goSpot(id) {
   router.push(`/travel/home/spots/${id}`)
+}
+
+function slotClass(slot) {
+  if (slot === '上午') return 'slot-morning'
+  if (slot === '下午') return 'slot-afternoon'
+  if (slot === '晚上') return 'slot-evening'
+  return 'slot-unknown'
 }
 
 /** 封面加载失败时隐藏图片，避免出现破图图标；文字信息仍然完整 */
@@ -684,18 +714,32 @@ async function restore(item) {
   object-fit: cover;
 }
 
-.spot-index {
+.slot-badge {
   flex-shrink: 0;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--ink-50, #f3f4f6);
-  color: var(--ink-500, #6b7280);
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.slot-morning {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.slot-afternoon {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.slot-evening {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.slot-unknown {
+  background: #f3f4f6;
+  color: #6b7280;
 }
 
 .spot-title {
@@ -723,15 +767,36 @@ async function restore(item) {
   color: var(--ink-400, #9ca3af);
 }
 
-.spot-reason {
-  margin: 4px 0 2px;
-  font-size: 12px;
+.spot-intro {
+  margin: 6px 0 8px;
+  font-size: 12.5px;
+  line-height: 1.75;
   color: var(--ink-600, #4b5563);
 }
 
-.spot-addr {
+.spot-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.note {
+  display: flex;
+  gap: 6px;
   margin: 0;
   font-size: 12px;
+  line-height: 1.6;
+  color: var(--ink-500, #6b7280);
+}
+
+.note-label {
+  flex-shrink: 0;
+  width: 26px;
+  font-style: normal;
+  color: var(--ink-400, #9ca3af);
+}
+
+.note-muted {
   color: var(--ink-400, #9ca3af);
 }
 

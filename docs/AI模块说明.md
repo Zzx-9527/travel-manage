@@ -81,7 +81,7 @@ ai-stream 线程池（4 线程）
 |---|---|---|
 | ① 封闭候选集 | Prompt | 从源头把可选范围压到库内景点 |
 | ② ID 白名单 | `AiPlanService.validateAndEnrich` | 模型仍然可能编 id：不在候选 Map 里的整条丢弃，计入 `droppedSpots` |
-| ③ 事实数据回填 | 同上 | 名称、价格、评分、坐标、封面一律用库里的值覆盖模型输出 |
+| ③ 事实数据回填 | 同上 | 名称、价格、评分、坐标、封面、开放时间一律用库里的值覆盖模型输出 |
 
 `droppedSpots` 不只是个数字，它是**模型幻觉率的观测指标**：大于 0 说明这次生成有编造，
 持续偏高就该调整 Prompt 或候选集。
@@ -153,10 +153,14 @@ ai-stream 线程池（4 线程）
   "days": [
     { "dayNo": 1, "theme": "皇城历史",
       "spots": [
-        { "scenicId": 2, "stayTime": "3小时", "reason": "明清皇宫，历史底蕴深厚",
+        { "scenicId": 2, "timeSlot": "上午", "stayTime": "3小时",
+          "traffic": "地铁1号线天安门东站 B 口，步行约 8 分钟",
+          "intro": "明清两代的皇家宫殿，现存规模最大的木质结构古建筑群。建议沿中轴线从午门进、神武门出。",
+          "notice": "周一闭馆；需提前在官网实名预约。",
+          "reason": "第一次来北京的核心地标",
           "name": "故宫博物院", "price": 60.0, "score": 4.8,
-          "address": "北京市东城区景山前街4号", "longitude": 116.39748, "latitude": 39.91728,
-          "cover": "https://..." }
+          "address": "北京市东城区景山前街4号", "openTime": "08:30-17:00",
+          "longitude": 116.39748, "latitude": 39.91728, "cover": "https://..." }
       ] },
     { "dayNo": 2, "theme": "自由活动", "spots": [] }
   ],
@@ -165,7 +169,11 @@ ai-stream 线程池（4 线程）
 }
 ```
 
-模型只被要求返回 `scenicId / stayTime / reason`，其余字段由服务端补。
+模型负责 `scenicId / timeSlot / stayTime / traffic / intro / notice / reason`；
+`name / price / score / address / openTime / 经纬度 / 封面` 全部由服务端按 id 回填。
+
+`intro` 与 `notice` 是模型写的叙述性内容，Prompt 里明确禁止它们写票价和开放时间——
+这两个事实由 `price` 和 `openTime` 提供，避免"AI 说门票 60 块"这类不一致。
 
 ---
 
