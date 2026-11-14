@@ -101,31 +101,37 @@ public class AiPlanService {
             List<ScenicEntity> candidates = loadCandidates(req.getDestination());
             quotaService.checkAndConsume(userId);
 
-            long start = System.currentTimeMillis();
-            String raw;
+            // 扣了配额之后的任何失败都要返还：用户没拿到结果，不该损失今天的次数
             try {
-                raw = chatClient.prompt()
-                        .system(promptBuilder.systemPrompt())
-                        .user(promptBuilder.userPrompt(req, candidates))
-                        .call()
-                        .content();
-            } catch (Exception e) {
-                // 上游错误（超时、401、限流）只记日志，不把原始报文返回给前端
-                log.error("调用大模型失败：目的地={}，天数={}", req.getDestination(), req.getDays(), e);
-                throw new AiPlanException(friendlyLlmError(e));
+                long start = System.currentTimeMillis();
+                String raw;
+                try {
+                    raw = chatClient.prompt()
+                            .system(promptBuilder.systemPrompt())
+                            .user(promptBuilder.userPrompt(req, candidates))
+                            .call()
+                            .content();
+                } catch (Exception e) {
+                    // 上游错误（超时、401、限流）只记日志，不把原始报文返回给前端
+                    log.error("调用大模型失败：目的地={}，天数={}", req.getDestination(), req.getDays(), e);
+                    throw new AiPlanException(friendlyLlmError(e));
+                }
+                long latency = System.currentTimeMillis() - start;
+
+                AiPlanResult result = parse(raw);
+                int dropped = validateAndEnrich(result, req, candidates);
+
+                result.setModel(model);
+                result.setLatencyMs(latency);
+                result.setDroppedSpots(dropped);
+
+                log.info("AI 行程生成完成：目的地={}，天数={}，有效景点={}，丢弃={}，耗时={}ms",
+                        req.getDestination(), req.getDays(), countSpots(result), dropped, latency);
+                return result;
+            } catch (RuntimeException e) {
+                quotaService.refund(userId);
+                throw e;
             }
-            long latency = System.currentTimeMillis() - start;
-
-            AiPlanResult result = parse(raw);
-            int dropped = validateAndEnrich(result, req, candidates);
-
-            result.setModel(model);
-            result.setLatencyMs(latency);
-            result.setDroppedSpots(dropped);
-
-            log.info("AI 行程生成完成：目的地={}，天数={}，有效景点={}，丢弃={}，耗时={}ms",
-                    req.getDestination(), req.getDays(), countSpots(result), dropped, latency);
-            return result;
         } finally {
             quotaService.releaseGeneration(userId);
         }
@@ -200,11 +206,13 @@ public class AiPlanService {
                 safeComplete(emitter);
                 return;
             }
+            boolean quotaCounted = false;
             try {
                 AiPlanRequest req = normalize(request);
                 // 先确认目的地有景点可排，再扣配额：目的地写错不该消耗今天的次数
                 List<ScenicEntity> candidates = loadCandidates(req.getDestination());
                 quotaService.checkAndConsume(userId);
+                quotaCounted = true;
 
                 Flux<String> flux = chatClient.prompt()
                         .system(promptBuilder.systemPrompt())
@@ -235,10 +243,16 @@ public class AiPlanService {
                 log.info("AI 行程流式生成完成：目的地={}，天数={}，景点={}，丢弃={}，耗时={}ms",
                         req.getDestination(), req.getDays(), countSpots(result), dropped, latency);
             } catch (AiPlanException e) {
+                if (quotaCounted) {
+                    quotaService.refund(userId);
+                }
                 sendEvent(emitter, "error", Map.of("msg", e.getMessage()));
                 safeComplete(emitter);
             } catch (Exception e) {
                 log.error("AI 流式生成失败", e);
+                if (quotaCounted) {
+                    quotaService.refund(userId);
+                }
                 sendEvent(emitter, "error", Map.of("msg", friendlyLlmError(e)));
                 safeComplete(emitter);
             } finally {

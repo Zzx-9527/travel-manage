@@ -6,6 +6,7 @@ import com.zjx.travel.ai.exception.AiPlanException;
 import com.zjx.travel.domain.RouteDetailEntity;
 import com.zjx.travel.domain.RouteEntity;
 import com.zjx.travel.domain.ScenicEntity;
+import com.zjx.travel.mapper.RouteMapper;
 import com.zjx.travel.mapper.ScenicMapper;
 import com.zjx.travel.service.RouteDetailService;
 import com.zjx.travel.service.RouteService;
@@ -43,13 +44,16 @@ public class AiPlanSaveService {
     private final RouteService routeService;
     private final RouteDetailService routeDetailService;
     private final ScenicMapper scenicMapper;
+    private final RouteMapper routeMapper;
 
     public AiPlanSaveService(RouteService routeService,
                              RouteDetailService routeDetailService,
-                             ScenicMapper scenicMapper) {
+                             ScenicMapper scenicMapper,
+                             RouteMapper routeMapper) {
         this.routeService = routeService;
         this.routeDetailService = routeDetailService;
         this.scenicMapper = scenicMapper;
+        this.routeMapper = routeMapper;
     }
 
     /**
@@ -72,9 +76,17 @@ public class AiPlanSaveService {
                 .map(ScenicEntity::getId)
                 .collect(Collectors.toSet());
 
+        String routeName = truncate(request.getTitle(), MAX_TITLE_LENGTH, "AI 生成的行程");
+        // 幂等：连点两次"保存"时，第二次直接返回第一次的 routeId，不再插一条一样的
+        Integer existingId = routeMapper.findRecentSameName(userId, routeName);
+        if (existingId != null) {
+            log.info("5 分钟内已保存过同名行程，返回已有路线：routeId={}，userId={}", existingId, userId);
+            return existingId;
+        }
+
         RouteEntity route = new RouteEntity();
         route.setUserId(SecurityUtil.userRef(userId));
-        route.setName(truncate(request.getTitle(), MAX_TITLE_LENGTH, "AI 生成的行程"));
+        route.setName(routeName);
         route.setDayCount(dayCount);
         route.setStartCity(truncate(request.getDestination(), 30, null));
         route.setTraffic("自由行");

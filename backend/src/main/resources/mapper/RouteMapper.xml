@@ -136,5 +136,21 @@
     <update id="deleteById">
         UPDATE route SET del_mark = 0 WHERE id = #{id}
     </update>
+
+    <!--
+      AI 保存去重：5 分钟内、同用户、同名的待审核路线。
+      注意本库 del_mark = 1 表示有效，deleteById 是置 0，所以这里必须带 del_mark = 1。
+    -->
+    <select id="findRecentSameName" resultType="java.lang.Integer">
+        select id
+        from route
+        where user_id = #{userId}
+          and name = #{name}
+          and status = 0
+          and del_mark = 1
+          and create_time &gt; date_sub(now(), interval 5 minute)
+        order by id desc
+        limit 1
+    </select>
 </mapper>
 

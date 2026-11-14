@@ -115,4 +115,29 @@ public class AiQuotaService {
         LocalDateTime tomorrow = LocalDateTime.of(now.toLocalDate().plusDays(1), LocalTime.MIDNIGHT).plusMinutes(1);
         return Duration.between(now, tomorrow);
     }
+
+    /**
+     * 返还一次配额：生成失败时调用，避免用户"一次结果没拿到，次数却没了"。
+     *
+     * <p>三个保护：
+     * <ul>
+     *   <li>只在 key 还存在时返还——调用跨过午夜、key 已按新的一天重建时，
+     *       不能去扣今天的额度；</li>
+     *   <li>减到 0 就删掉 key，不留一个 0 值且无 TTL 的脏 key；</li>
+     *   <li>Redis 异常时静默失败，返还属于补偿动作，不该影响主流程返回的错误信息。</li>
+     * </ul>
+     */
+    public void refund(Integer userId) {
+        if (userId == null) {
+            return;
+        }
+        String key = RedisKeys.aiQuota(userId, LocalDate.now());
+        if (!redisUtil.hasKey(key)) {
+            return;
+        }
+        Long value = redisUtil.increment(key, -1);
+        if (value != null && value <= 0) {
+            redisUtil.delete(key);
+        }
+    }
 }
