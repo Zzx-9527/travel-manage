@@ -111,7 +111,7 @@
     <select id="queryAllByLimit" resultMap="collectMap">
         <include refid="baseSql"></include>
         <include refid="condition"></include>
-        order by collect.id asc
+        order by collect.id desc
         limit #{pageable.offset}, #{pageable.pageSize}
     </select>
 

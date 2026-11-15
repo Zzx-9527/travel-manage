@@ -184,7 +184,7 @@
     <select id="queryAllByLimit" resultMap="scenicOrdersMap">
         <include refid="baseSql"></include>
         <include refid="condition"></include>
-        order by scenic_orders.id asc
+        order by scenic_orders.id desc
         limit #{pageable.offset}, #{pageable.pageSize}
     </select>
 

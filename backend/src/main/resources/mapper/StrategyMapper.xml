@@ -76,7 +76,7 @@
     <select id="queryAllByLimit" resultMap="strategyMap">
         <include refid="baseSql"></include>
         <include refid="condition"></include>
-        order by id asc
+        order by id desc
         limit #{pageable.offset}, #{pageable.pageSize}
     </select>
 
