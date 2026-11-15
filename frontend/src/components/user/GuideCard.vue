@@ -9,7 +9,7 @@
     @keydown.space.prevent="$emit('click', guide)"
   >
     <div class="guide-cover">
-      <el-image :src="guide.cover" fit="cover" lazy style="width: 100%; height: 100%;">
+      <el-image :src="resolveUploadUrl(guide.cover)" fit="cover" lazy style="width: 100%; height: 100%;">
         <template #error><div class="placeholder-img"><i class="fa fa-image"></i></div></template>
       </el-image>
     </div>
@@ -26,6 +26,7 @@
 </template>
 
 <script setup>
+import { resolveUploadUrl } from '@/api/file'
 import { truncate } from '@/utils/format'
 
 defineProps({

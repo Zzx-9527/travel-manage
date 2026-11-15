@@ -37,7 +37,7 @@
             {{ isCollected ? '已收藏' : '收藏' }}
           </button>
         </div>
-        <el-image :src="guide.cover" fit="cover" class="head-cover">
+        <el-image :src="resolveUploadUrl(guide.cover)" fit="cover" class="head-cover">
           <template #error><div class="head-cover-fallback"><i class="fa fa-image"></i></div></template>
         </el-image>
       </header>
@@ -95,6 +95,7 @@
 </template>
 
 <script setup>
+import { resolveUploadUrl } from '@/api/file'
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'

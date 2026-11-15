@@ -47,8 +47,8 @@
         <el-table-column label="封面" width="80" align="center">
           <template #default="{ row }">
             <el-image
-              v-if="row.cover" :src="row.cover" style="width: 56px; height: 38px; border-radius: 6px; cursor: pointer;" fit="cover" lazy
-              :preview-src-list="[row.cover]" preview-teleported @click.stop
+              v-if="row.cover" :src="resolveUploadUrl(row.cover)" style="width: 56px; height: 38px; border-radius: 6px; cursor: pointer;" fit="cover" lazy
+              :preview-src-list="[resolveUploadUrl(row.cover)]" preview-teleported @click.stop
             >
               <template #error><div class="w-[56px] h-[38px] bg-gray-100 rounded flex items-center justify-center text-gray-400 text-xs"><i class="fa fa-image"></i></div></template>
             </el-image>
@@ -174,7 +174,7 @@
     <!-- 审核状态对话框 -->
     <el-dialog v-model="auditVisible" title="修改审核状态" :width="460" :close-on-click-modal="false" top="25vh">
       <div class="flex gap-4 mb-5 p-4 rounded-xl" style="background: #F8FAFC;">
-        <el-image v-if="auditRow?.cover" :src="auditRow.cover" style="width: 96px; height: 64px; border-radius: 8px; flex-shrink: 0;" fit="cover">
+        <el-image v-if="auditRow?.cover" :src="resolveUploadUrl(auditRow.cover)" style="width: 96px; height: 64px; border-radius: 8px; flex-shrink: 0;" fit="cover">
           <template #error><div class="w-24 h-16 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 text-xs"><i class="fa fa-image"></i></div></template>
         </el-image>
         <div class="flex-1 min-w-0">
@@ -207,7 +207,7 @@
     <el-dialog v-model="detailVisible" :title="detailData.title || '攻略详情'" :width="680" top="5vh" destroy-on-close>
       <div v-if="detailData.id">
         <div v-if="detailData.cover" class="mb-5">
-          <el-image :src="detailData.cover" style="width: 100%; height: 240px; border-radius: 12px;" fit="cover" :preview-src-list="[detailData.cover]" preview-teleported>
+          <el-image :src="resolveUploadUrl(detailData.cover)" style="width: 100%; height: 240px; border-radius: 12px;" fit="cover" :preview-src-list="[detailData.cover]" preview-teleported>
             <template #error>
               <div class="w-full h-48 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400"><i class="fa fa-image text-3xl mr-2"></i>暂无封面</div>
             </template>
@@ -269,6 +269,7 @@
 </template>
 
 <script setup>
+import { resolveUploadUrl } from '@/api/file'
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getStrategiesByPage, addStrategy, editStrategy, deleteStrategy } from '@/api/strategy'
