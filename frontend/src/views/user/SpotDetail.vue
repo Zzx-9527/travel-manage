@@ -99,6 +99,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import EmptyState from '@/components/user/EmptyState.vue'
 import OrderDialog from '@/components/user/OrderDialog.vue'
+import { resolveUploadUrl } from '@/api/file'
 import ScenicMap from '@/components/user/ScenicMap.vue'
 import { formatTime, priceText } from '@/utils/format'
 import { useAuthStore } from '@/stores/auth'
@@ -123,7 +124,7 @@ const imageList = computed(() => {
   const imgs = spot.value.images
     ? String(spot.value.images).split(',').map(s => s.trim()).filter(Boolean)
     : []
-  return imgs.length ? imgs : (spot.value.cover ? [spot.value.cover] : [])
+  return imgs.length ? imgs.map(resolveUploadUrl) : (spot.value.cover ? [resolveUploadUrl(spot.value.cover)] : [])
 })
 
 const heroStyle = computed(() => {

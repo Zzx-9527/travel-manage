@@ -58,11 +58,11 @@
           <template #default="{ row }">
             <el-image
               v-if="row.cover"
-              :src="row.cover"
+              :src="resolveUploadUrl(row.cover)"
               style="width: 60px; height: 40px; border-radius: 6px; cursor: pointer;"
               fit="cover"
               lazy
-              :preview-src-list="[row.cover]"
+              :preview-src-list="[resolveUploadUrl(row.cover)]"
               preview-teleported
               @click.stop
             >

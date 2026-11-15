@@ -3,7 +3,7 @@
     <div v-if="spot">
       <!-- 景点摘要 -->
       <div class="spot-brief">
-        <el-image :src="spot.cover" fit="cover" style="width: 64px; height: 48px; border-radius: 8px; flex-shrink: 0;">
+        <el-image :src="resolveUploadUrl(spot.cover)" fit="cover" style="width: 64px; height: 48px; border-radius: 8px; flex-shrink: 0;">
           <template #error><div class="brief-img-fallback"><i class="fa fa-image"></i></div></template>
         </el-image>
         <div class="brief-info">
@@ -68,6 +68,7 @@
 import { ref, reactive, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { priceText } from '@/utils/format'
+import { resolveUploadUrl } from '@/api/file'
 import { createOrder, payOrder } from '@/api/order'
 import { getStock } from '@/api/scenic'
 import { useAuthStore } from '@/stores/auth'

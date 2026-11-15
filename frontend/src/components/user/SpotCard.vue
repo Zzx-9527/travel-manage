@@ -9,7 +9,7 @@
     @keydown.space.prevent="$emit('click', spot)"
   >
     <div class="spot-cover">
-      <el-image :src="spot.cover" fit="cover" lazy style="width: 100%; height: 100%;">
+      <el-image :src="resolveUploadUrl(spot.cover)" fit="cover" lazy style="width: 100%; height: 100%;">
         <template #error><div class="placeholder-img"><i class="fa fa-image"></i></div></template>
       </el-image>
       <div class="spot-price">{{ priceText(spot.price) }}</div>
@@ -24,6 +24,7 @@
 
 <script setup>
 import { priceText } from '@/utils/format'
+import { resolveUploadUrl } from '@/api/file'
 
 defineProps({
   spot: { type: Object, required: true }

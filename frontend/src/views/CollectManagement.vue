@@ -123,7 +123,7 @@
           <div class="flex items-start gap-3">
             <el-image
               v-if="collectTarget(detailData).cover"
-              :src="collectTarget(detailData).cover"
+              :src="resolveUploadUrl(collectTarget(detailData).cover)"
               fit="cover"
               lazy
               style="width: 64px; height: 48px; border-radius: 6px; flex-shrink: 0;"
@@ -164,6 +164,7 @@
 </template>
 
 <script setup>
+import { resolveUploadUrl } from '@/api/file'
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { collectTarget, collectTypeText, collectTypeStyle, formatTime } from '@/utils/format'

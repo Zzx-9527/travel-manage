@@ -44,6 +44,7 @@ import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import EmptyState from '@/components/user/EmptyState.vue'
 import { isAmapConfigured, loadAMap } from '@/utils/amap'
 import { estimateLeg } from '@/utils/routePlanner'
+import { resolveUploadUrl } from '@/api/file'
 
 const props = defineProps({
   spots: { type: Array, default: () => [] },
@@ -402,7 +403,7 @@ function escapeHtml(str) {
 function openInfo(spot, marker) {
   const price = spot.price == null || spot.price === 0 ? '免费' : `¥${spot.price}`
   const score = spot.score != null ? Number(spot.score).toFixed(1) : '--'
-  const cover = spot.cover
+  const cover = resolveUploadUrl(spot.cover)
   const img = cover
     ? `<img class="mi-img" src="${escapeHtml(cover)}" onerror="this.style.display='none'" />`
     : '<div class="mi-img mi-fallback"><i class="fa fa-map-marker"></i></div>'
