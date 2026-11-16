@@ -53,9 +53,11 @@ spring.datasource.username=root
 spring.datasource.password=你的密码
 ```
 
-### 3. 库存迁移与上线前检查
+### 3. 初始化数据库
 
-在部署带库存功能的后端前，先停止旧版下单入口、备份数据库，运行 [迁移前检查](docs/sql/2026-11-09_ticket_stock_precheck.sql)，确认无异常后由数据库管理员执行 [库存迁移](docs/sql/2026-11-09_ticket_stock_migration.sql)。当前本地开发库已由用户执行并核验，无须重复执行；其他环境需要分别迁移。旧版服务不能在迁移后继续接受不扣库存的下单请求。库存由每日任务为在售景区补齐含当天的未来 30 个自然日；部署后先由管理员调用一次 `POST /travel/scenic/stock/generate` 补齐窗口，再开放下单。
+全新环境直接执行 `sql/schema.sql` 建库建表（14 张表），再按需导入 `sql/seed_data.sql`（4 个分类 + 52 个景点）。表结构已是库存改造后的最终版本，无需再跑历史迁移脚本。
+
+库存窗口：部署后先由管理员调用一次 `POST /travel/scenic/stock/generate`，为在售景区补齐含当天的未来 30 天库存，再开放下单。
 
 ### 4. 启动服务
 
