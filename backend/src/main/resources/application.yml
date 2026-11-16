@@ -14,8 +14,9 @@ spring:
     datasource:
         driver-class-name: com.mysql.cj.jdbc.Driver
         url: "jdbc:mysql://localhost:3306/travel_management?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true"
-        username: root
-        password: 123456
+        # 账号密码从 .env 读取（spring.config.import 已加载）；本地没配 .env 时用默认值兜底
+        username: ${MYSQL_USERNAME:root}
+        password: ${MYSQL_PASSWORD:}
 
         # ===== HikariCP（Spring Boot 默认连接池） =====
         hikari:

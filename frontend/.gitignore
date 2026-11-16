@@ -5,3 +5,8 @@ dist
 .env
 .env.local
 .env.*.local
+# 本地冒烟测试截图（不进仓库）
+.smoke
+
+# 本地工具目录
+.zcode
