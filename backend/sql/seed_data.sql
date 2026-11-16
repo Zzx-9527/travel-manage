@@ -1,4 +1,3 @@
-
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
@@ -52,3 +51,84 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
+-- ============================================================
+-- 演示数据（仅用于全新数据库，重复执行会产生重复数据）
+-- 账号：admin / zhangsan / lisi，密码均为 123456
+-- ============================================================
+
+-- ---------- 用户 ----------
+INSERT INTO `travel_user` (`id`,`account`,`password`,`nickname`,`phone`,`avatar`,`user_role`,`status`,`del_mark`,`create_time`,`update_time`) VALUES
+(1,'admin','$2a$10$atcNTHe9alBRH6eZ7B/3nOO9FMI.mGThkr4PFwr0ZMAZ8rnNSMEU6','管理员','13800000000',NULL,1,1,1,NOW(),NOW()),
+(2,'zhangsan','$2a$10$atcNTHe9alBRH6eZ7B/3nOO9FMI.mGThkr4PFwr0ZMAZ8rnNSMEU6','张三','13800000001',NULL,0,1,1,NOW(),NOW()),
+(3,'lisi','$2a$10$atcNTHe9alBRH6eZ7B/3nOO9FMI.mGThkr4PFwr0ZMAZ8rnNSMEU6','李四','13800000002',NULL,0,1,1,NOW(),NOW());
+
+-- ---------- 路线 ----------
+INSERT INTO `route` (`id`,`user_id`,`name`,`day_count`,`start_city`,`traffic`,`budget`,`intro`,`status`,`del_mark`,`create_time`,`update_time`) VALUES
+(1,2,'北京经典三日游',3,'北京','驾车',2600.00,'故宫、长城、颐和园三大地标，节奏适中，适合第一次来北京。',1,1,DATE_SUB(NOW(), INTERVAL 6 DAY),DATE_SUB(NOW(), INTERVAL 6 DAY)),
+(2,2,'成都休闲两日游',2,'成都','驾车',1200.00,'上午看熊猫，下午逛都江堰，适合周末短途。',1,1,DATE_SUB(NOW(), INTERVAL 4 DAY),DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(3,3,'西安历史文化两日游',2,'西安','驾车',1500.00,'兵马俑与华清宫一线，把秦汉唐一次看全。',1,1,DATE_SUB(NOW(), INTERVAL 2 DAY),DATE_SUB(NOW(), INTERVAL 2 DAY));
+
+INSERT INTO `route_detail` (`route_id`,`scenic_id`,`day_no`,`sort`,`stay_time`,`del_mark`,`create_time`) VALUES
+(1,2,1,1,'4 小时',1,NOW()),
+(1,75,2,1,'5 小时',1,NOW()),
+(1,76,2,2,'2 小时',1,NOW()),
+(1,4,3,1,'3 小时',1,NOW()),
+(2,87,1,1,'3 小时',1,NOW()),
+(2,88,2,1,'4 小时',1,NOW()),
+(3,84,1,1,'4 小时',1,NOW()),
+(3,85,2,1,'3 小时',1,NOW());
+
+-- ---------- 攻略 ----------
+INSERT INTO `strategy` (`id`,`user_id`,`title`,`cover`,`content`,`collect_count`,`read_count`,`audit_status`,`del_mark`,`create_time`,`update_time`) VALUES
+(1,2,'北京三日游避坑指南','/travel/uploads/scenic/2.jpg','故宫一定要提前 7 天在官方小程序抢票，早上 8 点半入场人最少。长城建议坐缆车上、走下来，省一半体力。颐和园从新建宫门进，直接到昆明湖。',12,860,1,1,DATE_SUB(NOW(), INTERVAL 5 DAY),DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(2,2,'成都大熊猫基地怎么玩最值','/travel/uploads/scenic/87_3.jpg','熊猫上午最活跃，建议 7 点半就进园，先冲月亮产房看幼崽。园区很大，观光车 10 元很值。回程可以顺路去都江堰，一天两个点刚刚好。',8,540,1,1,DATE_SUB(NOW(), INTERVAL 4 DAY),DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(3,3,'西安兵马俑一日路线','/travel/uploads/scenic/84_1.jpg','兵马俑按一号坑、三号坑、二号坑的顺序看，请个讲解差别很大。下午去华清宫，骊山脚下，晚上有实景演出。',5,320,1,1,DATE_SUB(NOW(), INTERVAL 3 DAY),DATE_SUB(NOW(), INTERVAL 3 DAY)),
+(4,3,'黄山看日出住宿怎么选','/travel/uploads/scenic/1.jpg','山上酒店贵但省事，光明顶附近看日出走路十分钟。预算有限可以住山下汤口镇，凌晨坐索道上去，就是比较赶。',3,210,1,1,DATE_SUB(NOW(), INTERVAL 1 DAY),DATE_SUB(NOW(), INTERVAL 1 DAY));
+
+-- ---------- 攻略评论 ----------
+INSERT INTO `strategy_comment` (`strategy_id`,`user_id`,`content`,`del_mark`,`create_time`,`audit_status`) VALUES
+(1,3,'抢票这点太真实了，我上次就是没抢到。',1,DATE_SUB(NOW(), INTERVAL 4 DAY),1),
+(1,2,'补充一句：珍宝馆要单独预约，别忘了。',1,DATE_SUB(NOW(), INTERVAL 3 DAY),1),
+(2,3,'月亮产房几点排队比较合适？',1,DATE_SUB(NOW(), INTERVAL 3 DAY),1),
+(3,2,'讲解确实值，不然就是看三个大坑。',1,DATE_SUB(NOW(), INTERVAL 2 DAY),1),
+(4,2,'住山上会不会太贵？',1,DATE_SUB(NOW(), INTERVAL 1 DAY),1),
+(4,3,'旺季一千多，但省了半夜爬山的折腾。',1,DATE_SUB(NOW(), INTERVAL 1 DAY),1);
+
+-- ---------- 收藏（1 攻略 2 景点 3 路线） ----------
+INSERT INTO `collect` (`user_id`,`target_type`,`target_id`,`create_time`) VALUES
+(2,2,2,DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(2,2,75,DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(2,3,1,DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(2,1,1,DATE_SUB(NOW(), INTERVAL 3 DAY)),
+(3,2,1,DATE_SUB(NOW(), INTERVAL 2 DAY));
+
+-- ---------- 消息 ----------
+INSERT INTO `message` (`user_id`,`title`,`content`,`type`,`is_read`,`del_mark`,`create_time`,`update_time`) VALUES
+(2,'欢迎加入旅迹','完善个人资料可以获得更准确的行程推荐。',0,0,1,DATE_SUB(NOW(), INTERVAL 6 DAY),DATE_SUB(NOW(), INTERVAL 6 DAY)),
+(2,'订单支付成功','您预订的「故宫博物院」门票已支付成功，凭订单号入园。',1,1,1,DATE_SUB(NOW(), INTERVAL 3 DAY),DATE_SUB(NOW(), INTERVAL 3 DAY)),
+(2,'攻略审核通过','您发布的攻略《北京三日游避坑指南》已审核通过。',2,0,1,DATE_SUB(NOW(), INTERVAL 4 DAY),DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(3,'订单支付成功','您预订的「成都大熊猫繁育研究基地」门票已支付成功。',1,0,1,DATE_SUB(NOW(), INTERVAL 2 DAY),DATE_SUB(NOW(), INTERVAL 2 DAY)),
+(3,'订单已取消','您的「秦始皇兵马俑博物馆」订单已取消，库存已释放。',1,0,1,DATE_SUB(NOW(), INTERVAL 1 DAY),DATE_SUB(NOW(), INTERVAL 1 DAY)),
+(3,'欢迎加入旅迹','完善个人资料可以获得更准确的行程推荐。',0,1,1,DATE_SUB(NOW(), INTERVAL 6 DAY),DATE_SUB(NOW(), INTERVAL 6 DAY));
+
+-- ---------- 订单（0 待支付 1 已支付 2 已取消） ----------
+INSERT INTO `scenic_orders` (`order_no`,`user_id`,`scenic_id`,`contact_name`,`contact_phone`,`play_date`,`ticket_count`,`ticket_type_id`,`stock_reserved`,`total_amount`,`unit_price`,`pay_type`,`pay_status`,`status`,`cancel_time`,`cancel_reason`,`del_mark`,`create_time`,`pay_time`) VALUES
+('DEMO202611160001',2,2,'张三','13800000001',DATE_ADD(CURDATE(), INTERVAL 3 DAY),2,1,0,120.00,60.00,1,1,1,NULL,NULL,1,DATE_SUB(NOW(), INTERVAL 3 DAY),DATE_SUB(NOW(), INTERVAL 3 DAY)),
+('DEMO202611160002',2,75,'张三','13800000001',DATE_ADD(CURDATE(), INTERVAL 5 DAY),1,1,0,40.00,40.00,NULL,0,0,NULL,NULL,1,DATE_SUB(NOW(), INTERVAL 1 DAY),NULL),
+('DEMO202611160003',3,87,'李四','13800000002',DATE_ADD(CURDATE(), INTERVAL 2 DAY),2,1,0,110.00,55.00,1,1,1,NULL,NULL,1,DATE_SUB(NOW(), INTERVAL 2 DAY),DATE_SUB(NOW(), INTERVAL 2 DAY)),
+('DEMO202611160004',3,84,'李四','13800000002',DATE_ADD(CURDATE(), INTERVAL 6 DAY),1,1,0,120.00,120.00,NULL,2,2,DATE_SUB(NOW(), INTERVAL 1 DAY),'MANUAL',1,DATE_SUB(NOW(), INTERVAL 2 DAY),NULL);
+
+-- ---------- 未来 30 天库存与场地容量（仅补缺失的日期） ----------
+INSERT INTO `scenic_stock` (`scenic_id`,`play_date`,`ticket_type_id`,`total`,`remaining`,`version`)
+WITH RECURSIVE d(n) AS (SELECT 0 UNION ALL SELECT n + 1 FROM d WHERE n < 29)
+SELECT s.id, DATE_ADD(CURDATE(), INTERVAL d.n DAY), 1, 2000, 2000, 0
+FROM `scenic` s CROSS JOIN d
+WHERE s.del_mark = 1 AND s.status = 1
+  AND NOT EXISTS (SELECT 1 FROM `scenic_stock` st WHERE st.scenic_id = s.id AND st.play_date = DATE_ADD(CURDATE(), INTERVAL d.n DAY));
+
+INSERT INTO `scenic_capacity` (`scenic_id`,`play_date`,`total`,`remaining`)
+WITH RECURSIVE d2(n) AS (SELECT 0 UNION ALL SELECT n + 1 FROM d2 WHERE n < 29)
+SELECT s.id, DATE_ADD(CURDATE(), INTERVAL d2.n DAY), 5000, 5000
+FROM `scenic` s CROSS JOIN d2
+WHERE s.del_mark = 1 AND s.status = 1
+  AND NOT EXISTS (SELECT 1 FROM `scenic_capacity` c WHERE c.scenic_id = s.id AND c.play_date = DATE_ADD(CURDATE(), INTERVAL d2.n DAY));
