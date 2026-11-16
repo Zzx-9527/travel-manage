@@ -61,19 +61,18 @@ docs/                   模块设计说明
 
 ### 1. 数据库
 
-```sql
-CREATE DATABASE travel_management DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
-```
-
-再按顺序执行：
-
 ```bash
-mysql -uroot -p travel_management < backend/docs/sql/2026-11-09_ticket_stock_migration.sql
-mysql -uroot -p travel_management < backend/sql/ai_chat_message.sql
-mysql -uroot -p travel_management < backend/sql/ai_plan_record.sql
+# 建库 + 建表（14 张表，脚本内已包含 CREATE DATABASE）
+mysql -uroot -p < backend/sql/schema.sql
+
+# 可选：导入种子数据（4 个分类 + 52 个景点）
+mysql -uroot -p travel_management < backend/sql/seed_data.sql
 ```
 
-> 说明：仓库里只包含**增量脚本**，完整基础表结构未随仓库提供。首次部署需要先从已有数据库导出结构（`mysqldump --no-data travel_management`），或按实体类手动建表。
+> `backend/sql` 下另有 AI 对话表、票务库存迁移等增量脚本，用于已有数据库的版本升级；
+> 全新安装只跑 `schema.sql` + `seed_data.sql` 即可。
+>
+> ⚠️ `schema.sql` 含 14 条 `DROP TABLE IF EXISTS`，**只用于全新初始化**；已有数据的库不要执行。
 
 ### 2. 后端
 
