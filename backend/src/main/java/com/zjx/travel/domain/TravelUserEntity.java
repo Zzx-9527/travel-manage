@@ -1,5 +1,9 @@
 package com.zjx.travel.domain;
 
+import jakarta.validation.constraints.Size;
+
+import jakarta.validation.constraints.NotBlank;
+
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -10,9 +14,13 @@ import java.util.Date;
 @Data
 public class TravelUserEntity{
     private Integer id;
+    @NotBlank(message = "账号不能为空")
+    @Size(min = 4, max = 20, message = "账号长度需在 4-20 位")
     private String account;
     // 序列化时不对前端返回密码哈希；反序列化时仍接收前端传入的密码（登录/新增用）
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @NotBlank(message = "密码不能为空")
+    @Size(min = 6, max = 20, message = "密码长度需在 6-20 位")
     private String password;
     private String nickname;
     private String phone;

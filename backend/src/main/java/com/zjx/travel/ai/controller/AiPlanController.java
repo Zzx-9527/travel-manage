@@ -1,5 +1,7 @@
 package com.zjx.travel.ai.controller;
 
+import jakarta.validation.Valid;
+
 import com.zjx.travel.ai.dto.AiPlanRequest;
 import com.zjx.travel.ai.dto.AiPlanSaveRequest;
 import com.zjx.travel.ai.exception.AiPlanException;
@@ -61,7 +63,7 @@ public class AiPlanController {
      * + 可读提示，与平台其他接口的约定保持一致，不走 HTTP 错误码。
      */
     @PostMapping("plan")
-    public ReturnVO plan(@RequestBody AiPlanRequest request) {
+    public ReturnVO plan(@Valid @RequestBody AiPlanRequest request) {
         try {
             return ReturnVO.getSuccessDataReturnVO(aiPlanService.plan(request, SecurityUtil.currentUserId()));
         } catch (AiPlanException e) {
@@ -76,7 +78,7 @@ public class AiPlanController {
      * 需要走 {@code fetch} + {@code ReadableStream} 手动解析 SSE 帧。
      */
     @PostMapping(value = "plan/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter planStream(@RequestBody AiPlanRequest request) {
+    public SseEmitter planStream(@Valid @RequestBody AiPlanRequest request) {
         SseEmitter emitter = new SseEmitter(SSE_TIMEOUT_MILLIS);
         emitter.onTimeout(emitter::complete);
         aiPlanService.planStream(request, SecurityUtil.currentUserId(), emitter);

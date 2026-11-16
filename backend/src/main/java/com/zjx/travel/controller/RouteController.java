@@ -1,5 +1,7 @@
 package com.zjx.travel.controller;
 
+import jakarta.validation.Valid;
+
 import com.zjx.travel.domain.RouteEntity;
 import com.zjx.travel.service.RouteService;
 import com.zjx.travel.util.*;
@@ -65,7 +67,7 @@ public class RouteController {
     }
 
     @PostMapping("add")
-    public ReturnVO add(@RequestBody RouteEntity route) {
+    public ReturnVO add(@Valid @RequestBody RouteEntity route) {
 
         //定义失败的返回对象
         ReturnVO returnVO = ReturnVO.getNodataFoundReturnVO();
@@ -87,7 +89,7 @@ public class RouteController {
     }
 
     @PostMapping("edit")
-    public ReturnVO edit(@RequestBody RouteEntity route) {
+    public ReturnVO edit(@Valid @RequestBody RouteEntity route) {
 
         //定义失败的返回对象
         ReturnVO returnVO = ReturnVO.getNodataFoundReturnVO();

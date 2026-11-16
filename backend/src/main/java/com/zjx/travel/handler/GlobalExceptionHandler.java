@@ -1,5 +1,13 @@
 package com.zjx.travel.handler;
 
+import org.springframework.web.bind.MethodArgumentNotValidException;
+
+import org.springframework.validation.FieldError;
+
+import org.springframework.http.converter.HttpMessageNotReadableException;
+
+import jakarta.validation.ConstraintViolationException;
+
 import cn.dev33.satoken.exception.NotLoginException;
 import cn.dev33.satoken.exception.NotPermissionException;
 import cn.dev33.satoken.exception.NotRoleException;
@@ -68,5 +76,38 @@ public class GlobalExceptionHandler {
             default:
                 return "未登录，请先登录";
         }
+    }
+
+    /**
+     * 请求体参数校验失败（@Valid 触发）。
+     * 与业务失败保持一致：HTTP 200 + code=0，前端直接展示 msg。
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ReturnVO handleValidation(MethodArgumentNotValidException e) {
+        String message = e.getBindingResult().getFieldErrors().stream()
+                .map(FieldError::getDefaultMessage)
+                .filter(m -> m != null && !m.isEmpty())
+                .findFirst()
+                .orElse("请求参数不合法");
+        log.debug("参数校验失败：{}", message);
+        return new ReturnVO(0, message);
+    }
+
+    /** 方法参数上的约束校验失败（如 @RequestParam 加注解时） */
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ReturnVO handleConstraint(ConstraintViolationException e) {
+        String message = e.getConstraintViolations().stream()
+                .map(v -> v.getMessage())
+                .findFirst()
+                .orElse("请求参数不合法");
+        log.debug("参数校验失败：{}", message);
+        return new ReturnVO(0, message);
+    }
+
+    /** 请求体不是合法 JSON 或字段类型不匹配 */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ReturnVO handleUnreadable(HttpMessageNotReadableException e) {
+        log.debug("请求体解析失败：{}", e.getMessage());
+        return new ReturnVO(0, "请求参数格式不正确");
     }
 }

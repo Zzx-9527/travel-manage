@@ -1,5 +1,7 @@
 package com.zjx.travel.controller;
 
+import jakarta.validation.Valid;
+
 import com.zjx.travel.domain.CollectEntity;
 import com.zjx.travel.service.CollectService;
 import com.zjx.travel.util.*;
@@ -64,7 +66,7 @@ public class CollectController {
     }
 
     @PostMapping("add")
-    public ReturnVO add(@RequestBody CollectEntity collect) {
+    public ReturnVO add(@Valid @RequestBody CollectEntity collect) {
 
         //定义失败的返回对象
         ReturnVO returnVO = ReturnVO.getNodataFoundReturnVO();

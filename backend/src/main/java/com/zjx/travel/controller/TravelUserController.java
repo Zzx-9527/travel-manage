@@ -1,5 +1,7 @@
 package com.zjx.travel.controller;
 
+import jakarta.validation.Valid;
+
 import cn.dev33.satoken.SaManager;
 import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.dev33.satoken.session.SaSession;
@@ -97,7 +99,7 @@ public class TravelUserController {
     }
 
     @PostMapping("add")
-    public ReturnVO add(@RequestBody TravelUserEntity travelUser) {
+    public ReturnVO add(@Valid @RequestBody TravelUserEntity travelUser) {
 
         //定义失败的返回对象
         ReturnVO returnVO = ReturnVO.getNodataFoundReturnVO();
@@ -173,7 +175,7 @@ public class TravelUserController {
      * 与 {@code expire}，前端无需改代码即可继续用。
      */
     @PostMapping("login")
-    public ReturnVO login(@RequestBody TravelUserEntity userinfo, HttpServletRequest request) {
+    public ReturnVO login(@Valid @RequestBody TravelUserEntity userinfo, HttpServletRequest request) {
         //定义一个失败的返回对象
         ReturnVO returnVO = ReturnVO.getNodataFoundReturnVO();
 
@@ -411,7 +413,7 @@ public class TravelUserController {
      * <p>身份取自 token，body 里的 {@code id} 不再生效（防止改他人密码）。
      */
     @PostMapping("updatePassword")
-    public ReturnVO updatePassword(@RequestBody UpdatePasswordVO vo) {
+    public ReturnVO updatePassword(@Valid @RequestBody UpdatePasswordVO vo) {
         ReturnVO returnVO = ReturnVO.getNodataFoundReturnVO();
 
         if (vo.getOldPassword() == null || vo.getNewPassword() == null

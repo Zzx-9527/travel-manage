@@ -1,5 +1,11 @@
 package com.zjx.travel.domain;
 
+import jakarta.validation.constraints.Max;
+
+import jakarta.validation.constraints.Min;
+
+import jakarta.validation.constraints.NotNull;
+
 import java.io.Serializable;
 import java.util.*;
 
@@ -13,8 +19,13 @@ public class CollectEntity{
     private Integer id;// primary key
     private TravelUserEntity userId;
     // 收藏目标类型：1攻略 2景点 3路线（数据库字段）
+    @NotNull(message = "收藏类型不能为空")
+    @Min(value = 1, message = "收藏类型不合法")
+    @Max(value = 3, message = "收藏类型不合法")
     private Integer targetType;
     // 收藏目标ID（数据库字段）
+    @NotNull(message = "收藏对象不能为空")
+    @Min(value = 1, message = "收藏对象不合法")
     private Integer targetId;
     // 收藏的景点（非数据库字段，仅用于查询返回）
     @TableField(exist = false)

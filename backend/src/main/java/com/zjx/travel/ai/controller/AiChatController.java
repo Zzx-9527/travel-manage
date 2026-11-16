@@ -1,5 +1,7 @@
 package com.zjx.travel.ai.controller;
 
+import jakarta.validation.Valid;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zjx.travel.ai.dto.AiChatRequest;
 import com.zjx.travel.ai.exception.AiPlanException;
@@ -40,7 +42,7 @@ public class AiChatController {
     }
 
     @PostMapping(value = "stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter stream(@RequestBody AiChatRequest request) {
+    public SseEmitter stream(@Valid @RequestBody AiChatRequest request) {
         SseEmitter emitter = new SseEmitter(SSE_TIMEOUT_MILLIS);
         emitter.onTimeout(emitter::complete);
         chatService.chatStream(request, SecurityUtil.currentUserId(), emitter);

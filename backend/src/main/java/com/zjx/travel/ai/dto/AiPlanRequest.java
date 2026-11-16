@@ -1,5 +1,17 @@
 package com.zjx.travel.ai.dto;
 
+import jakarta.validation.constraints.DecimalMin;
+
+import jakarta.validation.constraints.Max;
+
+import jakarta.validation.constraints.Min;
+
+import jakarta.validation.constraints.NotNull;
+
+import jakarta.validation.constraints.Size;
+
+import jakarta.validation.constraints.NotBlank;
+
 import lombok.Data;
 
 /**
@@ -12,12 +24,18 @@ import lombok.Data;
 public class AiPlanRequest {
 
     /** 目的地，必填，如"西安" */
+    @NotBlank(message = "目的地不能为空")
+    @Size(max = 50, message = "目的地名称过长")
     private String destination;
 
     /** 天数，1-7，缺省 2 */
+    @NotNull(message = "天数不能为空")
+    @Min(value = 1, message = "天数至少 1 天")
+    @Max(value = 15, message = "天数最多 15 天")
     private Integer days;
 
     /** 预算（元），可空 */
+    @DecimalMin(value = "0", message = "预算不能为负数")
     private Double budget;
 
     /** 偏好，如"历史""自然""亲子""美食"，可空 */

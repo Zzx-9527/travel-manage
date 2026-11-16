@@ -1,5 +1,7 @@
 package com.zjx.travel.controller;
 
+import jakarta.validation.Valid;
+
 import com.zjx.travel.domain.StrategyCommentEntity;
 import com.zjx.travel.service.StrategyCommentService;
 import com.zjx.travel.util.*;
@@ -65,7 +67,7 @@ public class StrategyCommentController {
     }
 
     @PostMapping("add")
-    public ReturnVO add(@RequestBody StrategyCommentEntity strategyComment) {
+    public ReturnVO add(@Valid @RequestBody StrategyCommentEntity strategyComment) {
 
         //定义失败的返回对象
         ReturnVO returnVO = ReturnVO.getNodataFoundReturnVO();
@@ -87,7 +89,7 @@ public class StrategyCommentController {
     }
 
     @PostMapping("edit")
-    public ReturnVO edit(@RequestBody StrategyCommentEntity strategyComment) {
+    public ReturnVO edit(@Valid @RequestBody StrategyCommentEntity strategyComment) {
 
         //定义失败的返回对象
         ReturnVO returnVO = ReturnVO.getNodataFoundReturnVO();

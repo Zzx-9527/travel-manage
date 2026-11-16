@@ -1,5 +1,9 @@
 package com.zjx.travel.domain;
 
+import jakarta.validation.constraints.Size;
+
+import jakarta.validation.constraints.NotBlank;
+
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -10,8 +14,11 @@ import java.util.Date;
 public class StrategyEntity{
     private Integer id;
     private TravelUserEntity userId;
+    @NotBlank(message = "标题不能为空")
+    @Size(max = 100, message = "标题不能超过 100 字")
     private String title;
     private String cover;
+    @NotBlank(message = "正文不能为空")
     private String content;
     private Integer collectCount;
     private Integer readCount;

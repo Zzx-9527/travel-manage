@@ -1,5 +1,7 @@
 package com.zjx.travel.controller;
 
+import jakarta.validation.Valid;
+
 import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.dev33.satoken.exception.NotPermissionException;
 import cn.dev33.satoken.stp.StpUtil;
@@ -87,7 +89,7 @@ public class ScenicOrdersController {
     }
 
     @PostMapping("add")
-    public ReturnVO add(@RequestBody ScenicOrderCreateDTO request) {
+    public ReturnVO add(@Valid @RequestBody ScenicOrderCreateDTO request) {
         Integer uid = SecurityUtil.currentUserId();
         if (!lockUtil.trySetOnce(RedisKeys.orderSubmit(uid), Duration.ofSeconds(5)))
             return new ReturnVO(0, "请勿重复提交，请 5 秒后再试");

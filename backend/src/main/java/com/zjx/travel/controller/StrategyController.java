@@ -1,5 +1,7 @@
 package com.zjx.travel.controller;
 
+import jakarta.validation.Valid;
+
 import com.zjx.travel.domain.StrategyEntity;
 import com.zjx.travel.service.FileStorageService;
 import com.zjx.travel.service.StrategyService;
@@ -68,7 +70,7 @@ public class StrategyController {
     }
 
     @PostMapping("add")
-    public ReturnVO add(@RequestBody StrategyEntity strategy) {
+    public ReturnVO add(@Valid @RequestBody StrategyEntity strategy) {
 
         //定义失败的返回对象
         ReturnVO returnVO = ReturnVO.getNodataFoundReturnVO();
@@ -90,7 +92,7 @@ public class StrategyController {
     }
 
     @PostMapping("edit")
-    public ReturnVO edit(@RequestBody StrategyEntity strategy) {
+    public ReturnVO edit(@Valid @RequestBody StrategyEntity strategy) {
 
         //定义失败的返回对象
         ReturnVO returnVO = ReturnVO.getNodataFoundReturnVO();
