@@ -136,6 +136,12 @@ npm run dev
 
 使用 `user_role = 1` 的账号登录，登录后自动进入 `/travel/dashboard`。
 
+全新数据库里没有内置管理员，先在前端注册一个账号，再执行：
+
+```sql
+UPDATE travel_user SET user_role = 1 WHERE account = '你的账号';
+```
+
 ## 已知限制
 
 - 支付为站内模拟流程（待支付 → 已支付），未接入真实支付渠道
