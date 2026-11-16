@@ -215,7 +215,7 @@ public class AiChatService {
 
     private void warnOnce(String action, Exception e) {
         if (tableWarned.compareAndSet(false, true)) {
-            log.warn("{}（若尚未建表，请执行 backend/sql/ai_chat_message.sql）：{}", action, e.getMessage());
+            log.warn("{}（若尚未建表，请执行 backend/sql/schema.sql）：{}", action, e.getMessage());
         }
     }
 

@@ -78,9 +78,9 @@ public class AiPlanRecordService {
             data.put("topDestinations", recordMapper.topDestinations(5));
             data.put("recent", recordMapper.recent(10));
         } catch (Exception e) {
-            log.warn("AI 用量统计查询失败（若尚未建表，请执行 backend/sql/ai_plan_record.sql）：{}", e.getMessage());
+            log.warn("AI 用量统计查询失败（若尚未建表，请执行 backend/sql/schema.sql）：{}", e.getMessage());
             data.put("tableReady", false);
-            data.put("message", "记录表尚未创建，请先执行 backend/sql/ai_plan_record.sql");
+            data.put("message", "记录表尚未创建，请先执行 backend/sql/schema.sql");
         }
         return data;
     }
@@ -177,7 +177,7 @@ public class AiPlanRecordService {
             recordMapper.insert(record);
         } catch (Exception e) {
             if (writeFailureWarned.compareAndSet(false, true)) {
-                log.warn("AI 生成记录写库失败（若尚未建表，请执行 backend/sql/ai_plan_record.sql）：{}",
+                log.warn("AI 生成记录写库失败（若尚未建表，请执行 backend/sql/schema.sql）：{}",
                         e.getMessage());
             }
         }

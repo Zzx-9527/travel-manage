@@ -69,9 +69,6 @@ mysql -uroot -p < backend/sql/schema.sql
 mysql -uroot -p travel_management < backend/sql/seed_data.sql
 ```
 
-> `backend/sql` 下另有 AI 对话表、票务库存迁移等增量脚本，用于已有数据库的版本升级；
-> 全新安装只跑 `schema.sql` + `seed_data.sql` 即可。
->
 > ⚠️ `schema.sql` 含 14 条 `DROP TABLE IF EXISTS`，**只用于全新初始化**；已有数据的库不要执行。
 
 ### 2. 后端
