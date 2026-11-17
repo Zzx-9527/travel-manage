@@ -20,7 +20,8 @@ import java.time.LocalTime;
  * <p>两个刻意的降级：
  * <ul>
  *   <li>Redis 不可用时 <b>放行</b>而不是拦截——配额是成本控制手段，不该反过来拖垮功能；</li>
- *   <li>计数在调用模型之前 +1，失败的请求也计入，避免"失败重试刷次数"。</li>
+ *   <li>计数在调用模型之前 +1，失败补偿必须使用消费时返回的 {@link QuotaTicket}，
+ *       不能重新按“今天”拼 key，否则跨午夜会扣错日期。</li>
  * </ul>
  */
 @Service
@@ -35,6 +36,17 @@ public class AiQuotaService {
     public AiQuotaService(RedisUtil redisUtil, AiProperties properties) {
         this.redisUtil = redisUtil;
         this.properties = properties;
+    }
+
+    /**
+     * 一次成功扣减的凭证。
+     *
+     * <p>{@code key == null} 表示配额未实际计入 Redis（限额关闭或 Redis 故障），返还时自动忽略。
+     */
+    public record QuotaTicket(String key) {
+        public static QuotaTicket none() {
+            return new QuotaTicket(null);
+        }
     }
 
     /**
@@ -65,28 +77,33 @@ public class AiQuotaService {
 
     /**
      * 校验并占用一次配额，超限抛 {@link AiPlanException}。
+     *
+     * @return 绑定到本次扣减 key 的凭证，失败补偿时原样传回
      */
-    public void checkAndConsume(Integer userId) {
+    public QuotaTicket checkAndConsume(Integer userId) {
         if (userId == null) {
             throw new AiPlanException("请先登录后再使用 AI 规划");
         }
         int limit = properties.getDailyLimit();
         if (limit <= 0) {
-            return;
+            return QuotaTicket.none();
         }
 
         String key = RedisKeys.aiQuota(userId, LocalDate.now());
         Long used = redisUtil.increment(key, 1);
         if (used == null) {
             // Redis 故障：直接放行，只记日志（RedisUtil 内部已记录原因）
-            return;
+            return new QuotaTicket(key);
         }
         if (used == 1L) {
             redisUtil.expire(key, ttlUntilTomorrow());
         }
         if (used > limit) {
+            // 超限请求本身没有获得服务，把刚才多计的那次原子退回，保持计数不超过上限
+            refund(new QuotaTicket(key));
             throw new AiPlanException("今天的 AI 规划次数已用完（每天 " + limit + " 次），明天再来吧");
         }
+        return new QuotaTicket(key);
     }
 
     /** 今日剩余次数，用于前端展示；拿不到时返回上限（不阻塞用户） */
@@ -115,25 +132,27 @@ public class AiQuotaService {
      * <p>为什么分开：一次行程生成的成本大约是单条对话的十倍，
      * 放一起会让"多聊两句"挤掉"生成行程"的名额，用户会觉得额度莫名其妙就没了。
      */
-    public void checkAndConsumeChat(Integer userId) {
+    public QuotaTicket checkAndConsumeChat(Integer userId) {
         if (userId == null) {
             throw new AiPlanException("请先登录后再使用 AI 助手");
         }
         int limit = properties.getChatDailyLimit();
         if (limit <= 0) {
-            return;
+            return QuotaTicket.none();
         }
         String key = RedisKeys.aiChatQuota(userId, LocalDate.now());
         Long used = redisUtil.increment(key, 1);
         if (used == null) {
-            return;
+            return new QuotaTicket(key);
         }
         if (used == 1L) {
             redisUtil.expire(key, ttlUntilTomorrow());
         }
         if (used > limit) {
+            refund(new QuotaTicket(key));
             throw new AiPlanException("今天的 AI 对话次数已用完（每天 " + limit + " 条），明天再来吧");
         }
+        return new QuotaTicket(key);
     }
 
     /** 到明天零点再多留一分钟，避免边界时刻 key 提前消失导致配额重置 */
@@ -144,35 +163,16 @@ public class AiQuotaService {
     }
 
     /**
-     * 返还一次配额：生成失败时调用，避免用户"一次结果没拿到，次数却没了"。
+     * 返还一次配额：任务失败或 SSE 未完整交付时调用。
      *
-     * <p>三个保护：
-     * <ul>
-     *   <li>只在 key 还存在时返还——调用跨过午夜、key 已按新的一天重建时，
-     *       不能去扣今天的额度；</li>
-     *   <li>减到 0 就删掉 key，不留一个 0 值且无 TTL 的脏 key；</li>
-     *   <li>Redis 异常时静默失败，返还属于补偿动作，不该影响主流程返回的错误信息。</li>
-     * </ul>
+     * <p>必须使用消费时返回的凭证，确保跨午夜也扣减原始那一天的 key。
+     * “检查存在 → 减一 → 到零删除”由 Redis 单条 Lua 脚本原子完成，
+     * 不会误删并发新请求刚创建的计数 key。
      */
-    public void refund(Integer userId) {
-        refundKey(userId == null ? null : RedisKeys.aiQuota(userId, LocalDate.now()));
-    }
-
-    /** 对话失败时返还，逻辑同上 */
-    public void refundChat(Integer userId) {
-        refundKey(userId == null ? null : RedisKeys.aiChatQuota(userId, LocalDate.now()));
-    }
-
-    private void refundKey(String key) {
-        if (key == null) {
+    public void refund(QuotaTicket ticket) {
+        if (ticket == null || ticket.key() == null) {
             return;
         }
-        if (!redisUtil.hasKey(key)) {
-            return;
-        }
-        Long value = redisUtil.increment(key, -1);
-        if (value != null && value <= 0) {
-            redisUtil.delete(key);
-        }
+        redisUtil.decrementOrDelete(ticket.key(), 1);
     }
 }

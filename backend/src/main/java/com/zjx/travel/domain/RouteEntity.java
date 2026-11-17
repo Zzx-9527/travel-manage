@@ -18,6 +18,7 @@ import java.util.*;
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 @Data
@@ -37,6 +38,9 @@ public class RouteEntity{
     private Double budget;
     private String intro;
     private Integer status;
+    /** AI 行程内容指纹：只用于服务端保存幂等，不通过接口读写 */
+    @JsonIgnore
+    private String planFingerprint;
     @TableField(fill = FieldFill.INSERT)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date createTime;

@@ -63,6 +63,7 @@ CREATE TABLE `collect` (
   `target_type` int NOT NULL DEFAULT '1' COMMENT '收藏目标类型 1攻略 2景点 3路线',
   `target_id` int NOT NULL COMMENT '收藏目标ID',
   PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_collect_user_target` (`user_id`,`target_type`,`target_id`),
   KEY `idx_user_id` (`user_id`) USING BTREE,
   CONSTRAINT `fk_collect_user` FOREIGN KEY (`user_id`) REFERENCES `travel_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
 ) ENGINE=InnoDB AUTO_INCREMENT=39 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='收藏表';
@@ -98,10 +99,12 @@ CREATE TABLE `route` (
   `budget` decimal(10,2) NOT NULL DEFAULT '0.00' COMMENT '预算',
   `intro` text COMMENT '路线说明',
   `status` tinyint NOT NULL DEFAULT '0' COMMENT '审核状态 0待审核 1已发布2已驳回',
+  `plan_fingerprint` varchar(64) DEFAULT NULL COMMENT 'AI行程内容指纹，手动路线为NULL',
   `del_mark` tinyint NOT NULL DEFAULT '1' COMMENT '删除标记 0已删除 1正常',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_route_user_plan_fingerprint` (`user_id`,`plan_fingerprint`),
   KEY `idx_user_id` (`user_id`),
   CONSTRAINT `fk_route_user` FOREIGN KEY (`user_id`) REFERENCES `travel_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='旅游路线表';

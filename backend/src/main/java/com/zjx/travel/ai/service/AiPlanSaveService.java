@@ -13,9 +13,14 @@ import com.zjx.travel.service.RouteService;
 import com.zjx.travel.util.SecurityUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -77,10 +82,12 @@ public class AiPlanSaveService {
                 .collect(Collectors.toSet());
 
         String routeName = truncate(request.getTitle(), MAX_TITLE_LENGTH, "AI 生成的行程");
-        // 幂等：连点两次"保存"时，第二次直接返回第一次的 routeId，不再插一条一样的
-        Integer existingId = routeMapper.findRecentSameName(userId, routeName);
+        String intro = buildIntro(request);
+        // 幂等依据是“实际会落库的内容”，不是标题：同名但景点/天数不同的行程必须都能保存
+        String fingerprint = fingerprint(request, routeName, intro, validScenicIds);
+        Integer existingId = routeMapper.findByUserAndFingerprint(userId, fingerprint);
         if (existingId != null) {
-            log.info("5 分钟内已保存过同名行程，返回已有路线：routeId={}，userId={}", existingId, userId);
+            log.info("同一份 AI 行程已保存过，返回已有路线：routeId={}，userId={}", existingId, userId);
             return existingId;
         }
 
@@ -91,11 +98,21 @@ public class AiPlanSaveService {
         route.setStartCity(truncate(request.getDestination(), 30, null));
         route.setTraffic("自由行");
         route.setBudget(request.getBudget());
-        route.setIntro(buildIntro(request));
+        route.setIntro(intro);
         // 0 = 待审核，和用户手动发布的路线一致
         route.setStatus(0);
+        route.setPlanFingerprint(fingerprint);
 
-        if (!routeService.insert(route) || route.getId() == null) {
+        try {
+            if (!routeService.insert(route) || route.getId() == null) {
+                throw new AiPlanException("保存失败，请稍后重试");
+            }
+        } catch (DuplicateKeyException e) {
+            // 双击并发时数据库唯一键兜底，返回先写入的那条
+            Integer concurrentId = routeMapper.findByUserAndFingerprint(userId, fingerprint);
+            if (concurrentId != null) {
+                return concurrentId;
+            }
             throw new AiPlanException("保存失败，请稍后重试");
         }
 
@@ -129,6 +146,54 @@ public class AiPlanSaveService {
         log.info("AI 行程已保存为路线：routeId={}，userId={}，天数={}，景点数={}",
                 route.getId(), userId, dayCount, savedSpots);
         return route.getId();
+    }
+
+    /**
+     * 对实际会落库的路线字段做稳定哈希。
+     *
+     * <p>仅包含有效景点，避免客户端塞入若干无效 id 后，同一份行程产生不同指纹。
+     */
+    private String fingerprint(AiPlanSaveRequest request, String title, String intro,
+                               Set<Integer> validScenicIds) {
+        StringBuilder canonical = new StringBuilder();
+        appendPart(canonical, title);
+        appendPart(canonical, truncate(request.getDestination(), 30, null));
+        appendPart(canonical, request.getBudget());
+        appendPart(canonical, intro);
+        if (request.getDays() != null) {
+            for (AiPlanResult.Day day : request.getDays()) {
+                if (day == null) {
+                    continue;
+                }
+                appendPart(canonical, day.getDayNo() == null ? 1 : day.getDayNo());
+                if (day.getSpots() == null) {
+                    continue;
+                }
+                int sort = 1;
+                for (AiPlanResult.Spot spot : day.getSpots()) {
+                    if (spot == null || spot.getScenicId() == null
+                            || !validScenicIds.contains(spot.getScenicId())) {
+                        continue;
+                    }
+                    appendPart(canonical, sort++);
+                    appendPart(canonical, spot.getScenicId());
+                    appendPart(canonical, spot.getStayTime());
+                }
+            }
+        }
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(canonical.toString().getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digest);
+        } catch (NoSuchAlgorithmException e) {
+            // JDK 17 必然支持 SHA-256，走到这里说明运行环境异常
+            throw new IllegalStateException("无法计算行程指纹", e);
+        }
+    }
+
+    private void appendPart(StringBuilder target, Object value) {
+        String text = value == null ? "" : String.valueOf(value);
+        target.append(text.length()).append(':').append(text).append('|');
     }
 
     private String buildIntro(AiPlanSaveRequest request) {

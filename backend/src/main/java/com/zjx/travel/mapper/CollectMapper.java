@@ -14,7 +14,8 @@ public interface CollectMapper  extends BaseMapper<CollectEntity> {
 
     long count(@Param("collect") CollectEntity collect);
 
-    int insert(CollectEntity collect);
+    /** 幂等插入：命中用户+目标唯一键时返回 0，不产生重复行。 */
+    int insertIgnore(CollectEntity collect);
 
     int update(CollectEntity collect);
 

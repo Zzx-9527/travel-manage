@@ -89,14 +89,16 @@ public class RouteController {
         }
 
         //入库
-        if(!this.routeService.insert(route)){
+        if(!this.routeService.insert(route) || route.getId() == null){
             //入库失败
+            returnVO.setMsg("路线创建失败，请稍后重试");
             return returnVO;
         }
 
-        //入库成功
+        //入库成功：返回新路线 ID，前端可立即跳转配置行程
         returnVO.setCode(1);
         returnVO.setMsg("添加成功");
+        returnVO.setContent(Map.of("id", route.getId()));
 
         return returnVO;
     }

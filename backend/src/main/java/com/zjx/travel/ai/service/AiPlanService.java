@@ -101,46 +101,51 @@ public class AiPlanService {
         }
         long totalStart = System.currentTimeMillis();
         AiPlanRequest req = null;
+        AiQuotaService.QuotaTicket quotaTicket = null;
+        boolean completed = false;
         try {
             req = normalize(request);
             // 先确认目的地有景点可排，再扣配额：目的地写错不该消耗今天的次数
             List<ScenicEntity> candidates = loadCandidates(req.getDestination());
-            quotaService.checkAndConsume(userId);
+            quotaTicket = quotaService.checkAndConsume(userId);
 
-            // 扣了配额之后的任何失败都要返还：用户没拿到结果，不该损失今天的次数
+            long start = System.currentTimeMillis();
+            String raw;
             try {
-                long start = System.currentTimeMillis();
-                String raw;
-                try {
-                    raw = chatClient.prompt()
-                            .system(promptBuilder.systemPrompt())
-                            .user(promptBuilder.userPrompt(req, candidates))
-                            .call()
-                            .content();
-                } catch (Exception e) {
-                    // 上游错误（超时、401、限流）只记日志，不把原始报文返回给前端
-                    log.error("调用大模型失败：目的地={}，天数={}", req.getDestination(), req.getDays(), e);
-                    throw new AiPlanException(friendlyLlmError(e));
-                }
-                long latency = System.currentTimeMillis() - start;
-
-                AiPlanResult result = parse(raw);
-                int dropped = validateAndEnrich(result, req, candidates);
-
-                result.setModel(model);
-                result.setLatencyMs(latency);
-                result.setDroppedSpots(dropped);
-
-                log.info("AI 行程生成完成：目的地={}，天数={}，有效景点={}，丢弃={}，耗时={}ms",
-                        req.getDestination(), req.getDays(), countSpots(result), dropped, latency);
-                recordService.success(userId, req, result, System.currentTimeMillis() - totalStart);
-                return result;
-            } catch (RuntimeException e) {
-                quotaService.refund(userId);
-                recordService.failure(userId, req, e.getMessage(), System.currentTimeMillis() - totalStart);
-                throw e;
+                raw = chatClient.prompt()
+                        .system(promptBuilder.systemPrompt())
+                        .user(promptBuilder.userPrompt(req, candidates))
+                        .call()
+                        .content();
+            } catch (Exception e) {
+                // 上游错误（超时、401、限流）只记日志，不把原始报文返回给前端
+                log.error("调用大模型失败：目的地={}，天数={}", req.getDestination(), req.getDays(), e);
+                throw new AiPlanException(friendlyLlmError(e));
             }
+            long latency = System.currentTimeMillis() - start;
+
+            AiPlanResult result = parse(raw);
+            int dropped = validateAndEnrich(result, req, candidates);
+
+            result.setModel(model);
+            result.setLatencyMs(latency);
+            result.setDroppedSpots(dropped);
+
+            log.info("AI 行程生成完成：目的地={}，天数={}，有效景点={}，丢弃={}，耗时={}ms",
+                    req.getDestination(), req.getDays(), countSpots(result), dropped, latency);
+            recordService.success(userId, req, result, System.currentTimeMillis() - totalStart);
+            completed = true;
+            return result;
+        } catch (RuntimeException e) {
+            if (quotaTicket != null) {
+                recordService.failure(userId, req, e.getMessage(), System.currentTimeMillis() - totalStart);
+            }
+            throw e;
         } finally {
+            // 任何未成功返回结果的失败都按消费凭证补偿；跨午夜也不会扣错日期
+            if (!completed) {
+                quotaService.refund(quotaTicket);
+            }
             quotaService.releaseGeneration(userId);
         }
     }
@@ -168,14 +173,15 @@ public class AiPlanService {
                 safeComplete(emitter);
                 return;
             }
-            boolean quotaCounted = false;
+            AiQuotaService.QuotaTicket quotaTicket = null;
+            boolean completed = false;
+            boolean failureRecorded = false;
             AiPlanRequest req = null;
             try {
                 req = normalize(request);
                 // 先确认目的地有景点可排，再扣配额：目的地写错不该消耗今天的次数
                 List<ScenicEntity> candidates = loadCandidates(req.getDestination());
-                quotaService.checkAndConsume(userId);
-                quotaCounted = true;
+                quotaTicket = quotaService.checkAndConsume(userId);
 
                 Flux<String> flux = chatClient.prompt()
                         .system(promptBuilder.systemPrompt())
@@ -187,7 +193,7 @@ public class AiPlanService {
                 for (String chunk : flux.toIterable()) {
                     buffer.append(chunk);
                     if (!sendEvent(emitter, "delta", Map.of("text", chunk))) {
-                        // 前端已断开：停止读取上游流，避免继续烧 token
+                        // 前端已断开：停止读取上游流，避免继续烧 token；finally 会返还配额
                         return;
                     }
                 }
@@ -199,30 +205,39 @@ public class AiPlanService {
                 result.setLatencyMs(latency);
                 result.setDroppedSpots(dropped);
 
-                sendEvent(emitter, "plan", result);
-                sendEvent(emitter, "done", Map.of("latencyMs", latency, "droppedSpots", dropped));
+                if (!sendEvent(emitter, "plan", result)) {
+                    return;
+                }
+                if (!sendEvent(emitter, "done", Map.of("latencyMs", latency, "droppedSpots", dropped))) {
+                    return;
+                }
                 emitter.complete();
+                completed = true;
 
                 log.info("AI 行程流式生成完成：目的地={}，天数={}，景点={}，丢弃={}，耗时={}ms",
                         req.getDestination(), req.getDays(), countSpots(result), dropped, latency);
                 recordService.success(userId, req, result, latency);
             } catch (AiPlanException e) {
-                if (quotaCounted) {
-                    quotaService.refund(userId);
-                }
                 recordService.failure(userId, req, e.getMessage(), System.currentTimeMillis() - start);
+                failureRecorded = true;
                 sendEvent(emitter, "error", Map.of("msg", e.getMessage()));
                 safeComplete(emitter);
             } catch (Exception e) {
                 log.error("AI 流式生成失败", e);
-                if (quotaCounted) {
-                    quotaService.refund(userId);
-                }
                 String message = friendlyLlmError(e);
                 recordService.failure(userId, req, message, System.currentTimeMillis() - start);
+                failureRecorded = true;
                 sendEvent(emitter, "error", Map.of("msg", message));
                 safeComplete(emitter);
             } finally {
+                if (!completed) {
+                    quotaService.refund(quotaTicket);
+                    if (!failureRecorded && req != null) {
+                        // 客户端中途断开走的是正常 return，这里补齐失败统计
+                        recordService.failure(userId, req, "客户端断开或结果未完整送达",
+                                System.currentTimeMillis() - start);
+                    }
+                }
                 quotaService.releaseGeneration(userId);
             }
         });

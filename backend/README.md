@@ -55,7 +55,7 @@ spring.datasource.password=你的密码
 
 ### 3. 初始化数据库
 
-全新环境直接执行 `sql/schema.sql` 建库建表（14 张表），再按需导入 `sql/seed_data.sql`（4 个分类 + 52 个景点）。表结构已是库存改造后的最终版本，无需再跑历史迁移脚本。
+全新环境直接执行 `sql/schema.sql` 建库建表（14 张表），再按需导入 `sql/seed_data.sql`（4 个分类 + 52 个景点）。已有数据库升级到当前版本时，执行一次 `sql/20261117_consistency_fixes.sql`（AI 行程指纹、收藏唯一键与攻略收藏数校正）。
 
 库存窗口：部署后先由管理员调用一次 `POST /travel/scenic/stock/generate`，为在售景区补齐含当天的未来 30 天库存，再开放下单。
 
@@ -143,7 +143,7 @@ com.zjx.travel
 |------|------|------|
 | `/route/queryById/{id}` | GET | 查询路线详情 |
 | `/route/queryByPage` | GET | 分页查询路线列表 |
-| `/route/add` | POST | 新增路线 |
+| `/route/add` | POST | 新增路线，成功返回 `content.id` |
 | `/route/edit` | POST | 编辑路线（含审核状态变更 → 自动消息通知） |
 | `/route/deleteById/{id}` | POST | 删除路线 |
 
@@ -151,10 +151,10 @@ com.zjx.travel
 
 | 接口 | 方法 | 说明 |
 |------|------|------|
-| `/routeDetail/queryByPage` | GET | 分页查询行程明细 |
-| `/routeDetail/add` | POST | 新增行程明细 |
-| `/routeDetail/edit` | POST | 编辑行程明细 |
-| `/routeDetail/deleteByRouteId` | POST | 按路线删除行程明细 |
+| `/routeDetail/queryByPage` | GET | 分页查询行程明细（未审核路线仅作者/管理员可见） |
+| `/routeDetail/add` | POST | 新增行程明细（路线作者本人或管理员） |
+| `/routeDetail/edit` | POST | 编辑行程明细（路线作者本人或管理员） |
+| `/routeDetail/deleteById/{id}` | POST | 删除行程明细（路线作者本人或管理员） |
 
 ### 攻略模块
 

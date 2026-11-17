@@ -95,10 +95,10 @@ public class AiChatService {
                 text = text.substring(0, MAX_MESSAGE_LENGTH);
             }
 
-            boolean counted = false;
+            AiQuotaService.QuotaTicket quotaTicket = null;
+            boolean completed = false;
             try {
-                quotaService.checkAndConsumeChat(userId);
-                counted = true;
+                quotaTicket = quotaService.checkAndConsumeChat(userId);
 
                 // 先取历史再存当前这句，避免把自己重复放进上下文
                 List<AiChatMessageEntity> history = loadRecent(userId, CONTEXT_LIMIT);
@@ -131,22 +131,24 @@ public class AiChatService {
                 if (!reply.isEmpty()) {
                     save(userId, "assistant", "text", truncate(reply, MAX_STORE_LENGTH), null);
                 }
-                sendEvent(emitter, "done", Map.of("length", reply.length()));
+                if (!sendEvent(emitter, "done", Map.of("length", reply.length()))) {
+                    return;
+                }
                 emitter.complete();
+                completed = true;
                 log.info("AI 对话完成：userId={}，问={}字，答={}字", userId, text.length(), reply.length());
             } catch (AiPlanException e) {
-                if (counted) {
-                    quotaService.refundChat(userId);
-                }
                 sendEvent(emitter, "error", Map.of("msg", e.getMessage()));
                 safeComplete(emitter);
             } catch (Exception e) {
                 log.error("AI 对话失败", e);
-                if (counted) {
-                    quotaService.refundChat(userId);
-                }
                 sendEvent(emitter, "error", Map.of("msg", AiErrors.friendly(e)));
                 safeComplete(emitter);
+            } finally {
+                // 未完整交付（含客户端中途断开、done 推送失败）统一返还本次配额
+                if (!completed) {
+                    quotaService.refund(quotaTicket);
+                }
             }
         });
     }

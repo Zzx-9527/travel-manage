@@ -18,4 +18,7 @@ public interface StrategyMapper extends BaseMapper<StrategyEntity> {
 
     int deleteById(Integer id);
 
+    /** 原子调整攻略收藏数，结果不会小于 0。 */
+    int updateCollectCount(@Param("id") Integer id, @Param("delta") int delta);
+
 }

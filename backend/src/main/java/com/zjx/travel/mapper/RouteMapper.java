@@ -22,11 +22,10 @@ public interface RouteMapper  extends BaseMapper<RouteEntity> {
     int deleteById(Integer id);
 
     /**
-     * 查最近 5 分钟内、同用户、同名的待审核路线 id。
+     * 按用户 + AI 行程内容指纹查已保存路线 id（幂等保存）。
      *
-     * <p>用于 AI 行程保存去重：用户连点两次"保存"不该产生两条一样的路线。
-     * 返回 null 表示没有重复。
+     * <p>不能用标题判重：同名但内容不同的两份行程必须都能保存。
      */
-    Integer findRecentSameName(@Param("userId") Integer userId, @Param("name") String name);
+    Integer findByUserAndFingerprint(@Param("userId") Integer userId, @Param("fingerprint") String fingerprint);
 
 }

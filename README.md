@@ -69,6 +69,12 @@ mysql -uroot -p < backend/sql/schema.sql
 mysql -uroot -p travel_management < backend/sql/seed_data.sql
 ```
 
+已有数据库升级到当前版本时，额外执行一次：
+
+```bash
+mysql -uroot -p travel_management < backend/sql/20261117_consistency_fixes.sql
+```
+
 > ⚠️ `schema.sql` 含 14 条 `DROP TABLE IF EXISTS`，**只用于全新初始化**；已有数据的库不要执行。
 
 导入 `seed_data.sql` 后自带一套可直接体验的演示数据：

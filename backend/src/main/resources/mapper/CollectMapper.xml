@@ -122,8 +122,8 @@
         <include refid="condition"></include> ) t
     </select>
 
-    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        insert into collect(user_id, target_type, target_id, create_time)
+    <insert id="insertIgnore" useGeneratedKeys="true" keyProperty="id">
+        insert ignore into collect(user_id, target_type, target_id, create_time)
         values(#{userId.id}, #{targetType}, #{targetId}, #{createTime})
     </insert>
 

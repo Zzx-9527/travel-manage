@@ -22,9 +22,12 @@ export function usePageList(fetchFn, options = {}) {
   // 请求序号守卫：快速搜索/翻页时，先发出的旧请求晚返回不能覆盖新结果
   let latestSeq = 0
 
-  async function load(extraParams = {}) {
+  async function load(extraParams) {
     const seq = ++latestSeq
-    lastParams = extraParams
+    // 只有显式传参才更新筛选条件；setPage/setSize 的无参 load 必须复用上次查询
+    if (extraParams !== undefined) {
+      lastParams = extraParams || {}
+    }
     loading.value = true
     try {
       const params = { page: page.value, size: size.value, ...lastParams }

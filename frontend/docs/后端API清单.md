@@ -120,7 +120,7 @@
 |---|---|---|
 | `route/queryByPage` | GET | `page, size, name?, status?`（用户端传 `status:1`） |
 | `route/detail/{id}` | GET 🔕 | 返回路线详情（含 name/intro/dayCount/startCity/traffic/budget/userId） |
-| `route/add` | POST | 路线字段（建议记录 userId 并落 `status=0` 待审核） |
+| `route/add` | POST | 路线字段（服务端取当前用户并落 `status=0` 待审核，返回 `content.id`） |
 | `route/edit` | POST | 路线字段（含 id） |
 | `route/deleteById/{id}` | POST | 逻辑删除 |
 

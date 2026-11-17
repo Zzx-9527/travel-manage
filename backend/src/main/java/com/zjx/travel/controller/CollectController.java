@@ -100,6 +100,11 @@ public class CollectController {
                 return returnVO;
             }
             SecurityUtil.requireSelfOrAdmin(old.getUserId() == null ? null : old.getUserId().getId());
+            // 收藏人和收藏目标都不能借编辑接口转移
+            collect.setUserId(old.getUserId());
+            collect.setTargetType(old.getTargetType());
+            collect.setTargetId(old.getTargetId());
+            collect.setCreateTime(null);
         }
 
         //修改

@@ -1,6 +1,5 @@
 package com.zjx.travel.controller;
 
-import cn.dev33.satoken.annotation.SaCheckRole;
 import com.zjx.travel.domain.RouteDetailEntity;
 import com.zjx.travel.domain.RouteEntity;
 import com.zjx.travel.service.RouteDetailService;
@@ -86,11 +85,23 @@ public class RouteDetailController {
     }
 
     @PostMapping("add")
-    @SaCheckRole("admin")
     public ReturnVO add(@RequestBody RouteDetailEntity routeDetail) {
 
         //定义失败的返回对象
         ReturnVO returnVO = ReturnVO.getNodataFoundReturnVO();
+
+        Integer routeId = routeDetail.getRouteId() == null ? null : routeDetail.getRouteId().getId();
+        RouteEntity parent = routeId == null ? null : this.routeService.queryById(routeId);
+        if (parent == null) {
+            returnVO.setMsg("路线不存在");
+            return returnVO;
+        }
+        if (!canManageParentRoute(parent)) {
+            returnVO.setMsg("无权修改该路线的行程");
+            return returnVO;
+        }
+        // 只保留 routeId，避免客户端把整段父路线字段带进后续处理
+        routeDetail.setRouteId(parent);
 
         //入库
         if(!this.routeDetailService.insert(routeDetail)){
@@ -106,11 +117,37 @@ public class RouteDetailController {
     }
 
     @PostMapping("edit")
-    @SaCheckRole("admin")
     public ReturnVO edit(@RequestBody RouteDetailEntity routeDetail) {
 
         //定义失败的返回对象
         ReturnVO returnVO = ReturnVO.getNodataFoundReturnVO();
+        if (routeDetail.getId() == null) {
+            return returnVO;
+        }
+
+        RouteDetailEntity old = this.routeDetailService.queryById(routeDetail.getId());
+        if (old == null || !canManageParentRoute(old.getRouteId())) {
+            returnVO.setMsg("行程记录不存在或无权修改");
+            return returnVO;
+        }
+
+        Integer targetRouteId = routeDetail.getRouteId() == null ? null : routeDetail.getRouteId().getId();
+        if (targetRouteId == null || targetRouteId.equals(old.getRouteId() == null ? null : old.getRouteId().getId())) {
+            // 普通编辑不允许把行程挪到另一条路线；未传 routeId 时保持原归属
+            routeDetail.setRouteId(old.getRouteId());
+        } else {
+            // 管理员可以在后台把景点调整到另一条路线
+            if (!SecurityUtil.isAdmin()) {
+                returnVO.setMsg("无权修改行程所属路线");
+                return returnVO;
+            }
+            RouteEntity target = this.routeService.queryById(targetRouteId);
+            if (target == null || !canManageParentRoute(target)) {
+                returnVO.setMsg("目标路线不存在或无权操作");
+                return returnVO;
+            }
+            routeDetail.setRouteId(target);
+        }
 
         //修改
         if(!this.routeDetailService.update(routeDetail)){
@@ -126,9 +163,15 @@ public class RouteDetailController {
     }
 
     @PostMapping("deleteById/{id}")
-    @SaCheckRole("admin")
     public ReturnVO deleteById(@PathVariable("id") Integer id) {        //定义失败的返回对象
         ReturnVO returnVO = ReturnVO.getNodataFoundReturnVO();
+
+        RouteDetailEntity old = this.routeDetailService.queryById(id);
+        if (old == null || !canManageParentRoute(old.getRouteId())) {
+            returnVO.setMsg("行程记录不存在或无权删除");
+            return returnVO;
+        }
+
         if(!this.routeDetailService.deleteById(id)){
             //删除失败
             return returnVO;
@@ -146,6 +189,14 @@ public class RouteDetailController {
         }
         if (Integer.valueOf(1).equals(route.getStatus())) {
             return true;
+        }
+        return canManageParentRoute(route);
+    }
+
+    /** 行程写操作只允许路线作者本人或管理员。 */
+    private boolean canManageParentRoute(RouteEntity route) {
+        if (route == null) {
+            return false;
         }
         Integer ownerId = route.getUserId() == null ? null : route.getUserId().getId();
         return SecurityUtil.isSelfOrAdmin(ownerId);

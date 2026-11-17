@@ -92,8 +92,10 @@
     </select>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        insert into route(user_id, name, day_count, start_city, traffic, budget, intro, status, create_time, update_time)
-        values(#{userId.id}, #{name}, #{dayCount}, #{startCity}, #{traffic}, #{budget}, #{intro}, #{status}, #{createTime}, #{updateTime})
+        insert into route(user_id, name, day_count, start_city, traffic, budget, intro, status,
+                          plan_fingerprint, create_time, update_time)
+        values(#{userId.id}, #{name}, #{dayCount}, #{startCity}, #{traffic}, #{budget}, #{intro}, #{status},
+               #{planFingerprint}, #{createTime}, #{updateTime})
     </insert>
 
     <update id="update">
@@ -134,22 +136,17 @@
     </update>
 
     <update id="deleteById">
-        UPDATE route SET del_mark = 0 WHERE id = #{id}
+        <!-- 清空指纹，允许用户删除 AI 路线后重新保存同一份行程 -->
+        UPDATE route SET del_mark = 0, plan_fingerprint = NULL WHERE id = #{id}
     </update>
 
-    <!--
-      AI 保存去重：5 分钟内、同用户、同名的待审核路线。
-      注意本库 del_mark = 1 表示有效，deleteById 是置 0，所以这里必须带 del_mark = 1。
-    -->
-    <select id="findRecentSameName" resultType="java.lang.Integer">
+    <!-- AI 保存幂等：同用户 + 同内容指纹唯一。手动发布路线指纹为 NULL，不受影响。 -->
+    <select id="findByUserAndFingerprint" resultType="java.lang.Integer">
         select id
         from route
         where user_id = #{userId}
-          and name = #{name}
-          and status = 0
+          and plan_fingerprint = #{fingerprint}
           and del_mark = 1
-          and create_time &gt; date_sub(now(), interval 5 minute)
-        order by id desc
         limit 1
     </select>
 </mapper>
