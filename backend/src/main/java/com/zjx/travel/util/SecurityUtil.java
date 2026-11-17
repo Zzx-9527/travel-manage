@@ -42,11 +42,13 @@ public final class SecurityUtil {
      * @param ownerId 资源归属人 id，允许为空（为空时非管理员一律拒绝）
      */
     public static void requireSelfOrAdmin(Integer ownerId) {
-        if (isAdmin()) {
-            return;
-        }
-        if (ownerId == null || !ownerId.equals(currentUserId())) {
+        if (!isSelfOrAdmin(ownerId)) {
             throw new NotPermissionException("resource:access:other");
         }
+    }
+
+    /** 当前登录人是否为资源归属人或管理员，用于审核内容的读权限判断。 */
+    public static boolean isSelfOrAdmin(Integer ownerId) {
+        return isAdmin() || (ownerId != null && ownerId.equals(currentUserId()));
     }
 }

@@ -9,7 +9,8 @@ import java.util.*;
 public interface RouteDetailService {
     RouteDetailEntity queryById(Integer id);
 
-    Page<RouteDetailEntity> queryByPage(RouteDetailEntity routeDetail, Integer routeId, Integer page, Integer size, String orderCol, String orderDirect);
+    Page<RouteDetailEntity> queryByPage(RouteDetailEntity routeDetail, Integer routeId, Integer page, Integer size,
+                                       String orderCol, String orderDirect, boolean onlyApproved);
 
     boolean insert(RouteDetailEntity routeDetail);
 

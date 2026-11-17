@@ -4,6 +4,10 @@ import com.zjx.travel.domain.TravelUserEntity;
 import com.zjx.travel.mapper.TravelUserMapper;
 import com.zjx.travel.service.TravelUserService;
 import com.zjx.travel.util.PasswordUtil;
+import cn.dev33.satoken.stp.StpUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import jakarta.annotation.Resource;
 import org.springframework.data.domain.Page;
@@ -15,6 +19,7 @@ import java.util.*;
 
 @Service
 public class TravelUserServiceImpl implements TravelUserService {
+    private static final Logger log = LoggerFactory.getLogger(TravelUserServiceImpl.class);
     private static int PAGE_DEFAULT = 1;
     private static int SIZE_DEFAULT = 10;
 
@@ -75,7 +80,33 @@ public class TravelUserServiceImpl implements TravelUserService {
         return this.travelUserMapper.insert(travelUser) > 0;
     }
 
+    public boolean register(TravelUserEntity travelUser) {
+        if (travelUser == null || travelUser.getAccount() == null) {
+            return false;
+        }
+        // 公开注册不接受任何角色/状态输入，服务端再次强制兜底
+        travelUser.setId(null);
+        travelUser.setUserRole(0);
+        travelUser.setStatus(1);
+        travelUser.setAccount(travelUser.getAccount().trim());
+        if (this.travelUserMapper.queryByAccount(travelUser.getAccount()) != null) {
+            return false;
+        }
+        try {
+            return this.insert(travelUser);
+        } catch (DuplicateKeyException e) {
+            // 并发注册时由数据库唯一索引兜底
+            return false;
+        }
+    }
+
     public boolean update(TravelUserEntity travelUser){
+        TravelUserEntity old = travelUser.getId() == null ? null : this.travelUserMapper.queryById(travelUser.getId());
+        boolean roleChanged = old != null && travelUser.getUserRole() != null
+                && !Objects.equals(old.getUserRole(), travelUser.getUserRole());
+        boolean statusChanged = old != null && travelUser.getStatus() != null
+                && !Objects.equals(old.getStatus(), travelUser.getStatus());
+
         // 对密码进行 BCrypt 加密
         if (travelUser.getPassword() != null && !travelUser.getPassword().isEmpty()) {
             travelUser.setPassword(PasswordUtil.encode(travelUser.getPassword()));
@@ -85,11 +116,32 @@ public class TravelUserServiceImpl implements TravelUserService {
                 && travelUser.getUserRole() != 0 && travelUser.getUserRole() != 1) {
             travelUser.setUserRole(0);
         }
-        return this.travelUserMapper.update(travelUser) > 0;
+        boolean updated = this.travelUserMapper.update(travelUser) > 0;
+        if (updated && (roleChanged || statusChanged)) {
+            // 角色或启用状态变化后旧会话必须失效，不能等 24 小时自然过期
+            invalidateSessions(travelUser.getId());
+        }
+        return updated;
     }
 
     public boolean deleteById(Integer id){
-        return this.travelUserMapper.deleteById(id) > 0;
+        boolean deleted = this.travelUserMapper.deleteById(id) > 0;
+        if (deleted) {
+            invalidateSessions(id);
+        }
+        return deleted;
+    }
+
+    private void invalidateSessions(Integer userId) {
+        if (userId == null) {
+            return;
+        }
+        try {
+            StpUtil.kickout(userId);
+        } catch (Exception e) {
+            // 数据库修改已经成功，不能因为会话清理异常把成功响应改成失败
+            log.warn("清理用户登录态失败，userId={}, cause={}", userId, e.toString());
+        }
     }
 
     public TravelUserEntity login(TravelUserEntity loginUser){

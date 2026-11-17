@@ -41,7 +41,7 @@ public class WebConfig implements WebMvcConfigurer {
     /**
      * 免登录白名单：
      * <ul>
-     *   <li>登录、注册（{@code /travelUser/add} 是注册接口）；</li>
+     *   <li>登录、公开注册（{@code /travelUser/register}）；</li>
      *   <li>接口文档相关（SpringDoc 的 swagger-ui、api-docs、静态资源）；</li>
      *   <li>上传后的图片（{@code /uploads/**}）：浏览器 {@code <img>} 无法携带 token，
      *       必须匿名可读，否则图片全部裂开；</li>
@@ -50,7 +50,7 @@ public class WebConfig implements WebMvcConfigurer {
      */
     private static final String[] WHITE_LIST = {
             "/travelUser/login",
-            "/travelUser/add",
+            "/travelUser/register",
             "/swagger-ui.html",
             "/swagger-ui/**",
             "/webjars/**",
@@ -67,6 +67,13 @@ public class WebConfig implements WebMvcConfigurer {
             // 放行 CORS 预检请求，否则浏览器跨域时会先被 401 拦掉
             SaRouter.match(SaHttpMethod.OPTIONS).free(r -> {
             }).stop();
+
+            // 后台新增用户与公开注册已拆分。该接口必须登录且为管理员，
+            // 防止普通登录用户通过 userRole=1 自行提权。
+            SaRouter.match("/travelUser/add").check(r -> {
+                StpUtil.checkLogin();
+                StpUtil.checkRole("admin");
+            });
 
             SaRouter.match("/**")
                     .notMatch(WHITE_LIST)

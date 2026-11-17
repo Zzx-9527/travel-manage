@@ -410,7 +410,7 @@ Lettuce(RedisTemplate)      Redisson(RedissonClient)      Sa-Token(SaTokenDao)
 | 目标 | 后台能看在线用户、能踢人；接口按角色控制 |
 | 验收记录 | 在线列表返回 2 人（含 userRole 与 tokenCount）；普通用户访问 `/dashboard/stats` → 403；管理员 → 200；踢人后该用户 → 401「账号被强制下线」且从在线列表消失；踢自己被拒；删除账号会连带踢掉其全部 token |
 | 交付物 | 改 `TravelUserController`（`/online`、`/kickout/{userId}`）、`DashboardController`（加 `@SaCheckRole("admin")`）；新增 `config/StpInterfaceImpl.java`、`domain/OnlineUserVO.java` |
-| 实现要点 | ① 登录时 `StpUtil.getSession().set(...)` 写 account/nickname/userRole；② 在线列表用 `StpUtil.searchTokenValue` 聚合，按 userId 去重、统计 tokenCount；③ 踢人 `StpUtil.kickout(userId)`；④ `StpInterface` 返回 `admin`/`user`；⑤ 注册接口 `/travelUser/add` 必须保持匿名 |
+| 实现要点 | ① 登录时 `StpUtil.getSession().set(...)` 写 account/nickname/userRole；② 在线列表用 `StpUtil.searchTokenValue` 聚合，按 userId 去重、统计 tokenCount；③ 踢人 `StpUtil.kickout(userId)`；④ `StpInterface` 以数据库实时角色为准并返回 `admin`/`user`；⑤ 公开注册 `/travelUser/register` 保持匿名，`/travelUser/add` 仅管理员 |
 | 验收标准 | ① 管理员能分页看到在线用户；② 踢人后该用户下一次请求 401 且 msg 为"账号被强制下线"；③ 普通用户访问 `/dashboard/stats` 返回 403；④ 管理员访问正常；⑤ 注册/登录接口不受影响 |
 | 预计工时 | 1 天 |
 | 风险 | 在线列表遍历全量 token，用户量大时性能差（本项目可接受，文档注明） |

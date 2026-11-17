@@ -69,10 +69,14 @@
              JOIN travel_user travel_user_3 ON(route.user_id = travel_user_3.id)
              JOIN scenic scenic_2 ON(route_detail.scenic_id = scenic_2.id)
              JOIN scenic_category scenic_category_5 ON(scenic_2.category_id = scenic_category_5.id)
-        WHERE route_detail.del_mark = 1 
+        WHERE route_detail.del_mark = 1
+          AND route.del_mark = 1
     </sql>
 
     <sql id="condition">
+        <if test="onlyApproved">
+             and route.status = 1
+        </if>
         <if test="routeDetail.keyword != null and routeDetail.keyword != ''">
              and route.name LIKE concat('%', #{routeDetail.keyword}, '%')
         </if>

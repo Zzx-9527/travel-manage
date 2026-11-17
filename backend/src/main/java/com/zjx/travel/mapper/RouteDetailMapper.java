@@ -11,9 +11,14 @@ public interface RouteDetailMapper  extends BaseMapper<RouteDetailEntity> {
 
     RouteDetailEntity queryById(Integer id);
 
-    public List<RouteDetailEntity> queryAllByLimit(@Param("routeDetail") RouteDetailEntity routeDetail, @Param("routeId") Integer routeId, @Param("pageable") Pageable pageable);
+    public List<RouteDetailEntity> queryAllByLimit(@Param("routeDetail") RouteDetailEntity routeDetail,
+                                                   @Param("routeId") Integer routeId,
+                                                   @Param("onlyApproved") boolean onlyApproved,
+                                                   @Param("pageable") Pageable pageable);
 
-    long count(@Param("routeDetail") RouteDetailEntity routeDetail, @Param("routeId") Integer routeId);
+    long count(@Param("routeDetail") RouteDetailEntity routeDetail,
+               @Param("routeId") Integer routeId,
+               @Param("onlyApproved") boolean onlyApproved);
 
     int insert(RouteDetailEntity routeDetail);
 

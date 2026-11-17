@@ -99,6 +99,7 @@ public class TravelUserController {
     }
 
     @PostMapping("add")
+    @SaCheckRole("admin")
     public ReturnVO add(@Valid @RequestBody TravelUserEntity travelUser) {
 
         //定义失败的返回对象

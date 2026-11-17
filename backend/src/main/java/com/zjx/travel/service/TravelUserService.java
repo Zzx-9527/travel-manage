@@ -11,7 +11,11 @@ public interface TravelUserService {
 
     Page<TravelUserEntity> queryByPage(TravelUserEntity travelUser, Integer page, Integer size, String orderCol, String orderDirect);
 
+    /** 管理员新增用户（可指定角色/状态）。 */
     boolean insert(TravelUserEntity travelUser);
+
+    /** 匿名注册：服务端强制普通用户角色和启用状态。 */
+    boolean register(TravelUserEntity travelUser);
 
     boolean update(TravelUserEntity travelUser);
 

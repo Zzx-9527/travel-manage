@@ -109,7 +109,8 @@ com.zjx.travel
 | `/travelUser/kickout/{userId}` | POST | 强制某用户下线（管理员） |
 | `/travelUser/queryById/{id}` | GET | 查询用户详情（管理员） |
 | `/travelUser/queryByPage` | GET | 分页查询用户列表（管理员） |
-| `/travelUser/add` | POST | 新增用户（注册，匿名可访问） |
+| `/travelUser/register` | POST | 公开注册（匿名可访问，服务端强制普通用户） |
+| `/travelUser/add` | POST | 后台新增用户（管理员） |
 | `/travelUser/edit` | POST | 修改用户信息（管理员） |
 | `/travelUser/deleteById/{id}` | POST | 删除用户（管理员） |
 | `/travelUser/updatePassword` | POST | 修改密码（身份取 token，body 不需要 id） |

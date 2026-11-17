@@ -9,11 +9,7 @@ import com.zjx.travel.util.*;
 
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.http.ResponseEntity;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 
 import java.util.*;
 
@@ -32,7 +28,12 @@ public class StrategyController {
         ReturnVO returnVO = ReturnVO.getNodataFoundReturnVO();
         StrategyEntity strategy = this.strategyService.queryById(id);
 
-        if(strategy == null) {
+        if (strategy == null) {
+            return returnVO;
+        }
+        // 待审核/已驳回攻略只对作者本人和管理员可见
+        Integer ownerId = strategy.getUserId() == null ? null : strategy.getUserId().getId();
+        if (!Integer.valueOf(1).equals(strategy.getAuditStatus()) && !SecurityUtil.isSelfOrAdmin(ownerId)) {
             return returnVO;
         }
 
@@ -44,9 +45,15 @@ public class StrategyController {
     @GetMapping("queryByPage")
     public ReturnVO queryByPage(StrategyEntity strategy, Integer page, Integer size, String orderCol, String orderDirect, Boolean mine) {
 
-        // “我的发布”场景：非管理员强制按当前登录人过滤，避免传 userId 查到别人的数据
-        if (Boolean.TRUE.equals(mine) && !SecurityUtil.isAdmin()) {
-            strategy.setUserId(SecurityUtil.currentUserRef());
+        boolean admin = SecurityUtil.isAdmin();
+        if (Boolean.TRUE.equals(mine)) {
+            // “我的发布”场景：非管理员强制按当前登录人过滤，避免传 userId 查到别人的数据
+            if (!admin) {
+                strategy.setUserId(SecurityUtil.currentUserRef());
+            }
+        } else if (!admin) {
+            // 公开列表只返回审核通过的攻略，忽略前端传入的审核状态
+            strategy.setAuditStatus(1);
         }
 
         //定义失败的返回对象
@@ -77,6 +84,14 @@ public class StrategyController {
 
         // 发布人一律取当前登录人，忽略前端传来的 userId
         strategy.setUserId(SecurityUtil.currentUserRef());
+        // 普通用户发布必须待审核，收藏/阅读数只能从 0 开始；管理员后台新增可按管理字段落库
+        if (!SecurityUtil.isAdmin()) {
+            strategy.setAuditStatus(0);
+            strategy.setCollectCount(0);
+            strategy.setReadCount(0);
+            strategy.setCreateTime(null);
+            strategy.setUpdateTime(null);
+        }
 
         //入库
         if(!this.strategyService.insert(strategy)){
@@ -96,20 +111,39 @@ public class StrategyController {
 
         //定义失败的返回对象
         ReturnVO returnVO = ReturnVO.getNodataFoundReturnVO();
-
-        // 归属校验：非管理员只能改自己的攻略；同时拿到旧数据用于审核状态比对
-        StrategyEntity old = strategy.getId() == null ? null : this.strategyService.queryById(strategy.getId());
-        if (old != null) {
-            SecurityUtil.requireSelfOrAdmin(old.getUserId() == null ? null : old.getUserId().getId());
+        if (strategy.getId() == null) {
+            return returnVO;
         }
 
-        // 检测审核状态变化：0(待审核) → 1(通过)/2(驳回) 才通知，普通编辑/重复审核不打扰用户
+        StrategyEntity old = this.strategyService.queryById(strategy.getId());
+        if (old == null) {
+            return returnVO;
+        }
+
+        // 归属校验：非管理员只能改自己的攻略
+        Integer ownerId = old.getUserId() == null ? null : old.getUserId().getId();
+        SecurityUtil.requireSelfOrAdmin(ownerId);
+
+        boolean admin = SecurityUtil.isAdmin();
+        // 归属人不能被编辑请求转移
+        strategy.setUserId(SecurityUtil.userRef(ownerId));
+
         boolean auditChanged = false;
         boolean auditPassed = false;
-        if (old != null && strategy.getAuditStatus() != null
-                && (strategy.getAuditStatus() == 1 || strategy.getAuditStatus() == 2)) {
-            auditChanged = old.getAuditStatus() != null && old.getAuditStatus() == 0;
-            auditPassed = strategy.getAuditStatus() == 1;
+        if (admin) {
+            // 仅管理员可以变更审核状态，且只通知 0 → 1/2 的有效状态变化
+            if (strategy.getAuditStatus() != null
+                    && (strategy.getAuditStatus() == 1 || strategy.getAuditStatus() == 2)) {
+                auditChanged = old.getAuditStatus() != null && old.getAuditStatus() == 0;
+                auditPassed = strategy.getAuditStatus() == 1;
+            }
+        } else {
+            // 普通用户不得改审核状态和统计字段；修改内容后重新进入待审核
+            strategy.setAuditStatus(0);
+            strategy.setCollectCount(null);
+            strategy.setReadCount(null);
+            strategy.setCreateTime(null);
+            strategy.setUpdateTime(null);
         }
 
         //修改
@@ -119,14 +153,14 @@ public class StrategyController {
         }
 
         // 单图覆盖：封面换了且更新成功，删掉磁盘上的旧图
-        if (old != null && strategy.getCover() != null && !strategy.getCover().equals(old.getCover())) {
+        if (strategy.getCover() != null && !strategy.getCover().equals(old.getCover())) {
             this.fileStorageService.deleteByUrl(old.getCover());
         }
 
         // 审核状态发生变化后通知发布者
         if (auditChanged) {
-            Integer receiverId = strategy.getUserId() != null ? strategy.getUserId().getId() : null;
-            this.messageNotifier.sendAuditResult(receiverId, "攻略", strategy.getTitle(), auditPassed);
+            String title = strategy.getTitle() != null ? strategy.getTitle() : old.getTitle();
+            this.messageNotifier.sendAuditResult(ownerId, "攻略", title, auditPassed);
         }
 
         //修改成功

@@ -24,7 +24,8 @@ public class RouteDetailServiceImpl implements RouteDetailService {
         return this.routeDetailMapper.queryById(id);
     }
 
-    public Page<RouteDetailEntity> queryByPage(RouteDetailEntity routeDetail, Integer routeId, Integer page, Integer size, String orderCol, String orderDirect){
+    public Page<RouteDetailEntity> queryByPage(RouteDetailEntity routeDetail, Integer routeId, Integer page, Integer size,
+                                               String orderCol, String orderDirect, boolean onlyApproved){
 
         if(page == null || page <= 0){
             page = PAGE_DEFAULT;
@@ -44,9 +45,10 @@ public class RouteDetailServiceImpl implements RouteDetailService {
             pageRequest = PageRequest.of(page - 1, size, sort);
         }
 
-        long total = this.routeDetailMapper.count(routeDetail, routeId);
+        long total = this.routeDetailMapper.count(routeDetail, routeId, onlyApproved);
 
-        return new PageImpl<>(this.routeDetailMapper.queryAllByLimit(routeDetail, routeId, pageRequest), pageRequest, total);
+        return new PageImpl<>(this.routeDetailMapper.queryAllByLimit(routeDetail, routeId, onlyApproved, pageRequest),
+                pageRequest, total);
     }
 
     public boolean insert(RouteDetailEntity routeDetail){

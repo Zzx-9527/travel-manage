@@ -1,16 +1,13 @@
 import request from './request'
 
-// 用户注册：后端无独立 register 接口，复用通用 travelUser/add（添加用户即注册）
-// 默认 userRole=0 普通用户、status=1 启用（注册账号默认可直接登录）
-// 头像为选填：调用方填了用调用方的，没填/留空走系统默认头像
+// 用户注册：公开注册只接收账号、密码和资料字段，角色/状态由服务端强制决定。
+// 后台“新增用户”仍使用 travelUser/add，该接口需要管理员权限。
 export function register(data) {
   const { avatar, ...rest } = data || {}
   return request({
-    url: 'travelUser/add',
+    url: 'travelUser/register',
     method: 'post',
     data: {
-      userRole: 0,
-      status: 1,
       avatar: avatar || 'https://picsum.photos/200/200?random=1',
       ...rest
     }

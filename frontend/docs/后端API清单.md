@@ -44,8 +44,9 @@
 ### 1.6 管理端用户 CRUD（后台）
 | 接口 | 方法 | 参数 |
 |---|---|---|
+| `travelUser/register` | POST | 公开注册（account/password/nickname/phone/avatar，匿名） |
 | `travelUser/queryByPage` | GET | `page, size, account?, userRole?, status?` |
-| `travelUser/add` | POST | 用户字段（account/password/nickname/phone/userRole/status） |
+| `travelUser/add` | POST | 后台新增用户（管理员；account/password/nickname/phone/userRole/status） |
 | `travelUser/edit` | POST | 用户字段（含 id） |
 | `travelUser/deleteById/{id}` | POST | 逻辑删除 |
 

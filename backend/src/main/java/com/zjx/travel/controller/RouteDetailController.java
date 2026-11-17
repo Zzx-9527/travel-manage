@@ -2,7 +2,9 @@ package com.zjx.travel.controller;
 
 import cn.dev33.satoken.annotation.SaCheckRole;
 import com.zjx.travel.domain.RouteDetailEntity;
+import com.zjx.travel.domain.RouteEntity;
 import com.zjx.travel.service.RouteDetailService;
+import com.zjx.travel.service.RouteService;
 import com.zjx.travel.util.*;
 
 import jakarta.annotation.Resource;
@@ -21,6 +23,8 @@ import java.util.*;
 public class RouteDetailController {
     @Resource
     private RouteDetailService routeDetailService;
+    @Resource
+    private RouteService routeService;
 
     /**
      * routeId 作为独立的查询参数接收（Integer），
@@ -36,7 +40,7 @@ public class RouteDetailController {
         ReturnVO returnVO = ReturnVO.getNodataFoundReturnVO();
         RouteDetailEntity routeDetail = this.routeDetailService.queryById(id);
 
-        if(routeDetail == null) {
+        if(routeDetail == null || !canViewParentRoute(routeDetail.getRouteId())) {
             return returnVO;
         }
 
@@ -51,12 +55,24 @@ public class RouteDetailController {
         //定义失败的返回对象
         ReturnVO returnVO = ReturnVO.getNodataFoundReturnVO();
 
+        boolean onlyApproved = false;
+        if (routeId != null) {
+            // 指定路线时必须先确认父路线可见，作者本人可查看自己的待审核行程
+            RouteEntity route = this.routeService.queryById(routeId);
+            if (!canViewParentRoute(route)) {
+                return returnVO;
+            }
+        } else if (!SecurityUtil.isAdmin()) {
+            // 不指定路线时，普通用户只能扫描审核通过路线的行程
+            onlyApproved = true;
+        }
+
         Page<RouteDetailEntity> pageVO =
             this.routeDetailService.queryByPage(
                 routeDetail,
                 routeId,
                 page, size,
-                orderCol, orderDirect);
+                orderCol, orderDirect, onlyApproved);
 
         //没有数据
         if(pageVO.getContent().isEmpty()){
@@ -122,6 +138,17 @@ public class RouteDetailController {
         returnVO.setMsg("删除成功");
 
         return returnVO;
+    }
+
+    private boolean canViewParentRoute(RouteEntity route) {
+        if (route == null) {
+            return false;
+        }
+        if (Integer.valueOf(1).equals(route.getStatus())) {
+            return true;
+        }
+        Integer ownerId = route.getUserId() == null ? null : route.getUserId().getId();
+        return SecurityUtil.isSelfOrAdmin(ownerId);
     }
 
 }

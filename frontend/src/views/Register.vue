@@ -36,13 +36,13 @@
             <el-form-item prop="account">
               <div class="input-wrap">
                 <i class="fa fa-user input-icon"></i>
-                <el-input v-model="form.account" placeholder="请输入账号（3-20位）" clearable />
+                <el-input v-model="form.account" placeholder="请输入账号（4-20位）" clearable />
               </div>
             </el-form-item>
             <el-form-item prop="password">
               <div class="input-wrap">
                 <i class="fa fa-lock input-icon"></i>
-                <el-input v-model="form.password" type="password" placeholder="请输入密码（至少3位）" show-password />
+                <el-input v-model="form.password" type="password" placeholder="请输入密码（6-20位）" show-password />
               </div>
             </el-form-item>
             <el-form-item prop="confirmPassword">
@@ -126,11 +126,11 @@ const validateConfirm = (rule, value, callback) => {
 const rules = {
   account: [
     { required: true, message: '请输入账号', trigger: 'blur' },
-    { min: 3, max: 20, message: '账号长度为 3-20 位', trigger: 'blur' }
+    { min: 4, max: 20, message: '账号长度为 4-20 位', trigger: 'blur' }
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 3, message: '密码长度不少于 3 位', trigger: 'blur' }
+    { min: 6, max: 20, message: '密码长度为 6-20 位', trigger: 'blur' }
   ],
   confirmPassword: [{ validator: validateConfirm, trigger: 'blur' }],
   nickname: [{ required: true, message: '请输入昵称', trigger: 'blur' }],

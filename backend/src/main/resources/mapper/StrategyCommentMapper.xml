@@ -54,7 +54,8 @@
              JOIN strategy ON(strategy_comment.strategy_id = strategy.id)
              JOIN travel_user travel_user_3 ON(strategy.user_id = travel_user_3.id)
              JOIN travel_user travel_user_4 ON(strategy_comment.user_id = travel_user_4.id)
-        WHERE strategy_comment.del_mark = 1 
+        WHERE strategy_comment.del_mark = 1
+          AND strategy.del_mark = 1
     </sql>
 
     <sql id="condition">
