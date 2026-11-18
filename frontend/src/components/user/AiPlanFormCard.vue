@@ -13,7 +13,20 @@
     <div class="field-row">
       <label class="field">
         <span class="label">出发地</span>
-        <el-input v-model="form.startCity" size="small" placeholder="可不填" maxlength="30" @keyup.enter="submit" />
+        <el-input v-model="form.startCity" size="small" placeholder="可不填" maxlength="30" @keyup.enter="submit">
+          <template #suffix>
+            <button
+              type="button"
+              class="locate-btn"
+              :disabled="locating"
+              title="使用当前所在城市"
+              aria-label="使用当前所在城市"
+              @click="fillCurrentCity"
+            >
+              <i :class="locating ? 'fa fa-spinner fa-spin' : 'fa fa-location-arrow'"></i>
+            </button>
+          </template>
+        </el-input>
       </label>
       <label class="field">
         <span class="label">交通方式</span>
@@ -56,8 +69,10 @@
 </template>
 
 <script setup>
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
+import { ElMessage } from 'element-plus'
 import { TRAFFIC_TYPES } from '@/utils/format'
+import { locateCurrentCity } from '@/utils/amap'
 
 const props = defineProps({
   /** 重新规划时带上一次的条件，省得用户重填 */
@@ -77,6 +92,25 @@ const form = reactive({
   preference: props.initial?.preference || '',
   extra: props.initial?.extra || ''
 })
+
+const locating = ref(false)
+
+async function fillCurrentCity() {
+  if (locating.value) return
+  locating.value = true
+  try {
+    const city = await locateCurrentCity()
+    form.startCity = city
+    ElMessage.success(`已定位到：${city}`)
+  } catch (e) {
+    const message = e?.message?.includes('未配置')
+      ? '定位服务暂不可用，请手动填写出发地'
+      : (e?.message || '定位失败，请手动填写出发地')
+    ElMessage.warning(message)
+  } finally {
+    locating.value = false
+  }
+}
 
 function submit() {
   if (!form.destination.trim()) {
@@ -140,6 +174,20 @@ function submit() {
 .field :deep(.el-select),
 .field :deep(.el-input-number) {
   width: 100%;
+}
+
+.locate-btn {
+  border: 0;
+  padding: 0 2px;
+  background: transparent;
+  color: var(--brand-600, #0d9488);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.locate-btn:disabled {
+  opacity: 0.55;
+  cursor: wait;
 }
 
 .plan-form-actions {

@@ -48,3 +48,42 @@ export function loadAMap() {
 
   return loadPromise
 }
+
+// 获取当前所在城市：浏览器/高德定位 → 逆地理编码。
+// 浏览器定位必须由用户授权，失败时抛出可读错误，由调用方决定是否回退到手动输入。
+export async function locateCurrentCity() {
+  const AMap = await loadAMap()
+
+  const position = await new Promise((resolve, reject) => {
+    AMap.plugin('AMap.Geolocation', () => {
+      const geo = new AMap.Geolocation({ enableHighAccuracy: true, timeout: 8000 })
+      geo.getCurrentPosition((status, result) => {
+        if (status === 'complete' && result?.position) {
+          resolve(result.position)
+        } else {
+          reject(new Error('定位失败，请检查浏览器定位权限'))
+        }
+      })
+    })
+  })
+
+  return new Promise((resolve, reject) => {
+    AMap.plugin('AMap.Geocoder', () => {
+      const geocoder = new AMap.Geocoder()
+      geocoder.getAddress([position.getLng(), position.getLat()], (status, result) => {
+        if (status !== 'complete') {
+          reject(new Error('地址解析失败，请手动填写出发地'))
+          return
+        }
+        const component = result?.regeocode?.addressComponent || {}
+        const raw = component.city || component.province
+        const city = Array.isArray(raw) ? raw[0] : raw
+        if (!city) {
+          reject(new Error('未获取到当前城市，请手动填写出发地'))
+          return
+        }
+        resolve(city)
+      })
+    })
+  })
+}
