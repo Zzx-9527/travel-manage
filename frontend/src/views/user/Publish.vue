@@ -96,7 +96,7 @@ const submitting = ref(false)
 
 const guideForm = ref({ title: '', cover: '', content: '' })
 const routeForm = ref({ name: '', dayCount: 2, startCity: '', traffic: '高铁', budget: 1000, intro: '' })
-const trafficOptions = ['高铁', '动车', '火车', '飞机', '大巴', '自驾']
+const trafficOptions = ['地铁', '高铁', '飞机', '大巴', '自驾', '其他']
 
 // 封面上传（§10）：上传拿 url 填入输入框，随发布表单一起提交
 const uploadingCover = ref(false)

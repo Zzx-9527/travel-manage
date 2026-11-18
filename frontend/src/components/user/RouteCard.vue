@@ -8,14 +8,18 @@
     @keydown.enter.prevent="$emit('click', route)"
     @keydown.space.prevent="$emit('click', route)"
   >
-    <!-- 渐变头图区：品牌青，配交通方式图标 -->
+    <!-- 渐变头图区：底色固定品牌青，交通方式只换图标块和胶囊的底色 -->
     <div class="route-banner">
-      <div class="banner-icon"><i class="fa" :class="trafficIcon(route.traffic)"></i></div>
+      <div class="banner-icon" :style="{ background: chip, borderColor: chip }">
+        <i class="fa" :class="trafficIcon(traffic)"></i>
+      </div>
       <div class="banner-info">
         <span class="banner-route">{{ route.name || '精彩路线' }}</span>
         <span class="banner-days">{{ route.dayCount || 1 }} 天行程</span>
       </div>
-      <span class="banner-traffic">{{ route.traffic || '自由行' }}</span>
+      <span class="banner-traffic" :style="{ background: chip, borderColor: chip }">
+        {{ traffic }}
+      </span>
       <div class="banner-deco"></div>
     </div>
 
@@ -36,12 +40,21 @@
 </template>
 
 <script setup>
-import { truncate, priceText, trafficIcon } from '@/utils/format'
+import { computed } from 'vue'
+import { truncate, priceText, trafficIcon, trafficColor } from '@/utils/format'
 
-defineProps({
+const props = defineProps({
   route: { type: Object, required: true }
 })
 defineEmits(['click'])
+
+// 系统里只有六种交通方式，旧数据里的自由行/火车等一律归到「其他」
+const TRAFFIC_TYPES = ['地铁', '高铁', '飞机', '大巴', '自驾', '其他']
+const traffic = computed(() => {
+  const t = String(props.route?.traffic || '').trim()
+  return TRAFFIC_TYPES.includes(t) ? t : '其他'
+})
+const chip = computed(() => trafficColor(traffic.value))
 </script>
 
 <style scoped>

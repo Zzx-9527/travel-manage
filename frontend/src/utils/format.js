@@ -108,12 +108,30 @@ export function trafficIcon(traffic) {
   switch (traffic) {
     case '高铁':
     case '动车': return 'fa-train'
+    case '地铁': return 'fa-subway'
     case '火车': return 'fa-subway'
     case '飞机': return 'fa-plane'
     case '大巴': return 'fa-bus'
     case '自驾': return 'fa-car'
     default: return 'fa-road'
   }
+}
+
+// 交通方式底色：只用于图标块和交通胶囊，标题保持白色
+// 卡片渐变底色始终是品牌青，不随交通方式变化
+// 系统里只有六种：地铁、高铁、飞机、大巴、自驾、其他
+const TRAFFIC_COLOR = {
+  '地铁': '#4C7A93',
+  '高铁': '#8E6B33',
+  '飞机': '#63508F',
+  '大巴': '#B87A1F',
+  '自驾': '#B85A34',
+  '其他': '#9C4553'
+}
+
+export function trafficColor(traffic) {
+  const key = String(traffic || '').trim()
+  return TRAFFIC_COLOR[key] || TRAFFIC_COLOR['其他']
 }
 
 // ---- 交通方式彩色标签 ----
