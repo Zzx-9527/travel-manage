@@ -8,6 +8,8 @@ import jakarta.validation.constraints.Min;
 
 import jakarta.validation.constraints.NotNull;
 
+import jakarta.validation.constraints.Pattern;
+
 import jakarta.validation.constraints.Size;
 
 import jakarta.validation.constraints.NotBlank;
@@ -33,6 +35,7 @@ public class RouteEntity{
     @Max(value = 15, message = "游玩天数最多 15 天")
     private Integer dayCount;
     private String startCity;
+    @Pattern(regexp = "^(地铁|高铁|飞机|大巴|自驾|其他)?$", message = "交通方式只能是：地铁、高铁、飞机、大巴、自驾、其他")
     private String traffic;
     @DecimalMin(value = "0", message = "预算不能为负数")
     private Double budget;

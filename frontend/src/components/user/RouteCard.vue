@@ -41,19 +41,15 @@
 
 <script setup>
 import { computed } from 'vue'
-import { truncate, priceText, trafficIcon, trafficColor } from '@/utils/format'
+import { truncate, priceText, trafficIcon, trafficColor, normalizeTraffic } from '@/utils/format'
 
 const props = defineProps({
   route: { type: Object, required: true }
 })
 defineEmits(['click'])
 
-// 系统里只有六种交通方式，旧数据里的自由行/火车等一律归到「其他」
-const TRAFFIC_TYPES = ['地铁', '高铁', '飞机', '大巴', '自驾', '其他']
-const traffic = computed(() => {
-  const t = String(props.route?.traffic || '').trim()
-  return TRAFFIC_TYPES.includes(t) ? t : '其他'
-})
+// 旧数据里的自由行/火车等非法值统一归入「其他」
+const traffic = computed(() => normalizeTraffic(props.route?.traffic))
 const chip = computed(() => trafficColor(traffic.value))
 </script>
 

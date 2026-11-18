@@ -67,7 +67,7 @@
             </div>
             <p class="route-sub">
               <span class="route-tag"><i class="fa fa-clock-o mr-1"></i>{{ r.dayCount }} 天</span>
-              <span class="route-tag" :style="trafficStyle(r.traffic)">{{ r.traffic || '其他' }}</span>
+              <span class="route-tag" :style="trafficStyle(r.traffic)">{{ normalizeTraffic(r.traffic) }}</span>
               <span class="route-price">{{ priceText(r.budget) }}</span>
             </p>
             <p class="route-intro">{{ truncate(r.intro, 50) || '暂无简介' }}</p>
@@ -101,7 +101,7 @@ import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import EmptyState from '@/components/user/EmptyState.vue'
 import { useAuthStore } from '@/stores/auth'
-import { formatTime, truncate, priceText, trafficStyle, auditText, auditIcon, auditStyle } from '@/utils/format'
+import { formatTime, truncate, priceText, trafficStyle, normalizeTraffic, auditText, auditIcon, auditStyle } from '@/utils/format'
 import { getStrategiesByPage } from '@/api/strategy'
 import { getRoutesByPage } from '@/api/route'
 

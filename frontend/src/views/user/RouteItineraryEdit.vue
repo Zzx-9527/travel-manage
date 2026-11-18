@@ -22,7 +22,7 @@
         <h2 class="route-name"><i class="fa fa-map-o mr-2" style="color: #1CB89D;"></i>{{ routeData.name }}</h2>
         <p class="route-sub">
           <span class="route-tag days"><i class="fa fa-clock-o mr-1"></i>{{ routeData.dayCount }} 天</span>
-          <span class="route-tag" :style="trafficStyle(routeData.traffic)">{{ routeData.traffic || '其他' }}</span>
+          <span class="route-tag" :style="trafficStyle(routeData.traffic)">{{ normalizeTraffic(routeData.traffic) }}</span>
           <span class="route-budget">{{ priceText(routeData.budget) }}</span>
         </p>
       </div>
@@ -109,7 +109,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import EmptyState from '@/components/user/EmptyState.vue'
-import { priceText, trafficStyle } from '@/utils/format'
+import { priceText, trafficStyle, normalizeTraffic } from '@/utils/format'
 import { useAuthStore } from '@/stores/auth'
 import { getRouteDetail } from '@/api/route'
 import { getRouteDetailsByPage, addRouteDetail, editRouteDetail, deleteRouteDetail } from '@/api/routeDetail'

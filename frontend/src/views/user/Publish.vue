@@ -53,7 +53,7 @@
             <div class="form-row">
               <el-form-item label="交通">
                 <el-select v-model="routeForm.traffic" placeholder="选择交通方式" style="width: 160px;">
-                  <el-option v-for="t in trafficOptions" :key="t" :label="t" :value="t" />
+                  <el-option v-for="t in TRAFFIC_TYPES" :key="t" :label="t" :value="t" />
                 </el-select>
               </el-form-item>
               <el-form-item label="预算">
@@ -87,6 +87,7 @@ import { useAuthStore } from '@/stores/auth'
 import { addStrategy } from '@/api/strategy'
 import { addRoute } from '@/api/route'
 import { uploadImage, imageFileError, resolveUploadUrl } from '@/api/file'
+import { TRAFFIC_TYPES } from '@/utils/format'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -96,7 +97,6 @@ const submitting = ref(false)
 
 const guideForm = ref({ title: '', cover: '', content: '' })
 const routeForm = ref({ name: '', dayCount: 2, startCity: '', traffic: '高铁', budget: 1000, intro: '' })
-const trafficOptions = ['地铁', '高铁', '飞机', '大巴', '自驾', '其他']
 
 // 封面上传（§10）：上传拿 url 填入输入框，随发布表单一起提交
 const uploadingCover = ref(false)

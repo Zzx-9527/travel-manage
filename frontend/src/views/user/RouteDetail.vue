@@ -19,7 +19,7 @@
         <div class="summary-hero">
           <div class="hero-top">
             <span class="days-badge"><i class="fa fa-clock-o mr-1"></i>{{ routeData.dayCount }} 天</span>
-            <span class="traffic-tag">{{ routeData.traffic || '其他' }}</span>
+            <span class="traffic-tag">{{ normalizeTraffic(routeData.traffic) }}</span>
             <button class="route-collect" :class="{ collected: isCollected }" @click="toggleCollect">
               <i class="fa mr-1" :class="isCollected ? 'fa-heart' : 'fa-heart-o'"></i>
               {{ isCollected ? '已收藏' : '收藏' }}
@@ -96,7 +96,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import EmptyState from '@/components/user/EmptyState.vue'
-import { formatTime, priceText } from '@/utils/format'
+import { formatTime, priceText, normalizeTraffic } from '@/utils/format'
 import { useAuthStore } from '@/stores/auth'
 import { getRouteDetail } from '@/api/route'
 import { getRouteDetailsByPage } from '@/api/routeDetail'

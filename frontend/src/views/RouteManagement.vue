@@ -77,7 +77,7 @@
         <el-table-column label="交通方式" width="100" align="center">
           <template #default="{ row }">
             <span class="inline-block px-2.5 py-1 rounded-full text-xs font-medium" :style="trafficStyle(row.traffic)">
-              {{ row.traffic || '其他' }}
+              {{ normalizeTraffic(row.traffic) }}
             </span>
           </template>
         </el-table-column>
@@ -157,13 +157,7 @@
         <div class="grid grid-cols-2 gap-4">
           <el-form-item label="交通方式" prop="traffic">
             <el-select v-model="addForm.traffic" placeholder="请选择" style="width: 100%;">
-              <el-option label="高铁" value="高铁" />
-              <el-option label="动车" value="动车" />
-              <el-option label="火车" value="火车" />
-              <el-option label="飞机" value="飞机" />
-              <el-option label="大巴" value="大巴" />
-              <el-option label="自驾" value="自驾" />
-              <el-option label="其他" value="其他" />
+              <el-option v-for="t in TRAFFIC_TYPES" :key="t" :label="t" :value="t" />
             </el-select>
           </el-form-item>
           <el-form-item label="预算(元)" prop="budget">
@@ -252,7 +246,7 @@
           <div class="rounded-lg p-3" style="background: #F8FAFC;">
             <p class="text-xs text-gray-400 uppercase tracking-wide">交通方式</p>
             <span class="inline-block px-2.5 py-1 rounded-full text-xs font-medium mt-1" :style="trafficStyle(detailData.traffic)">
-              {{ detailData.traffic || '其他' }}
+              {{ normalizeTraffic(detailData.traffic) }}
             </span>
           </div>
           <div class="rounded-lg p-3" style="background: #F8FAFC;">
@@ -294,6 +288,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getRoutesByPage, addRoute, editRoute, deleteRoute } from '@/api/route'
 import { useAdminTable } from '@/composables/useAdminTable'
+import { TRAFFIC_TYPES, normalizeTraffic, trafficStyle } from '@/utils/format'
 
 const searchKeyword = ref('')
 const filterStatus = ref(null)
@@ -324,17 +319,6 @@ function auditStyle(s) {
   if (s === 2) return { background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA' }
   return { background: '#F1F5F9', color: '#64748B', border: '1px solid #E2E8F0' }
 }
-function trafficStyle(traffic) {
-  switch (traffic) {
-    case '高铁': case '动车': return { background: '#EFF6FF', color: '#2563EB', border: '1px solid #BFDBFE' }
-    case '火车': return { background: '#FFF7ED', color: '#EA580C', border: '1px solid #FED7AA' }
-    case '飞机': return { background: '#F5F3FF', color: '#7C3AED', border: '1px solid #DDD6FE' }
-    case '大巴': return { background: '#FEFCE8', color: '#CA8A04', border: '1px solid #FEF08A' }
-    case '自驾': return { background: '#F0FDF4', color: '#16A34A', border: '1px solid #BBF7D0' }
-    default: return { background: '#F1F5F9', color: '#64748B', border: '1px solid #E2E8F0' }
-  }
-}
-
 // ---- 查询 ----
 function handleSearch() { currentPage.value = 1; fetchData() }
 function resetSearch() { searchKeyword.value = ''; filterStatus.value = null; currentPage.value = 1; fetchData() }
@@ -381,7 +365,7 @@ async function handleAdd() {
       name: addForm.name,
       dayCount: addForm.dayCount,
       startCity: addForm.startCity,
-      traffic: addForm.traffic,
+      traffic: normalizeTraffic(addForm.traffic),
       budget: addForm.budget,
       intro: addForm.intro,
       status: addForm.status
@@ -417,7 +401,7 @@ async function handleAudit() {
       name: r.name,
       dayCount: r.dayCount,
       startCity: r.startCity,
-      traffic: r.traffic,
+      traffic: normalizeTraffic(r.traffic),
       budget: r.budget,
       intro: r.intro,
       status: auditStatusValue.value

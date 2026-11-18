@@ -96,7 +96,7 @@ public class AiPlanSaveService {
         route.setName(routeName);
         route.setDayCount(dayCount);
         route.setStartCity(truncate(request.getDestination(), 30, null));
-        route.setTraffic("自由行");
+        route.setTraffic("其他");
         route.setBudget(request.getBudget());
         route.setIntro(intro);
         // 0 = 待审核，和用户手动发布的路线一致

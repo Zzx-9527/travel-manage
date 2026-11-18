@@ -64,9 +64,9 @@ INSERT INTO `travel_user` (`id`,`account`,`password`,`nickname`,`phone`,`avatar`
 
 -- ---------- 路线 ----------
 INSERT INTO `route` (`id`,`user_id`,`name`,`day_count`,`start_city`,`traffic`,`budget`,`intro`,`status`,`del_mark`,`create_time`,`update_time`) VALUES
-(1,2,'北京经典三日游',3,'北京','驾车',2600.00,'故宫、长城、颐和园三大地标，节奏适中，适合第一次来北京。',1,1,DATE_SUB(NOW(), INTERVAL 6 DAY),DATE_SUB(NOW(), INTERVAL 6 DAY)),
-(2,2,'成都休闲两日游',2,'成都','驾车',1200.00,'上午看熊猫，下午逛都江堰，适合周末短途。',1,1,DATE_SUB(NOW(), INTERVAL 4 DAY),DATE_SUB(NOW(), INTERVAL 4 DAY)),
-(3,3,'西安历史文化两日游',2,'西安','驾车',1500.00,'兵马俑与华清宫一线，把秦汉唐一次看全。',1,1,DATE_SUB(NOW(), INTERVAL 2 DAY),DATE_SUB(NOW(), INTERVAL 2 DAY));
+(1,2,'北京经典三日游',3,'北京','自驾',2600.00,'故宫、长城、颐和园三大地标，节奏适中，适合第一次来北京。',1,1,DATE_SUB(NOW(), INTERVAL 6 DAY),DATE_SUB(NOW(), INTERVAL 6 DAY)),
+(2,2,'成都休闲两日游',2,'成都','自驾',1200.00,'上午看熊猫，下午逛都江堰，适合周末短途。',1,1,DATE_SUB(NOW(), INTERVAL 4 DAY),DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(3,3,'西安历史文化两日游',2,'西安','自驾',1500.00,'兵马俑与华清宫一线，把秦汉唐一次看全。',1,1,DATE_SUB(NOW(), INTERVAL 2 DAY),DATE_SUB(NOW(), INTERVAL 2 DAY));
 
 INSERT INTO `route_detail` (`route_id`,`scenic_id`,`day_no`,`sort`,`stay_time`,`del_mark`,`create_time`) VALUES
 (1,2,1,1,'4 小时',1,NOW()),
