@@ -12,6 +12,8 @@ import jakarta.validation.constraints.Size;
 
 import jakarta.validation.constraints.NotBlank;
 
+import jakarta.validation.constraints.Pattern;
+
 import lombok.Data;
 
 /**
@@ -27,6 +29,14 @@ public class AiPlanRequest {
     @NotBlank(message = "目的地不能为空")
     @Size(max = 50, message = "目的地名称过长")
     private String destination;
+
+    /** 出发地，可空；为空时不设置 */
+    @Size(max = 30, message = "出发地名称过长")
+    private String startCity;
+
+    /** 交通方式，可空；保存路线时为空则使用「其他」 */
+    @Pattern(regexp = "^(地铁|高铁|飞机|大巴|自驾|其他)?$", message = "交通方式只能是：地铁、高铁、飞机、大巴、自驾、其他")
+    private String traffic;
 
     /** 天数，1-7，缺省 2 */
     @NotNull(message = "天数不能为空")

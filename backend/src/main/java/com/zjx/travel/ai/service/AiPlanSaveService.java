@@ -45,6 +45,8 @@ public class AiPlanSaveService {
     private static final int MAX_TITLE_LENGTH = 50;
     private static final int MAX_INTRO_LENGTH = 500;
     private static final int MAX_DAYS = 7;
+    private static final Set<String> TRAFFIC_TYPES =
+            Set.of("地铁", "高铁", "飞机", "大巴", "自驾", "其他");
 
     private final RouteService routeService;
     private final RouteDetailService routeDetailService;
@@ -83,10 +85,12 @@ public class AiPlanSaveService {
 
         String routeName = truncate(request.getTitle(), MAX_TITLE_LENGTH, "AI 生成的行程");
         String intro = buildIntro(request);
+        String startCity = truncate(request.getStartCity(), 30, null);
+        String traffic = normalizeTraffic(request.getTraffic());
         // 预算允许前端不填；route.budget 为非空列，保存时统一按 0 处理
         double budget = request.getBudget() == null ? 0D : Math.max(0D, request.getBudget());
         // 幂等依据是“实际会落库的内容”，不是标题：同名但景点/天数不同的行程必须都能保存
-        String fingerprint = fingerprint(request, routeName, intro, validScenicIds, budget);
+        String fingerprint = fingerprint(request, routeName, intro, validScenicIds, budget, startCity, traffic);
         Integer existingId = routeMapper.findByUserAndFingerprint(userId, fingerprint);
         if (existingId != null) {
             log.info("同一份 AI 行程已保存过，返回已有路线：routeId={}，userId={}", existingId, userId);
@@ -97,8 +101,8 @@ public class AiPlanSaveService {
         route.setUserId(SecurityUtil.userRef(userId));
         route.setName(routeName);
         route.setDayCount(dayCount);
-        route.setStartCity(truncate(request.getDestination(), 30, null));
-        route.setTraffic("其他");
+        route.setStartCity(startCity);
+        route.setTraffic(traffic);
         route.setBudget(budget);
         route.setIntro(intro);
         // 0 = 待审核，和用户手动发布的路线一致
@@ -156,10 +160,13 @@ public class AiPlanSaveService {
      * <p>仅包含有效景点，避免客户端塞入若干无效 id 后，同一份行程产生不同指纹。
      */
     private String fingerprint(AiPlanSaveRequest request, String title, String intro,
-                               Set<Integer> validScenicIds, double budget) {
+                               Set<Integer> validScenicIds, double budget,
+                               String startCity, String traffic) {
         StringBuilder canonical = new StringBuilder();
         appendPart(canonical, title);
         appendPart(canonical, truncate(request.getDestination(), 30, null));
+        appendPart(canonical, startCity);
+        appendPart(canonical, traffic);
         appendPart(canonical, budget);
         appendPart(canonical, intro);
         if (request.getDays() != null) {
@@ -196,6 +203,11 @@ public class AiPlanSaveService {
     private void appendPart(StringBuilder target, Object value) {
         String text = value == null ? "" : String.valueOf(value);
         target.append(text.length()).append(':').append(text).append('|');
+    }
+
+    private String normalizeTraffic(String traffic) {
+        String value = traffic == null ? "" : traffic.trim();
+        return TRAFFIC_TYPES.contains(value) ? value : "其他";
     }
 
     private String buildIntro(AiPlanSaveRequest request) {

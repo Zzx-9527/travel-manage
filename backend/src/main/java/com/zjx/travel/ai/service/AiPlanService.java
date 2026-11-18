@@ -275,6 +275,8 @@ public class AiPlanService {
 
         AiPlanRequest req = new AiPlanRequest();
         req.setDestination(truncate(destination, 30));
+        req.setStartCity(truncate(request.getStartCity(), 30));
+        req.setTraffic(truncate(request.getTraffic(), 10));
         int days = request.getDays() == null ? DEFAULT_DAYS : request.getDays();
         req.setDays(Math.max(MIN_DAYS, Math.min(MAX_DAYS, days)));
         if (request.getBudget() != null && request.getBudget() > 0) {

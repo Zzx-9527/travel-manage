@@ -74,6 +74,15 @@ public class PlanPromptBuilder {
         StringBuilder sb = new StringBuilder();
         sb.append("目的地：").append(request.getDestination()).append('\n');
         sb.append("天数：").append(request.getDays()).append('\n');
+        if (hasText(request.getStartCity())) {
+            sb.append("出发地：").append(request.getStartCity().trim()).append('\n');
+        }
+        if (hasText(request.getTraffic())) {
+            sb.append("交通方式：").append(request.getTraffic().trim()).append('\n');
+        }
+        if (hasText(request.getStartCity()) || hasText(request.getTraffic())) {
+            sb.append("请为第一天预留合理的跨城在途时间。\n");
+        }
         if (request.getBudget() != null) {
             sb.append("预算：").append(request.getBudget().intValue()).append(" 元\n");
         }

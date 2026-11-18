@@ -19,6 +19,12 @@ public class AiPlanSaveRequest {
     /** 出发城市 / 目的地 */
     private String destination;
 
+    /** 出发地；为空时不设置 */
+    private String startCity;
+
+    /** 路线交通方式；为空或非法时保存为「其他」 */
+    private String traffic;
+
     /** 预算 */
     private Double budget;
 

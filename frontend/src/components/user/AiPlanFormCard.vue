@@ -12,6 +12,19 @@
 
     <div class="field-row">
       <label class="field">
+        <span class="label">出发地</span>
+        <el-input v-model="form.startCity" size="small" placeholder="可不填" maxlength="30" @keyup.enter="submit" />
+      </label>
+      <label class="field">
+        <span class="label">交通方式</span>
+        <el-select v-model="form.traffic" size="small" clearable placeholder="默认其他">
+          <el-option v-for="t in TRAFFIC_TYPES" :key="t" :label="t" :value="t" />
+        </el-select>
+      </label>
+    </div>
+
+    <div class="field-row">
+      <label class="field">
         <span class="label">天数</span>
         <el-select v-model="form.days" size="small">
           <el-option v-for="d in 7" :key="d" :label="`${d} 天`" :value="d" />
@@ -44,6 +57,7 @@
 
 <script setup>
 import { reactive } from 'vue'
+import { TRAFFIC_TYPES } from '@/utils/format'
 
 const props = defineProps({
   /** 重新规划时带上一次的条件，省得用户重填 */
@@ -56,6 +70,8 @@ const preferences = ['历史人文', '自然风光', '亲子', '美食', '拍照
 
 const form = reactive({
   destination: props.initial?.destination || '',
+  startCity: props.initial?.startCity || '',
+  traffic: props.initial?.traffic || '',
   days: props.initial?.days || 2,
   budget: props.initial?.budget ?? 1500,
   preference: props.initial?.preference || '',
@@ -67,7 +83,11 @@ function submit() {
     return
   }
   // 交给父组件去调接口，卡片本身不关心网络
-  emit('submit', { ...form, destination: form.destination.trim() })
+  emit('submit', {
+    ...form,
+    destination: form.destination.trim(),
+    startCity: form.startCity.trim()
+  })
 }
 </script>
 
