@@ -343,7 +343,7 @@ async function savePlanMsg(msg) {
   try {
     await savePlan({
       destination: msg.request?.destination || '',
-      budget: msg.request?.budget,
+      budget: msg.request?.budget ?? 0,
       title: msg.plan.title,
       intro: msg.plan.intro,
       days: msg.plan.days,

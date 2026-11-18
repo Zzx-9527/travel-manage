@@ -54,6 +54,10 @@ public class RouteServiceImpl implements RouteService {
         if (route.getStatus() == null) {
             route.setStatus(0);
         }
+        // route.budget 为非空列，所有路线写入统一兜底，避免空预算导致 500
+        if (route.getBudget() == null) {
+            route.setBudget(0D);
+        }
         // 自定义 XML 插入不会触发 MyBatis-Plus 的自动填充，这里兜底补时间
         Date now = new Date();
         if (route.getCreateTime() == null) {
