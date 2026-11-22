@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>版本二 · 全站统一</title>
+<style>
+  :root{
+    --bg:#F8FAFC;
+    --card:#FFFFFF;
+    --line:#F1F5F9;
+    --hair:#EEF2F6;
+    --ink:#1E293B;
+    --text:#334155;
+    --muted:#64748B;
+    --faint:#94A3B8;
+    --brand:#0F766E;
+    --brand-soft:#E8F5F2;
+    --gold:#F59E0B;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:rgba(15,118,110,.14);}
+  .page{max-width:1100px;margin:0 auto;padding:24px 24px 64px;}
+
+  /* ---------- 对比条（仅原型用） ---------- */
+  .proto-bar{display:flex;align-items:center;gap:12px;font-size:11.5px;color:#9A9184;margin-bottom:16px;}
+  .proto-bar em{font-style:normal;letter-spacing:.14em;color:#B6AC9C;}
+  .proto-bar a{color:inherit;text-decoration:none;padding-bottom:1px;border-bottom:1px solid transparent;}
+  .proto-bar a:hover{color:#6E665B;}
+  .proto-bar a.on{color:#5F574C;border-color:currentColor;}
+
+  .back{
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:13px;color:var(--muted);text-decoration:none;margin-bottom:14px;
+    transition:color .2s;
+  }
+  .back:hover{color:var(--brand);}
+  .back svg{width:13px;height:13px;}
+
+  .grid{display:grid;grid-template-columns:minmax(0,1fr) 336px;gap:20px;}
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    box-shadow:0 1px 3px rgba(0,0,0,.04);
+  }
+
+  /* ---------- 正文卡 ---------- */
+  .article{padding:34px 40px 38px;}
+
+
+  h1{margin:0 0 18px;font-size:30px;line-height:1.4;font-weight:700;color:var(--ink);letter-spacing:.01em;}
+
+  .byline{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-bottom:18px;border-bottom:1px solid var(--hair);}
+  .avatar{width:32px;height:32px;border-radius:50%;object-fit:cover;background:#E2E8F0;flex-shrink:0;}
+  .byline-name{font-size:13px;font-weight:600;color:var(--ink);}
+  .byline-time{font-size:12px;color:var(--faint);}
+  .meta{margin-left:auto;display:flex;align-items:center;gap:14px;}
+  .stat{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--muted);}
+  .stat svg{width:14px;height:14px;color:#94A3B8;}
+  .collect{
+    display:inline-flex;align-items:center;gap:5px;
+    height:30px;padding:0 12px;border-radius:8px;
+    border:1px solid #CCE7E2;background:#fff;color:var(--brand);
+    font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;
+    transition:background .2s,border-color .2s;
+  }
+  .collect:hover{background:var(--brand-soft);border-color:#B7DED7;}
+  .collect svg{width:13px;height:13px;}
+
+  .cover{margin:22px 0 26px;border-radius:12px;overflow:hidden;background:#E2E8F0;}
+  .cover img{display:block;width:100%;height:330px;object-fit:cover;}
+
+  .prose{font-size:16px;line-height:1.9;color:var(--text);}
+  .prose p{margin:0 0 18px;}
+  .prose p:last-child{margin-bottom:0;}
+
+  .end{
+    margin-top:32px;padding-top:18px;border-top:1px solid var(--hair);
+    text-align:center;font-size:11.5px;letter-spacing:.3em;color:var(--faint);
+  }
+
+  /* ---------- 评论卡 ---------- */
+  .side{display:flex;min-width:0;}
+  .comments{flex:1;display:flex;flex-direction:column;padding:24px 22px 22px;}
+
+  .c-head{display:flex;align-items:center;gap:8px;margin-bottom:16px;}
+  .c-head h2{margin:0;font-size:15px;font-weight:700;color:var(--ink);}
+  .c-head .count{
+    display:inline-flex;align-items:center;justify-content:center;
+    min-width:20px;height:20px;padding:0 6px;border-radius:6px;
+    background:#F1F5F9;color:var(--muted);
+    font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums;
+  }
+
+  .cform{margin-bottom:18px;}
+  .rate-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;}
+  .rate-row > span{font-size:12px;color:var(--muted);}
+  .stars{display:flex;gap:1px;}
+  .star{width:15px;height:15px;fill:var(--gold);}
+  .cform textarea{
+    width:100%;min-height:82px;resize:vertical;
+    padding:10px 12px;border-radius:10px;
+    border:1px solid #E2E8F0;background:#fff;
+    font-family:inherit;font-size:13.5px;line-height:1.7;color:var(--ink);
+    outline:none;transition:border-color .2s,box-shadow .2s;
+  }
+  .cform textarea::placeholder{color:#A8B4C2;}
+  .cform textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(15,118,110,.1);}
+  .submit-row{display:flex;justify-content:flex-end;margin-top:10px;}
+  .submit{
+    height:34px;padding:0 16px;border:0;border-radius:8px;
+    background:var(--brand);color:#fff;font-family:inherit;
+    font-size:12.5px;font-weight:600;letter-spacing:.04em;cursor:pointer;
+    transition:background .2s;
+  }
+  .submit:hover{background:#0A665C;}
+
+  .empty{margin:auto 0;text-align:center;padding:30px 6px;}
+  .empty svg{width:22px;height:22px;stroke:#CBD5E1;fill:none;stroke-width:1.5;}
+  .empty p{margin:12px 0 4px;font-size:13px;color:var(--muted);}
+  .empty span{font-size:11.5px;line-height:1.6;color:var(--faint);}
+
+  @media (max-width:1024px){
+    .grid{grid-template-columns:minmax(0,1fr);}
+  }
+  @media (max-width:640px){
+    .page{padding:16px 14px 52px;}
+    .article{padding:24px 20px 28px;}
+    h1{font-size:24px;}
+    .cover img{height:200px;}
+    .meta{margin-left:0;width:100%;}
+  }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.8 12S6.4 6.6 12 6.6 21.2 12 21.2 12 17.6 17.4 12 17.4 2.8 12 2.8 12Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7.4-4.6-7.4-10A4.2 4.2 0 0 1 12 7.2 4.2 4.2 0 0 1 19.4 10c0 5.4-7.4 10-7.4 10Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3.4l2.7 5.5 6 .9-4.35 4.25 1.03 6-5.38-2.83-5.38 2.83 1.03-6L3.3 9.8l6-.9z"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-comment" viewBox="0 0 24 24"><path d="M20.5 11.6c0 4.2-3.8 7.6-8.5 7.6-1 0-2-.2-2.9-.5L4 20l1.3-3.6c-1.1-1.4-1.8-3-1.8-4.8C3.5 7.4 7.3 4 12 4s8.5 3.4 8.5 7.6Z" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M15.2 8.8l-1.7 4.7-4.7 1.7 1.7-4.7z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></symbol>
+</svg>
+
+<div class="page">
+  <div class="proto-bar">
+    <em>对比</em>
+    <a href="guide-v1-paper.html">一 纸上杂志</a>
+    <a href="guide-v2-native.html" class="on">二 全站统一</a>
+    <a href="guide-v3-hero.html">三 大图开场</a>
+  </div>
+
+  <a class="back" href="#"><svg><use href="#i-left"/></svg>返回攻略列表</a>
+
+  <div class="grid">
+    <article class="card article">
+
+      <h1>老君山2天1夜深度游攻略</h1>
+
+      <div class="byline">
+        <img class="avatar" src="https://picsum.photos/200/200?random=8" alt="" />
+        <span class="byline-name">小丽</span>
+        <span class="byline-time">2026-04-13 19:37</span>
+        <div class="meta">
+          <span class="stat"><svg><use href="#i-eye"/></svg>1560</span>
+          <span class="stat"><svg><use href="#i-heart"/></svg>0</span>
+          <button class="collect"><svg><use href="#i-heart"/></svg>收藏</button>
+        </div>
+      </div>
+
+      <figure class="cover">
+        <img src="https://picsum.photos/800/450?random=201" alt="老君山" />
+      </figure>
+
+      <div class="prose">
+        <p>老君山因“远赴人间惊鸿宴，一睹老君盛世颜”火遍全网，金顶、云海、日出、雪景，每一帧都像仙境。</p>
+        <p>Day1：抵达老君山，坐中灵索道上山，游览追梦谷、中天门，徒步前往金顶，打卡金殿、亮宝台、玉皇顶，傍晚看日落，夕阳洒满金顶，金碧辉煌；夜宿山顶民宿，方便第二天看日出。</p>
+        <p>Day2：凌晨登顶看日出云海，晴天云雾缭绕，雪景银装素裹，宛如天宫；日出后打卡十里画屏，奇石林立，风景壮阔；之后坐云景索道下山。</p>
+        <p>美食推荐：洛阳水席、栾川豆腐、老君山烩菜，口味地道。</p>
+        <p>贴士：山顶温差极大，必带厚外套；登山穿防滑鞋；冬季路面结冰，注意安全；节假日提前预订门票、住宿。</p>
+      </div>
+
+      <div class="end">全文完</div>
+    </article>
+
+    <aside class="side">
+      <section class="card comments">
+        <div class="c-head">
+          <h2>评论</h2>
+          <span class="count">0</span>
+        </div>
+
+        <div class="cform">
+          <div class="rate-row">
+            <span>给你的评分</span>
+            <div class="stars">
+              <svg class="star"><use href="#i-star"/></svg>
+              <svg class="star"><use href="#i-star"/></svg>
+              <svg class="star"><use href="#i-star"/></svg>
+              <svg class="star"><use href="#i-star"/></svg>
+              <svg class="star"><use href="#i-star"/></svg>
+            </div>
+          </div>
+          <textarea placeholder="说说你的看法…"></textarea>
+          <div class="submit-row"><button class="submit">发表评论</button></div>
+        </div>
+
+        <div class="empty">
+          <svg><use href="#i-comment"/></svg>
+          <p>还没有评论</p>
+          <span>说说你的看法，帮到下一位旅行者</span>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>
+
+</body>
+</html>
