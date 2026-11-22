@@ -1,119 +1,247 @@
 <template>
-  <div class="register-wrapper">
-    <!-- 背景装饰 -->
-    <div class="bg-decorations">
-      <div class="deco-circle deco-circle-1"></div>
-      <div class="deco-circle deco-circle-2"></div>
-      <div class="deco-circle deco-circle-3"></div>
-      <div class="deco-wave"></div>
-    </div>
+  <div class="auth-page">
+    <div class="auth-scene" :style="{ backgroundImage: `url(${brandScene})` }"></div>
+    <div class="auth-veil"></div>
 
-    <div class="register-container">
-      <!-- 左侧品牌区 -->
-      <div class="brand-section">
-        <img :src="brandScene" class="brand-scene" alt="" />
-        <div class="brand-content">
-          <div class="brand-icon">
-            <i class="fa fa-globe"></i>
-          </div>
-          <h1 class="brand-title">旅迹 · 旅游信息管理平台</h1>
-          <p class="brand-subtitle">探索世界之美，从这里开始</p>
-        </div>
-        <div class="brand-footer">
-          <p>毕业设计 · 旅游信息管理平台</p>
-        </div>
+    <!-- 左侧品牌主张 -->
+    <aside class="auth-side auth-side-left">
+      <p class="auth-side-title">旅迹</p>
+      <span class="auth-side-rule"></span>
+      <p class="auth-side-platform">旅游信息管理平台</p>
+      <p class="auth-side-tagline">探索世界之美，从这里开始</p>
+    </aside>
+
+    <!-- 右侧能力清单 -->
+    <aside class="auth-side auth-side-right">
+      <ul class="auth-side-list">
+        <li><b>景点</b><span>山湖与城市，按主题浏览</span></li>
+        <li><b>路线</b><span>把想去的地方连成一条线</span></li>
+        <li><b>攻略</b><span>出发前，先看看别人怎么走</span></li>
+        <li><b>收藏</b><span>想去的先存着，随时回看</span></li>
+      </ul>
+    </aside>
+
+    <main class="auth-sheet">
+      <div class="auth-brand">
+        <span class="auth-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 21s6.5-5.9 6.5-10.5a6.5 6.5 0 1 0-13 0C5.5 15.1 12 21 12 21Z" />
+            <circle cx="12" cy="10.4" r="2.4" />
+          </svg>
+        </span>
+        <span class="auth-brand-name">旅迹</span>
+        <span class="auth-brand-divider"></span>
+        <span class="auth-brand-sub">旅游信息管理平台</span>
       </div>
 
-      <!-- 右侧注册表单区 -->
-      <div class="form-section">
-        <div class="form-card">
-          <div class="form-header">
-            <h2 class="form-title">创建账户</h2>
-            <p class="form-desc">注册后开启你的旅程</p>
-          </div>
+      <div class="auth-sheet-body">
+        <div class="auth-head">
+          <h1>创建账户</h1>
+          <p>注册后开启你的旅程，收藏、规划、发布都用这个账号。</p>
+        </div>
 
-          <el-form ref="formRef" :model="form" :rules="rules" label-width="0" status-icon @keyup.enter="handleRegister" size="large">
-            <el-form-item prop="account">
-              <div class="input-wrap">
-                <i class="fa fa-user input-icon"></i>
-                <el-input v-model="form.account" placeholder="请输入账号（4-20位）" clearable />
-              </div>
-            </el-form-item>
-            <el-form-item prop="password">
-              <div class="input-wrap">
-                <i class="fa fa-lock input-icon"></i>
-                <el-input v-model="form.password" type="password" placeholder="请输入密码（6-20位）" show-password />
-              </div>
-            </el-form-item>
-            <el-form-item prop="confirmPassword">
-              <div class="input-wrap">
-                <i class="fa fa-lock input-icon"></i>
-                <el-input v-model="form.confirmPassword" type="password" placeholder="请再次输入密码" show-password />
-              </div>
-            </el-form-item>
-            <el-form-item prop="nickname">
-              <div class="input-wrap">
-                <i class="fa fa-id-card input-icon"></i>
-                <el-input v-model="form.nickname" placeholder="请输入昵称" maxlength="20" />
-              </div>
-            </el-form-item>
-            <el-form-item prop="avatar">
-              <div class="avatar-row">
-                <el-avatar :size="48" :src="form.avatar" class="avatar-preview">
-                  <i class="fa fa-user"></i>
-                </el-avatar>
-                <div class="input-wrap avatar-input">
-                  <i class="fa fa-image input-icon"></i>
-                  <el-input v-model="form.avatar" placeholder="头像图片 URL（选填，留空使用默认头像）" clearable />
-                </div>
-              </div>
-            </el-form-item>
-            <el-form-item prop="phone">
-              <div class="input-wrap">
-                <i class="fa fa-phone input-icon"></i>
-                <el-input v-model="form.phone" placeholder="请输入手机号（选填）" maxlength="11" />
-              </div>
-            </el-form-item>
+        <el-form
+          ref="formRef"
+          class="auth-form"
+          :model="form"
+          :rules="rules"
+          @keyup.enter="handleRegister"
+          @submit.prevent
+        >
+          <div class="auth-group">账号信息</div>
 
-            <el-button
-              class="register-btn"
-              type="primary"
-              :loading="loading"
-              @click="handleRegister"
+          <el-form-item prop="account">
+            <div class="auth-field-head">
+              <label class="auth-label" for="reg-account">账号</label>
+              <span class="auth-optional">4–20 位</span>
+            </div>
+            <el-input
+              id="reg-account"
+              v-model="form.account"
+              placeholder="设置登录账号"
+              autocomplete="username"
+              maxlength="20"
+              clearable
             >
-              <i v-if="!loading" class="fa fa-user-plus mr-2"></i>{{ loading ? '注册中...' : '注 册' }}
-            </el-button>
-          </el-form>
+              <template #prefix>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="8" r="3.6" />
+                  <path d="M4.8 20.2c1.2-3.6 4-5.4 7.2-5.4s6 1.8 7.2 5.4" />
+                </svg>
+              </template>
+            </el-input>
+          </el-form-item>
 
-          <div class="form-footer">
-            <p>已有账户？<router-link to="/travel/login">去登录</router-link></p>
-          </div>
+          <el-form-item prop="password">
+            <div class="auth-field-head">
+              <label class="auth-label" for="reg-password">密码</label>
+              <span class="auth-optional">6–20 位</span>
+            </div>
+            <el-input
+              id="reg-password"
+              v-model="form.password"
+              :type="pwdVisible ? 'text' : 'password'"
+              placeholder="设置密码"
+              autocomplete="new-password"
+            >
+              <template #prefix>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="4.6" y="10.4" width="14.8" height="9.8" rx="2.4" />
+                  <path d="M8.2 10.4V8a3.8 3.8 0 0 1 7.6 0v2.4" />
+                </svg>
+              </template>
+              <template #suffix>
+                <button
+                  type="button"
+                  class="auth-peek"
+                  :aria-label="pwdVisible ? '隐藏密码' : '显示密码'"
+                  :aria-pressed="pwdVisible"
+                  @click="pwdVisible = !pwdVisible"
+                >
+                  <svg v-if="!pwdVisible" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2.8 12S6.4 6.6 12 6.6 21.2 12 21.2 12 17.6 17.4 12 17.4 2.8 12 2.8 12Z" />
+                    <circle cx="12" cy="12" r="2.7" />
+                  </svg>
+                  <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4.2 8.4C3.4 9.6 2.8 12 2.8 12s3.6 5.4 9.2 5.4c1.5 0 2.8-.4 3.9-1" />
+                    <path d="M19.2 15.2c1.3-1.3 2-3.2 2-3.2s-3.6-5.4-9.2-5.4c-.8 0-1.5.1-2.2.3" />
+                    <path d="M4 4l16 16" />
+                  </svg>
+                </button>
+              </template>
+            </el-input>
+            <div class="auth-strength" :data-level="strength">
+              <i></i><i></i><i></i><b>{{ strengthText }}</b>
+            </div>
+          </el-form-item>
+
+          <el-form-item prop="confirmPassword">
+            <div class="auth-field-head">
+              <label class="auth-label" for="reg-confirm">确认密码</label>
+            </div>
+            <el-input
+              id="reg-confirm"
+              v-model="form.confirmPassword"
+              :type="confirmVisible ? 'text' : 'password'"
+              placeholder="再次输入密码"
+              autocomplete="new-password"
+            >
+              <template #prefix>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="4.6" y="10.4" width="14.8" height="9.8" rx="2.4" />
+                  <path d="M8.2 10.4V8a3.8 3.8 0 0 1 7.6 0v2.4" />
+                  <path d="M10 15.2l1.6 1.6 3-3" />
+                </svg>
+              </template>
+              <template #suffix>
+                <button
+                  type="button"
+                  class="auth-peek"
+                  :aria-label="confirmVisible ? '隐藏密码' : '显示密码'"
+                  :aria-pressed="confirmVisible"
+                  @click="confirmVisible = !confirmVisible"
+                >
+                  <svg v-if="!confirmVisible" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2.8 12S6.4 6.6 12 6.6 21.2 12 21.2 12 17.6 17.4 12 17.4 2.8 12 2.8 12Z" />
+                    <circle cx="12" cy="12" r="2.7" />
+                  </svg>
+                  <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4.2 8.4C3.4 9.6 2.8 12 2.8 12s3.6 5.4 9.2 5.4c1.5 0 2.8-.4 3.9-1" />
+                    <path d="M19.2 15.2c1.3-1.3 2-3.2 2-3.2s-3.6-5.4-9.2-5.4c-.8 0-1.5.1-2.2.3" />
+                    <path d="M4 4l16 16" />
+                  </svg>
+                </button>
+              </template>
+            </el-input>
+          </el-form-item>
+
+          <div class="auth-group">个人资料</div>
+
+          <el-form-item prop="nickname">
+            <div class="auth-field-head">
+              <label class="auth-label" for="reg-nickname">昵称</label>
+            </div>
+            <el-input
+              id="reg-nickname"
+              v-model="form.nickname"
+              placeholder="给自己起个名字"
+              maxlength="20"
+            >
+              <template #prefix>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3.4" y="5.6" width="17.2" height="12.8" rx="2.4" />
+                  <circle cx="9" cy="11" r="1.9" />
+                  <path d="M6.2 15.7c.6-1.5 1.6-2.3 2.8-2.3s2.2.8 2.8 2.3M14.6 10.4h3.4M14.6 13.2h2.4" />
+                </svg>
+              </template>
+              <template #suffix>
+                <span class="auth-avatar-chip" :style="{ background: avatarColor }" aria-hidden="true">
+                  {{ avatarInitial }}
+                </span>
+              </template>
+            </el-input>
+            <p class="auth-hint">头像先按昵称首字预览，注册后可在个人中心上传自己的照片。</p>
+          </el-form-item>
+
+          <el-form-item prop="phone">
+            <div class="auth-field-head">
+              <label class="auth-label" for="reg-phone">手机号</label>
+              <span class="auth-optional">选填</span>
+            </div>
+            <el-input
+              id="reg-phone"
+              v-model="form.phone"
+              type="tel"
+              placeholder="用于找回账号"
+              maxlength="11"
+            >
+              <template #prefix>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M7 3.8h2.1l1.4 3.5-1.8 1.3a12.4 12.4 0 0 0 5.7 5.7l1.3-1.8 3.5 1.4V16a1.6 1.6 0 0 1-1.7 1.6A15.7 15.7 0 0 1 5.4 5.5 1.6 1.6 0 0 1 7 3.8Z" />
+                </svg>
+              </template>
+            </el-input>
+          </el-form-item>
+
+          <div style="height: 2px"></div>
+
+          <button type="button" class="auth-cta" :disabled="loading" @click="handleRegister">
+            <span v-if="loading" class="auth-spinner"></span>
+            {{ loading ? '注册中…' : '注 册' }}
+          </button>
+        </el-form>
+
+        <div class="auth-switch">
+          已有账户？
+          <router-link to="/travel/login">去登录</router-link>
         </div>
       </div>
-    </div>
+    </main>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 import { register } from '@/api/userCenter'
 import brandScene from '@/assets/images/hero-scene.svg'
+import '@/assets/css/auth.css'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
 const formRef = ref(null)
 const loading = ref(false)
+const pwdVisible = ref(false)
+const confirmVisible = ref(false)
 
 const form = reactive({
   account: '',
   password: '',
   confirmPassword: '',
   nickname: '',
-  avatar: '',
   phone: ''
 })
 
@@ -134,357 +262,56 @@ const rules = {
   ],
   confirmPassword: [{ validator: validateConfirm, trigger: 'blur' }],
   nickname: [{ required: true, message: '请输入昵称', trigger: 'blur' }],
-  phone: [
-    { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' }
-  ]
+  phone: [{ pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' }]
 }
 
+// 昵称首字头像：颜色由字符码决定，同一个昵称每次颜色一致
+const AVATAR_COLORS = ['#0F766E', '#0B7C72', '#15726B', '#1B5E7A', '#2A5D80', '#0B4A6F']
+const avatarInitial = computed(() => {
+  const v = form.nickname.trim()
+  return v ? Array.from(v)[0] : '旅'
+})
+const avatarColor = computed(() => {
+  const code = avatarInitial.value.codePointAt(0) || 0
+  return AVATAR_COLORS[code % AVATAR_COLORS.length]
+})
+
+const strength = computed(() => {
+  const v = form.password
+  if (v.length < 6) return 0
+  if (v.length >= 12 && /[a-zA-Z]/.test(v) && /\d/.test(v) && /[^a-zA-Z0-9]/.test(v)) return 3
+  if (v.length >= 10 && /[a-zA-Z]/.test(v) && /\d/.test(v)) return 2
+  return 1
+})
+const strengthText = computed(() => ['强度', '偏弱', '中等', '很强'][strength.value])
+
 async function handleRegister() {
-  if (!formRef.value) return
+  if (!formRef.value || loading.value) return
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
 
   loading.value = true
   try {
+    // 头像不在这里填：留空即使用后端默认头像，用户可在个人中心上传
     await register({
       account: form.account,
       password: form.password,
       nickname: form.nickname,
-      phone: form.phone || undefined,
-      // 头像选填：填了就带上，留空传 undefined → userCenter 用默认头像
-      avatar: form.avatar.trim() || undefined
+      phone: form.phone || undefined
     })
-    // 注册成功 → 尝试自动登录
+
     try {
       const user = await authStore.login(form.account, form.password)
-      ElMessage.success(`欢迎加入，${user.nickname || form.nickname}！`)
+      ElMessage.success(`欢迎加入，${user?.nickname || form.nickname}！`)
       router.replace('/travel/home')
-    } catch (err) {
+    } catch {
       ElMessage.success('注册成功，请登录')
       router.replace('/travel/login')
     }
-  } catch (err) {
-    // 注册失败（如账号已存在）：拦截器/提示已展示，这里不重复
+  } catch {
+    // 注册失败（如账号已存在）：拦截器已提示，这里不重复
   } finally {
     loading.value = false
   }
 }
 </script>
-
-<style scoped>
-.register-wrapper {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(135deg, #0D1B2A 0%, #1A2D42 30%, #132D46 60%, #0B1E2F 100%);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
-}
-
-/* ===== 背景装饰 ===== */
-.bg-decorations {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.deco-circle {
-  position: absolute;
-  border-radius: 50%;
-  opacity: 0.08;
-}
-
-.deco-circle-1 {
-  width: 600px; height: 600px;
-  background: radial-gradient(circle, #1CB89D, transparent);
-  top: -200px; right: -150px;
-  animation: float 20s ease-in-out infinite;
-}
-
-.deco-circle-2 {
-  width: 400px; height: 400px;
-  background: radial-gradient(circle, #3B82F6, transparent);
-  bottom: -100px; left: -100px;
-  animation: float 25s ease-in-out infinite reverse;
-}
-
-.deco-circle-3 {
-  width: 200px; height: 200px;
-  background: radial-gradient(circle, #1CB89D, transparent);
-  top: 40%; left: 20%;
-  animation: float 15s ease-in-out infinite 5s;
-}
-
-.deco-wave {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 120px;
-  background: linear-gradient(180deg, transparent, rgba(28, 184, 157, 0.04));
-}
-
-@keyframes float {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(30px, -30px) scale(1.05); }
-  66% { transform: translate(-20px, 20px) scale(0.95); }
-}
-
-/* ===== 主容器 ===== */
-.register-container {
-  display: flex;
-  width: 920px;
-  max-width: 94vw;
-  border-radius: 24px;
-  overflow: hidden;
-  position: relative;
-  z-index: 1;
-  box-shadow:
-    0 25px 60px rgba(0, 0, 0, 0.3),
-    0 8px 20px rgba(0, 0, 0, 0.15);
-}
-
-/* ===== 左侧品牌区 ===== */
-.brand-section {
-  flex: 1;
-  background: linear-gradient(135deg, #0D9488 0%, #1CB89D 40%, #0D1B2A 100%);
-  padding: 48px 40px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  position: relative;
-  overflow: hidden;
-}
-
-/* 品牌区底部山水插画 */
-.brand-scene {
-  position: absolute;
-  left: 0; right: 0; bottom: 0;
-  width: 100%;
-  height: 46%;
-  object-fit: cover;
-  object-position: center bottom;
-  opacity: 0.9;
-  pointer-events: none;
-}
-
-.brand-section::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  opacity: 0.5;
-}
-
-.brand-content {
-  position: relative;
-  z-index: 1;
-}
-
-.brand-icon {
-  width: 64px; height: 64px;
-  border-radius: 18px;
-  display: flex;
-  align-items: center; justify-content: center;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
-  font-size: 28px;
-  color: #fff;
-  margin-bottom: 24px;
-}
-
-.brand-title {
-  font-size: 24px;
-  font-weight: 700;
-  color: #fff;
-  margin: 0 0 8px;
-  line-height: 1.3;
-}
-
-.brand-subtitle {
-  font-size: 15px;
-  color: rgba(255, 255, 255, 0.7);
-  margin: 0;
-}
-
-.brand-footer {
-  position: relative;
-  z-index: 1;
-}
-
-.brand-footer p {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.4);
-  margin: 0;
-}
-
-/* ===== 右侧注册表单区 ===== */
-.form-section {
-  flex: 1.2;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 40px;
-}
-
-.form-card {
-  width: 100%;
-  max-width: 380px;
-}
-
-.form-header {
-  margin-bottom: 26px;
-}
-
-.form-title {
-  font-size: 24px;
-  font-weight: 700;
-  color: #1E293B;
-  margin: 0 0 6px;
-}
-
-.form-desc {
-  font-size: 14px;
-  color: #94A3B8;
-  margin: 0;
-}
-
-:deep(.el-form-item) {
-  margin-bottom: 18px;
-}
-
-:deep(.el-form-item__error) {
-  padding-left: 36px;
-}
-
-.input-wrap {
-  position: relative;
-}
-
-/* 头像：左侧预览 + 右侧 URL 输入 */
-.avatar-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-}
-
-.avatar-preview {
-  flex-shrink: 0;
-  background: #F1F5F9;
-  border: 2px solid #E2E8F0;
-  color: #94A3B8;
-  font-size: 20px;
-}
-
-.avatar-input {
-  flex: 1;
-  min-width: 0;
-}
-
-.input-icon {
-  position: absolute;
-  left: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #94A3B8;
-  font-size: 15px;
-  z-index: 2;
-  pointer-events: none;
-}
-
-:deep(.el-input__wrapper) {
-  padding-left: 40px !important;
-  height: 48px;
-  border-radius: 12px !important;
-  box-shadow: 0 0 0 1px #E2E8F0 inset !important;
-  background: #F8FAFC;
-  transition: all 0.25s ease;
-}
-
-:deep(.el-input__wrapper:hover) {
-  box-shadow: 0 0 0 1px #1CB89D inset !important;
-  background: #fff;
-}
-
-:deep(.el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 2px rgba(28, 184, 157, 0.25) inset !important;
-  background: #fff;
-}
-
-:deep(.el-input__inner) {
-  font-size: 14px;
-  color: #1E293B;
-}
-
-:deep(.el-input__inner::placeholder) {
-  color: #CBD5E1;
-}
-
-/* 注册按钮 */
-.register-btn {
-  width: 100%;
-  height: 48px;
-  border-radius: 12px !important;
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: 2px;
-  border: none !important;
-  background: linear-gradient(135deg, #1CB89D, #0D9488) !important;
-  transition: all 0.3s ease !important;
-  box-shadow: 0 4px 15px rgba(28, 184, 157, 0.3) !important;
-  margin-top: 4px;
-}
-
-.register-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(28, 184, 157, 0.4) !important;
-}
-
-.register-btn.is-loading {
-  background: linear-gradient(135deg, #94A3B8, #64748B) !important;
-  box-shadow: none !important;
-}
-
-/* 底部 */
-.form-footer {
-  margin-top: 22px;
-  text-align: center;
-}
-
-.form-footer p {
-  font-size: 13px;
-  color: #94A3B8;
-  margin: 0;
-}
-
-.form-footer a {
-  color: #1CB89D;
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.form-footer a:hover {
-  color: #0D9488;
-}
-
-/* ===== 响应式 ===== */
-@media (max-width: 768px) {
-  .register-container {
-    flex-direction: column;
-    min-height: auto;
-    width: 96vw;
-    border-radius: 16px;
-  }
-
-  .brand-section {
-    padding: 28px 24px;
-  }
-
-  .form-section {
-    padding: 32px 24px;
-  }
-}
-</style>

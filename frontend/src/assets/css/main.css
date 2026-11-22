@@ -68,6 +68,13 @@
   outline-offset: 2px;
 }
 
+/* 输入框的聚焦由容器描边表达（Element 的 wrapper、搜索框外壳等），
+   原生 outline 会在框内再套一圈，叠成双边框 */
+.el-input__inner:focus-visible,
+.el-textarea__inner:focus-visible {
+  outline: none;
+}
+
 /* 尊重系统“减少动态效果”设置 */
 @media (prefers-reduced-motion: reduce) {
   *,
