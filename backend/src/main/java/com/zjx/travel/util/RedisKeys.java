@@ -79,6 +79,18 @@ public final class RedisKeys {
     }
 
     /**
+     * 库存行锁：travel:v1:lock:stock:{scenicId}:{playDate}:{ticketTypeId}
+     *
+     * <p>粒度刻意对齐 {@code scenic_stock} 的唯一键——锁保护的资源就是那一行库存。
+     * 粗到景区维度会把不同日期的下单无谓串行化；细到用户维度又防不住对同一行余量的竞争。
+     */
+    public static String stockLock(Integer scenicId, java.time.LocalDate playDate, int ticketTypeId) {
+        return PREFIX + "lock:stock:" + scenicId + ":"
+                + (playDate == null ? "unknown" : playDate.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE))
+                + ":" + ticketTypeId;
+    }
+
+    /**
      * 由业务 key 推导锁 key：{@code travel:v1:scenic:detail:12} → {@code travel:v1:lock:scenic:detail:12}。
      * 非本前缀的 key 会整体挂到 lock: 段下，保证锁 key 仍在统一命名空间内。
      */
